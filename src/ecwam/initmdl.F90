@@ -1002,8 +1002,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'
       CALL FLUSH (IU06)
 
-!    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
-!!!! might need to restrict call when needed !!!
+!     GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT IF NEEDED
       IF(LCIWA1) CALL CIGETDEAC
 
 ! ----------------------------------------------------------------------
