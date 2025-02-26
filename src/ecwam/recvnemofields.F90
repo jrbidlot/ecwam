@@ -87,6 +87,11 @@ SUBROUTINE RECVNEMOFIELDS(BLK2LOC, WVENVI, NEMO2WAM,  &
 
       INTEGER(KIND=JWIM) :: IX, JY, IJ
       INTEGER(KIND=JWIM) :: ICHNK, KIJS, KIJL, IC, IFLD
+
+!     CONSTANTS FOR PARAMETRISATION OF SEA ICE THICKNESS:
+      REAL(KIND=JWRB), PARAMETER :: C1=0.2_JWRB
+      REAL(KIND=JWRB), PARAMETER :: C2=0.4_JWRB
+
       REAL(KIND=JWRO), DIMENSION(NTOTIJ, NFIELD) :: ZNEMOTOWAM
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -190,7 +195,12 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
                 IF (FIELDG%LKFR(IX,JY) <= 0.0_JWRB ) THEN
                   FF_NOW%CITHICK(IJ,ICHNK)=NEMO2WAM%NEMOCICOVER(IJ,ICHNK)*NEMO2WAM%NEMOCITHICK(IJ,ICHNK)
                 ELSE
-                  FF_NOW%CICOVER(IJ,ICHNK)=0.5_JWRB*NEMO2WAM%NEMOCICOVER(IJ,ICHNK)
+!                 adopting what is done when we have no thickness information available to be consistent with micep
+                  IF (FIELDG%CICOVER(IX,JY) > 0.0_JWRB) THEN
+                    FF_NOW%CITHICK(IJ,ICHNK)=MAX(C1+C2*FIELDG%CICOVER(IX,JY),0.0_JWRB)
+                  ELSE
+                    FF_NOW%CITHICK(IJ,ICHNK)=0.0_JWRB
+                  ENDIF
                 ENDIF
               ENDDO
             ENDIF
