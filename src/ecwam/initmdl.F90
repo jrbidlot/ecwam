@@ -191,7 +191,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      LLUNSTR
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
-      USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
+      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
@@ -469,8 +469,6 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         DFIM_END_L(M) = SCDF_L*FR(M)
         DFIM_END_U(M) = SCDF_U*FR(M)
       ENDDO
-
-      FLMINFAC = ALPHAPMINFAC*FM2FP*G/(PI*ZPI**3*FR(NFRE)**5)
 
       FLOGSPRDM1=1.0_JWRB/LOG10(FRATIO)
 
