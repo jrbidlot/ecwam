@@ -199,6 +199,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: XLAT
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: WAMDEPTH
       REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: PERCENTLAND, PERCENTSHALLOW
+      REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:,:) :: SGRDOBS
 
 
       REAL(KIND=JWRB) :: PRPLRADI, ZCONV, FR1, OMEGA, DEPTH
@@ -220,6 +221,7 @@ PROGRAM CREATE_BATHY_ETOPO1
       LOGICAL :: LLGRIBIN !! funtionality not yet fully coded
       LOGICAL :: LLOBSTROUT, LLGRIBOUT
       LOGICAL :: LLOBSTRON
+      LOGICAL :: LLSGRDOBS
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLEXCLTHRSHOLD
       LOGICAL, ALLOCATABLE, DIMENSION(:,:) :: LLSM
 
@@ -805,6 +807,7 @@ IF ( LLOBSTROUT ) THEN
       ALLOCATE(IOBSRLAT(NGX,NGY,2))
       ALLOCATE(IOBSRLON(NGX,NGY,2))
       ALLOCATE(FIELD(NGX,NGY))
+      ALLOCATE(SGRDOBS(NGX,NGY))
 
       WRITE(1,'(I4)') NFRE_RED
 
@@ -827,6 +830,7 @@ IF ( LLOBSTROUT ) THEN
       IOBSCOR(:,:,:)  = NOOBSTRT 
       IOBSRLAT(:,:,:) = NOOBSTRT 
       IOBSRLON(:,:,:) = NOOBSTRT
+      SGRDOBS(:,:) = 0._JWRU
       FIELD(:,:) = ZMISS 
       LLSM(:,:) = .FALSE.
       ILSM(:,:) = 0 
@@ -2142,6 +2146,127 @@ IF ( LLOBSTROUT ) THEN
 !$OMP END PARALLEL DO
         ENDDO
 
+
+!       PERCENTAGE OF SUBGRID LAND AND OBSTRUCTIONS
+!       --------------------------------------------
+        IF ( M == 5 ) THEN
+          LLSGRDOBS=.TRUE.
+!         This will not be used by the advection scheme !
+          WRITE(IU06,*) 'CREATE PERCENTAGE OF SUBGRID LAND AND OBSTRUCTIONS '
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
+!$OMP& PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX) &
+!$OMP& PRIVATE(XLONL,XLONR,ILONL,ILONR,NOBSTRCT) &
+!$OMP& PRIVATE(I,NIOBSLON,J,LNSW,L1ST) &
+!$OMP& PRIVATE(NTOTPTS)
+!         LOOP OVER MODEL LATITUDES
+          DO K=1,NGY
+!           LATIDUNAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
+            XLATT=XLAT(K)+0.5_JWRU*DXDELLA
+            XLATB=XLAT(K)-0.5_JWRU*DXDELLA
+            ILATT = INT((90.0_JWRU- XLATT)*INVRES) + 1
+            ILATB = INT((90.0_JWRU- XLATB)*INVRES) + 2
+            ILATT = MAX(1,MIN(ILATT,ILAT))
+            ILATB = MAX(1,MIN(ILATB,ILAT))
+            IF (ILATB == ILAT+1) ILATB=ILAT
+
+!           LOOP OVER ALL MODEL POINTS FOR A GIVEN LATITUDE
+            DO IX=1,NLONRGG(K)
+              IF (LLSM(IX,K)) THEN
+!               SEA POINT GRID BOX LATITUNAL EXTEND :
+                XLONL=DAMOWEP + (REAL(IX-1,JWRU)-0.5_JWRU)*ZDELLO(K)
+                IF (XLONL > 180._JWRU) THEN
+                  XLONL=XLONL-360._JWRU
+                ENDIF
+                XLONR=DAMOWEP + (REAL(IX-1,JWRU)+0.5_JWRU)*ZDELLO(K)
+                IF (XLONR > 180._JWRU) THEN
+                  XLONR=XLONR-360._JWRU
+                ENDIF
+
+!               LONGITUDINAL INDEX OF THE OF THE SUBGRID POINTS THAT ARE INSIDE THE MODEL GRID BOX:  
+                ILONL = INT((XLONL + 180._JWRU)*INVRES) + 1
+                ILONR = INT((XLONR + 180._JWRU)*INVRES) + 2
+
+!               COMPUTE THE OBSTRUCTIONS:
+!               TALLY THE NUMBER OF SUB GRID POINTS THAT ARE POTENTIALLY BLOCKING WAVE PROPAGATION (NOBSTRCT)
+                NOBSTRCT=0
+
+!               AWAY FROM THE DATELINE
+                IF (ILONL <= ILONR) THEN
+!                 TOTAL NUMBER OF SUBGRID POINTS
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR-ILONL+1)
+
+!                 LOOP OVER SUBGRID LONGITUDE LINE:
+                  DO I=ILONL,ILONR
+                    NIOBSLON=0
+!                   SCAN EACH SUBGRID LATTUDE:
+                    DO J=ILATT,ILATB
+                      IF (IDEPTH(I,J) >= IBLOCKDPT(IX,K) ) THEN
+!                       IF THE LONGITUDE LINE CONTAINS ACTUAL LAND (> 0) THEN THE FULL LONGITUDE WILL BLOCK ONLY IF
+!                       THERE IS A SWITCH BACK TO DEPTH < IBLOCKDPT OR VICE VERSA (see below).
+!                       THIS IS TO AVOID CREATING FULL OBSTRUCTION WHEN APPROACHING THE COASTLINE.
+!                       ELSE IF THE LINE CONTAINS PSEUDO LAND AS DEFINED AS ANYTHING ABOVE IBLOCKDPT(IX,K) (IBLOCKDPT is negative)
+!                       THEN THE FULL LINE WILL BLOCK IF THERE IS NOT TOO MUCH LAND (see below).
+!                       AGAIN THIS IS TO AVOID CREATING FULL OBSTRUCTION WHEN APPROACHING THE COASTLINE.
+
+                        NIOBSLON=NIOBSLON+1
+
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND.  LLEXCLTHRSHOLD(IX,K)) THEN
+!                       IF SEA ABOVE THE THRESHOLD THEN ONLY THAT SUBGRID POINT BLOCKS
+                        NIOBSLON=NIOBSLON+1
+                      ENDIF
+                    ENDDO
+
+                    NOBSTRCT=NOBSTRCT+NIOBSLON
+                  ENDDO
+
+!                 RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
+                  SGRDOBS(IX,K) = REAL(NOBSTRCT,JWRU)/REAL(NTOTPTS,JWRU)
+
+
+!               AT THE DATELINE, DEALING WITH THE PERIODICITY (simplified version)
+                ELSE
+!                 TOTAL NUMBER OF SUBGRID POINTS
+                  NTOTPTS=(ILATB-ILATT+1)*(ILONR+ILON-ILONL+1)
+
+                  DO I=1,ILONR
+                    NIOBSLON=0
+                    DO J=ILATT,ILATB
+                      IF (IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
+                        NIOBSLON=ILATB-ILATT+1
+                        EXIT
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
+                        NIOBSLON=NIOBSLON+1 
+                      ENDIF
+                    ENDDO
+                    NOBSTRCT=NOBSTRCT+NIOBSLON
+                  ENDDO
+
+                  DO I=ILONL,ILON
+                    NIOBSLON=0
+                    DO J=ILATT,ILATB
+                      IF (IDEPTH(I,J) >= IBLOCKDPT(IX,K)) THEN
+                        NIOBSLON=ILATB-ILATT+1
+                        EXIT
+                      ELSEIF (IDEPTH(I,J) >= ITHRSHOLD(IX,K) .AND. LLEXCLTHRSHOLD(IX,K) ) THEN
+                        NIOBSLON=NIOBSLON+1 
+                      ENDIF
+                    ENDDO
+                    NOBSTRCT=NOBSTRCT+NIOBSLON
+                  ENDDO
+!                 RATIO OF ALL BLOCKING SUBGRID POINTS TO THE TOTAL NUMBER OF POINTS
+                  SGRDOBS(IX,K) = REAL(NOBSTRCT,JWRU)/REAL(NTOTPTS,JWRU)
+                ENDIF
+
+              ENDIF
+            ENDDO
+          ENDDO
+!$OMP END PARALLEL DO
+
+        ELSE
+          LLSGRDOBS=.FALSE.
+        ENDIF
+
+
         ENDIF ! end if xdella too small, do not compute obstructions
 
 
@@ -2459,6 +2584,31 @@ IF ( LLOBSTROUT ) THEN
             ENDDO
           ENDDO
 
+!         OUTPUT PERCENTAGE OF SUBGRID LAND AND OBSTRUCTIONS
+          IF (LLSGRDOBS) THEN
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(K,KNS,IX)
+                  DO K=1,NGY
+                    KNS=NGY-K+1
+                    DO IX=1,NLONRGG(K)
+                      FIELD(IX,KNS) = ILSM(IX,K)*SGRDOBS(IX,K) + (1-ILSM(IX,K))*ZMISS
+                    ENDDO
+                  ENDDO
+!$OMP END PARALLEL DO
+
+              ITEST = 0
+              ITABLE=140
+              IPARAM=KPARAM_SUBGRIG !! use the parameter id of the model bathymetry to insure the same interpolation method between the 2
+              IZLEV=0
+              ITMIN=0
+              ITMAX=0
+              CDATE=CDATECLIM
+              IFCST=0
+
+              CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,                   &
+     &                        ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, 0 , 0,     &
+     &                        CDATE, IFCST, MARSTYPE, LFDB, IU08(IP))
+
+          ENDIF
         ELSE
 !         BINARY OUTPUT
 !         FOR GLOBAL FIELD (in the same file as mean bathymetry)
