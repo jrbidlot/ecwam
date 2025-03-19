@@ -431,8 +431,8 @@ PROGRAM CREATE_BATHY_ETOPO1
           FILENAME='wam_grib_subgrid_'//C1
           CALL IGRIB_OPEN_FILE(IU08(IP),FILENAME,'w')
         ENDDO
-        write(*,*) 'opening wam_grib_subgrid_obstructions'
-        FILENAME='wam_grib_subgrid_obstructions'
+        write(*,*) 'opening wam_grib_subgrid_land_and_obstructions'
+        FILENAME='wam_grib_subgrid_land_and_obstructions'
         CALL IGRIB_OPEN_FILE(IUSGOBS,FILENAME,'w')
       ENDIF
 
@@ -2606,7 +2606,7 @@ IF ( LLOBSTROUT ) THEN
 
               CALL WGRIBENOUT(IU06, ITEST, NGX, NGY, FIELD,                   &
      &                        ITABLE, IPARAM, IZLEV, ITMIN, ITMAX, 0 , 0,     &
-     &                        CDATE, IFCST, MARSTYPE, LFDB, IU08(IP))
+     &                        CDATE, IFCST, MARSTYPE, LFDB, IUSGOBS)
 
           ENDIF
         ELSE
