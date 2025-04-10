@@ -121,7 +121,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            CHNKMIN_U, CDIS ,DELTA_SDIS, CDISVIS,                 &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
-     &            SWELLF4,  SWELLF7, SSDSC5
+     &            SWELLF4,  SWELLF7, SSDSC5, TAUWOTAUMAX
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IFRELFMAX, DELPRO_LF, IDELPRO, IDELT   ,IDELWI   ,    &
@@ -730,6 +730,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                BETAMAX = ...... ', BETAMAX
       WRITE(IU06,*) '                ZALP = ......... ', ZALP
       WRITE(IU06,*) '                ALPHA = ........ ', ALPHA
+      WRITE(IU06,*) '                TAUWOTAUMAX = ...', TAUWOTAUMAX 
       WRITE(IU06,*) '                CHNKMIN_U = .... ', CHNKMIN_U
       WRITE(IU06,*) '                ALPHAPMAX = .... ', ALPHAPMAX
       WRITE(IU06,*) '                TAUWSHELTER = .. ', TAUWSHELTER
