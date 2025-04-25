@@ -152,7 +152,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           SSDSC5  = 0.0_JWRB
 
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.39_JWRB
+            BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
            !!! not yet fully tested !!!
