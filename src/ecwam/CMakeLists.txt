@@ -93,6 +93,8 @@ list( APPEND ecwam_srcs
   h_max.F90
   halphap.F90
   headbc.F90
+  icebreak_modify_attenuation.F90  
+  ibrmemout.F90
   imphftail.F90
   implsch.F90
   incdate.F90
@@ -187,6 +189,7 @@ list( APPEND ecwam_srcs
   peak_ang.F90
   peak_freq.F90
   peakfri.F90
+  peak_waveage.F90
   preset_wgrib_template.F90
   prewind.F90
   proenvhalo.F90
@@ -220,8 +223,6 @@ list( APPEND ecwam_srcs
   sdice1.F90
   sdice2.F90
   sdice3.F90  
-  icebreak_modify_attenuation.F90  
-  ibrmemout.F90
   se10mean.F90
   sebtmean.F90
   second_order_lib.F90
@@ -250,6 +251,7 @@ list( APPEND ecwam_srcs
   stress_gc.F90
   stresso.F90
   strspec.F90
+  swellmask.F90
   tables_2nd.F90
   tabu_swellft.F90
   tau_phi_hf.F90
@@ -297,6 +299,7 @@ list( APPEND ecwam_srcs
   wgribencode_values.F90
   wgribenout.F90
   wgribout.F90
+  whitecap_fraction.F90
   wnfluxes.F90
   wposnam.F90
   writefl.F90

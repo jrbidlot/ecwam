@@ -78,7 +78,9 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 #include "cal_second_order_spec.intfb.h"
 #include "cimsstrn.intfb.h"
 #include "ctcor.intfb.h"
+#include "dominant_period.intfb.h"
 #include "femean.intfb.h"
+#include "ibrmemout.intfb.h"
 #include "intpol.intfb.h"
 #include "kurtosis.intfb.h"
 #include "meansqs.intfb.h"
@@ -86,15 +88,14 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 #include "mwp2.intfb.h"
 #include "outbeta.intfb.h"
 #include "outsetwmask.intfb.h"
-#include "dominant_period.intfb.h"
 #include "se10mean.intfb.h"
 #include "sebtmean.intfb.h"
 #include "sepwisw.intfb.h"
 #include "sthq.intfb.h"
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
+#include "whitecap_fraction.intfb.h"
 #include "w_maxh.intfb.h"
-#include "ibrmemout.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: MIJ
@@ -130,6 +131,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EM, FM, DP
       REAL(KIND=JWRB), DIMENSION(KIJL) :: C3, C4, BF, QP, HMAX, TMAX
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ZWCF
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ETA_M, R, XNSLC, SIG_TH, EPS, XNU
       REAL(KIND=JWRB), DIMENSION(KIJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
@@ -573,31 +575,40 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       IF (IPFGTBL(66 + 3*NTRAIN + NTEWH) /= 0) THEN
         BOUT(KIJS:KIJL,ITOBOUT(66 + 3*NTRAIN + NTEWH))=HMAX_ST(KIJS:KIJL)
       ENDIF
+
+
+!     WHITECAP FRACTION
+      IF (IPFGTBL(67 + 3*NTRAIN + NTEWH) /= 0) THEN
+
+        CALL WHITECAP_FRACTION (KIJS, KIJL, FL1, XLLWS, CINV, DEPTH, UFRIC, COSWDIF, PHIOCD, ZWCF)
+
+        BOUT(KIJS:KIJL,ITOBOUT(67 + 3*NTRAIN + NTEWH))=ZWCF(KIJS:KIJL)
+      ENDIF
 !!
 
 
 !     COMPUTE OUTPUT EXTRA FIELDS
 !     add necessary code to compute the extra output fields
 !!!for testing
-      IF (IPFGTBL(67 + 3*NTRAIN + NTEWH) /= 0) THEN
-        CALL CTCOR (KIJS, KIJL, FL1, BOUT(:,ITOBOUT(67 + 3*NTRAIN + NTEWH)))
-      ENDIF
-
       IF (IPFGTBL(68 + 3*NTRAIN + NTEWH) /= 0) THEN
-        XMODEL_CUTOFF=(ZPI*FR(NFRE))**2/G
-        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, COSWDIF, BOUT(:,ITOBOUT(68 + 3*NTRAIN + NTEWH)))
+        CALL CTCOR (KIJS, KIJL, FL1, BOUT(:,ITOBOUT(68 + 3*NTRAIN + NTEWH)))
       ENDIF
 
       IF (IPFGTBL(69 + 3*NTRAIN + NTEWH) /= 0) THEN
-        CALL IBRMEMOUT (KIJS, KIJL, IBRMEM, CICOVER, BOUT(:,ITOBOUT(69 + 3*NTRAIN + NTEWH)))
+        XMODEL_CUTOFF=(ZPI*FR(NFRE))**2/G
+        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, COSWDIF, BOUT(:,ITOBOUT(69 + 3*NTRAIN + NTEWH)))
       ENDIF
 
       IF (IPFGTBL(70 + 3*NTRAIN + NTEWH) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(70 + 3*NTRAIN + NTEWH))=TAUICX(KIJS:KIJL)
+        CALL IBRMEMOUT (KIJS, KIJL, IBRMEM, CICOVER, BOUT(:,ITOBOUT(70 + 3*NTRAIN + NTEWH)))
       ENDIF
 
       IF (IPFGTBL(71 + 3*NTRAIN + NTEWH) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(71 + 3*NTRAIN + NTEWH))=TAUICY(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(71 + 3*NTRAIN + NTEWH))=TAUICX(KIJS:KIJL)
+      ENDIF
+
+      IF (IPFGTBL(72 + 3*NTRAIN + NTEWH) /= 0) THEN
+        BOUT(KIJS:KIJL,ITOBOUT(72 + 3*NTRAIN + NTEWH))=TAUICY(KIJS:KIJL)
       ENDIF
 
 

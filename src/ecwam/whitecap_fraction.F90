@@ -1,0 +1,91 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
+SUBROUTINE WHITECAP_FRACTION (KIJS, KIJL, FL1, XLLWS, CINV, DEPTH, UFRIC, COSWDIF, PHIOCD, ZWCF)
+
+! ----------------------------------------------------------------------
+
+!**** *WHITECAP_FRACTION* - DETERNINES THE WHITECAP FRACTION
+
+! BASED ON
+! Callaghan, A. H., Bidlot, J.‐R., de Leeuw,G., & O’Dowd, C. D. (2025).
+! Comparingestimates of whitecap coverage from aspectral wave model with oceanic cobservations.
+! Geophysical ResearchLetters, 52, e2024GL112996. https://doi.org/10.1029/2024GL112996
+
+! ----------------------------------------------------------------------
+
+USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+USE YOWFRED  , ONLY : FRIC     ,OLDWSFC
+USE YOWPARAM , ONLY : NANG     ,NFRE
+USE YOWPCONS , ONLY : ROWATER
+
+USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+! -----------------------------------------------------------------------
+
+IMPLICIT NONE
+
+#include "peak_waveage.intfb.h"
+#include "semean.intfb.h"
+#include "swellmask.intfb.h"
+
+INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL                      !! INDEX OF FIRST GRIDPOINT AND LAST GRID POINT
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1     !! SPECTRA
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: XLLWS   !! WINDSEA MASK FROM INPUT SOURCE TERM
+REAL(KIND=JWRB), DIMENSION(KIJL, NFRE), INTENT(IN) :: CINV        !! INVERSE PHASE SPEEDS
+REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: DEPTH             !! WATER DEPTH
+REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC             !! FRICTION VELOCITY IN M/S.
+REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: PHIOCD            !! ENERGY FLUX DUE TO WAVE BREAKING (W/m^2) negative as it is going from waves to ocean
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG), INTENT(IN) :: COSWDIF      !! COSINE (WDWAVE - WAVES DIRECTIONS)
+REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: ZWCF             !! WHITECAP FRACTION
+
+
+INTEGER(KIND=JWIM) :: IJ, K, M
+
+REAL(KIND=JWRB), PARAMETER :: PPHITH = 0.0027_JWRB  !! W/m**2
+REAL(KIND=JWRB), PARAMETER :: POMEGA = 0.88_JWRB  !! W/kg
+REAL(KIND=JWRB), PARAMETER :: PDELTAC = 8.65_JWRB !! +- 5.38 
+REAL(KIND=JWRB), PARAMETER :: PDELTAE = 0.69_JWRB !! +- 0.30
+
+REAL(KIND=JWRB) :: COEF, CHECKTA
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+REAL(KIND=JWRB), DIMENSION(KIJL) :: ZPWAVEAGE, ESEA, ZHSWW
+REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SWM, F1
+
+! ----------------------------------------------------------------------
+
+IF (LHOOK) CALL DR_HOOK('WHITECAP_FRACTION',0,ZHOOK_HANDLE)
+
+! WAVEAGE
+CALL PEAK_WAVEAGE (KIJS, KIJL, FL1, DEPTH, UFRIC, ZPWAVEAGE)
+
+! SIGNIFICANT WAVE HEIGHT OF THE WINDSEA
+CALL SWELLMASK (KIJS, KIJL, FL1, XLLWS, CINV, UFRIC, COSWDIF, SWM)
+
+DO M=1,NFRE
+  DO K=1,NANG
+    DO IJ=KIJS,KIJL
+      F1(IJ,K,M)=MAX(FL1(IJ,K,M)*(1.0_JWRB-SWM(IJ,K,M)), 0.0_JWRB)
+    ENDDO
+  ENDDO
+ENDDO
+CALL SEMEAN(F1, KIJS, KIJL, ESEA, .FALSE.)
+ZHSWW(KIJS:KIJL)=4._JWRB*SQRT(MAX(ESEA(KIJS:KIJL),0._JWRB))
+
+
+! WHITECAP FRACTION
+DO IJ=KIJS,KIJL
+
+ENDDO
+
+
+IF (LHOOK) CALL DR_HOOK('WHITECAP_FRACTION',1,ZHOOK_HANDLE)
+
+END SUBROUTINE WHITECAP_FRACTION
