@@ -109,8 +109,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB) :: COEF
-      REAL(KIND=JWRB) :: CHECKTA
+      REAL(KIND=JWRB) :: ZPMLIM, CHECKTA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJL) :: R
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: XINVWVAGE
@@ -167,11 +166,11 @@
         ENDDO
       ENDDO
 
-      COEF = OLDWSFC*FRIC
+      ZPMLIM = OLDWSFC*FRIC
       DO K=1,NANG
         DO IJ=KIJS,KIJL
           ! add factor to extend windsea area
-          DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.0_JWRB,0.4_JWRB+COSWDIF(IJ,K))
+          DIRCOEF(IJ,K)=R(IJ)*ZPMLIM*SIGN(1.0_JWRB,0.4_JWRB+COSWDIF(IJ,K))
         ENDDO
       ENDDO
 
