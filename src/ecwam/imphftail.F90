@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE IMPHFTAIL (KIJS, KIJL, MIJ, FLM, WAVNUM, XK2CG, FL1) 
+      SUBROUTINE IMPHFTAIL (KIJS, KIJL, MIJ, FCUT, FLM, WAVNUM, XK2CG, FL1) 
 ! ----------------------------------------------------------------------
 
 !**** *IMPHFTAIL* - IMPOSE A HIGH FREQUENCY TAIL TO THE SPECTRUM
@@ -22,10 +22,11 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *IMPHFTAIL (KIJS, KIJL, MIJ, FLM, WAVNUM, XK2CG, FL1)
+!       *CALL* *IMPHFTAIL (KIJS, KIJL, MIJ, FCUT, FLM, WAVNUM, XK2CG, FL1)
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
 !          *MIJ*     - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!          *FCUT*    - ACTUAL FREQUENCY OF THE PROGNOSTIV RANGE,
 !          *FLM*     - SPECTAL DENSITY MINIMUM VALUE
 !          *WAVNUM*  - WAVENUMBER
 !          *XK2CG*   - (WAVNUM)**2 * GROUP SPEED
@@ -44,14 +45,15 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE YOWFRED  , ONLY : FR       ,FRM5
       USE YOWPARAM , ONLY : NANG     ,NFRE
-
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: MIJ
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: FCUT 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG), INTENT(IN) :: FLM 
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, XK2CG
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FL1
@@ -59,7 +61,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB) :: AKM1, TFAC
+      REAL(KIND=JWRB) :: ZW1, ZNFL1, ZSCL
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP1, TEMP2
 
@@ -71,17 +73,26 @@
 !     ----------------
 
       DO IJ=KIJS,KIJL
-        TEMP1(IJ) = 1.0_JWRB/XK2CG(IJ,MIJ(IJ))/WAVNUM(IJ,MIJ(IJ))
+!       APPLY F**-5 TAIL FROM FCUT WHEN FCUT < FR(MIJ)
+        ZSCL =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
+        ZW1 = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
+        DO K=1,NANG
+          ZNFL1 = ZW1*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1)*FL1(IJ,K,MIJ(IJ))
+          FL1(IJ,K,MIJ(IJ)) = ZNFL1 * ZSCL
+        ENDDO
 
+        TEMP1(IJ) = 1.0_JWRB/XK2CG(IJ,MIJ(IJ))/WAVNUM(IJ,MIJ(IJ))
+      ENDDO
+
+!*    MERGE TAIL INTO SPECTRA.
+!     ------------------------
+      DO IJ=KIJS,KIJL
         DO M=MIJ(IJ)+1,NFRE
           TEMP2(IJ) = 1.0_JWRB/XK2CG(IJ,M)/WAVNUM(IJ,M)
           TEMP2(IJ) = TEMP2(IJ)/TEMP1(IJ)
 
-!*    MERGE TAIL INTO SPECTRA.
-!     ------------------------
           DO K=1,NANG
-            TFAC = FL1(IJ,K,MIJ(IJ))
-            FL1(IJ,K,M) = MAX(TEMP2(IJ)*TFAC,FLM(IJ,K))
+            FL1(IJ,K,M) = MAX(TEMP2(IJ)*FL1(IJ,K,MIJ(IJ)),FLM(IJ,K))
           ENDDO
         ENDDO
       ENDDO

@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE FRCUTINDEX (KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
-     &                       MIJ, RHOWGDFTH)
+     &                       MIJ, FCUT, RHOWGDFTH)
 
 ! ----------------------------------------------------------------------
 
@@ -26,6 +26,7 @@
 !          *UFRIC*  - FRICTION VELOCITY IN M/S
 !          *CICOVER*- CICOVER 
 !          *MIJ*    - LAST FREQUENCY INDEX for imposing high frequency tail
+!          *FCUT*   - THE ACTUAL FREQUENCY OF THE PROGNOSTIC PART OF SPECTRUM.
 !          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
 !                       FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
 !                       !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
@@ -63,12 +64,13 @@
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJL)
       REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(IN) :: FM, FMWS, UFRIC, CICOVER
+      REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(OUT) :: FCUT
       REAL(KIND=JWRB),DIMENSION(KIJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
 
       INTEGER(KIND=JWIM) :: IJ, M
 
-      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4
+      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -88,11 +90,13 @@
         IF (CICOVER(IJ) <= CITHRSH_TAIL) THEN
           FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
           FPM = FPPM/MAX(UFRIC(IJ),EPSMIN)
-          FPM4 = MAX(FM2,FPM)
-          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
-          MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+          FCUT(IJ) = MAX(FM2,FPM)
+          MIJ(IJ) = INT(LOG10(FCUT(IJ))*FLOGSPRDM1)+2
+          MIJ(IJ) = MIN(MAX(2,MIJ(IJ)),NFRE)
+          FCUT(IJ) = MAX(MIN(FCUT(IJ),FR(NFRE)),FR(1))
         ELSE
           MIJ(IJ) = NFRE
+          FCUT(IJ) = FR(NFRE)
         ENDIF
       ENDDO
 
