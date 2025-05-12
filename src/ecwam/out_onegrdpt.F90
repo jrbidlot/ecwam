@@ -215,7 +215,13 @@
             Tws   = G*ITIME/USTAR
             E     = HSWS**2/16.0_JWRB
             Ews   = G**2*E/(USTAR**4)
+!!debile
+        if(GOUT(IPT1WS,I,J) > 0.0_JWRB) then
             Fws   = USTAR/(GOUT(IPT1WS,I,J)*G)
+        else
+         write(*,*) 'debile in out_onegrdpt',GOUT(IPHSWS,I,J),GOUT(IPT1WS,I,J)
+            Fws   = -99.
+        endif
 
             TSTAR_0 = 4.26_JWRB*10.0_JWRB**5
             XP      = 1.5_JWRB
@@ -297,6 +303,7 @@
         WRITE(IU06,*) '*                                     *'
         WRITE(IU06,*) '*  MISSING SOME OUTPUT VARIABLES !    *'
         WRITE(IU06,*) '***************************************'
+        CALL FLUSH(IU06)
         CALL ABORT1
       ENDIF
    60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,                &
