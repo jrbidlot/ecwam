@@ -44,6 +44,7 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 #include "femeanws.intfb.h"
 #include "frcutindex.intfb.h"
 #include "halphap.intfb.h"
+#include "imphftail.intfb.h"
 #include "sinput.intfb.h"
 #include "stresso.intfb.h"
 
@@ -173,6 +174,10 @@ CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS)
 ! COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !$loki inline
 CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, MIJ, FCUT, RHOWGDFTH)
+
+!$loki inline
+!!!!! this will modify FL1 !!!!!!!
+CALL IMPHFTAIL(KIJS, KIJL, MIJ, FCUT, FLM, WAVNUM, XK2CG, FL1)
 
 ! UPDATE TAUW
 !$loki inline
