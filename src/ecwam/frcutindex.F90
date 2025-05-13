@@ -48,11 +48,10 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
-     &                ZPIFR,                                            &
      &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,ZPI        ,EPSMIN
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -70,7 +69,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, M
 
-      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM
+      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4, ZLOG10FR1
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -83,16 +82,18 @@
 !*    VELOCITY. (FPM=G/(FRIC*ZPI*USTAR))
 !     ------------------------------------------------------------
 
-      FPMH = TAILFACTOR/FR(1)
-      FPPM = TAILFACTOR_PM*G/(FRIC*ZPIFR(1))
+      FPMH = TAILFACTOR
+      FPPM = TAILFACTOR_PM*G/(FRIC*ZPI)
+      ZLOG10FR1 = LOG10(FR(1))
 
       DO IJ=KIJS,KIJL
         IF (CICOVER(IJ) <= CITHRSH_TAIL) THEN
           FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
           FPM = FPPM/MAX(UFRIC(IJ),EPSMIN)
-          FCUT(IJ) = MAX(FM2,FPM)
-          MIJ(IJ) = INT(LOG10(FCUT(IJ))*FLOGSPRDM1)+2
+          FPM4 = MAX(FM2,FPM)
+          MIJ(IJ) = INT((LOG10(FPM4)-ZLOG10FR1)*FLOGSPRDM1)+2
           MIJ(IJ) = MIN(MAX(2,MIJ(IJ)),NFRE)
+          FCUT(IJ) = FPM4
           FCUT(IJ) = MAX(MIN(FCUT(IJ),FR(NFRE)),FR(1))
         ELSE
           MIJ(IJ) = NFRE

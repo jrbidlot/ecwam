@@ -74,12 +74,12 @@
 
       DO IJ=KIJS,KIJL
 !       APPLY F**-5 TAIL FROM FCUT WHEN FCUT < FR(MIJ)
-!!!        ZSCL =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
-!!!        ZW1 = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
-!!!!        DO K=1,NANG
-!!!          ZNFL1 = ZW1*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1)*FL1(IJ,K,MIJ(IJ))
-!!!          FL1(IJ,K,MIJ(IJ)) = ZNFL1 * ZSCL
-!!!        ENDDO
+        ZSCL =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
+        ZW1 = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
+        DO K=1,NANG
+          ZNFL1 = ZW1*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1)*FL1(IJ,K,MIJ(IJ))
+          FL1(IJ,K,MIJ(IJ)) = ZNFL1 * ZSCL
+        ENDDO
 
         TEMP1(IJ) = 1.0_JWRB/XK2CG(IJ,MIJ(IJ))/WAVNUM(IJ,MIJ(IJ))
       ENDDO

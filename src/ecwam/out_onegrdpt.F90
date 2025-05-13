@@ -54,6 +54,8 @@
       USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV    ,RNUM     ,ALPHAMIN
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
+
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -215,13 +217,6 @@
             Tws   = G*ITIME/USTAR
             E     = HSWS**2/16.0_JWRB
             Ews   = G**2*E/(USTAR**4)
-!!debile
-        if(GOUT(IPT1WS,I,J) > 0.0_JWRB) then
-            Fws   = USTAR/(GOUT(IPT1WS,I,J)*G)
-        else
-         write(*,*) 'debile in out_onegrdpt',GOUT(IPHSWS,I,J),GOUT(IPT1WS,I,J)
-            Fws   = -99.
-        endif
 
             TSTAR_0 = 4.26_JWRB*10.0_JWRB**5
             XP      = 1.5_JWRB
@@ -297,6 +292,10 @@
         CALL FLUSH(IU_INTP)
         CALL FLUSH(IU06)
       ELSE IF (.NOT. LLUNSTR) THEN
+        WRITE(NULERR,*) '*                                     *'
+        WRITE(NULERR,*) '*  FATAL ERROR IN SUB. OUT_ONEGRDPT   *'
+        WRITE(NULERR,*) '*                                     *'
+        WRITE(NULERR,*) '*  MISSING SOME OUTPUT VARIABLES !    *'
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '*                                     *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. OUT_ONEGRDPT   *'
