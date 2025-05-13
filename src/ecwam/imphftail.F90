@@ -79,7 +79,7 @@
 !!!        DO K=1,NANG
 !!!          ZNFL1 = ZW1*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1)*FL1(IJ,K,MIJ(IJ))
 !!!          FL1(IJ,K,MIJ(IJ)) = ZNFL1 * ZSCL
-        ENDDO
+!!!        ENDDO
 
 !!1 try an alternative method: impose f**-4 tail between MIJ-1 and FCUT and then f**-5 from FCUT 
         ZSCL = FCUT(IJ)*FR(MIJ(IJ)-1)**4 * FRM5(MIJ(IJ))
