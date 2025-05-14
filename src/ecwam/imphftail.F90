@@ -73,6 +73,11 @@
 !     ----------------
 
 !     APPLY F**-5 TAIL FROM FCUT WHEN FCUT < FR(MIJ)
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          FL1(IJ,K,MIJ(IJ)) = MIN(FL1(IJ,K,MIJ(IJ)-1),FL1(IJ,K,MIJ(IJ)))
+        ENDDO
+      ENDDO
       DO IJ=KIJS,KIJL
         ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
         ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
