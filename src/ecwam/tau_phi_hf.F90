@@ -28,7 +28,7 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, FCUT, LTAUWSHELTER, UFRIC, Z0M, &
 !**   INTERFACE.
 !     ---------
 
-!       *CALL* *TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, UST, Z0M,
+!       *CALL* *TAU_PHI_HF(KIJS, KIJL, MIJ, FCUT, LTAUWSHELTER, UFRIC, UST, Z0M,
 !                          FL1, AIRD, RNFAC,
 !                          COSWDIF, SINWDIF2, 
 !                          UST, TAUHF, PHIHF, LLPHIHF)
