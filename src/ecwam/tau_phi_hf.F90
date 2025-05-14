@@ -7,9 +7,9 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
- &                    FL1, AIRD, RNFAC,                          &
- &                    COSWDIF, SINWDIF2,                         &
+SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, FCUT, LTAUWSHELTER, UFRIC, Z0M, &
+ &                    FL1, AIRD, RNFAC,                                &
+ &                    COSWDIF, SINWDIF2,                               &
  &                    UST, TAUHF, PHIHF, LLPHIHF)
 
 ! ----------------------------------------------------------------------
@@ -35,6 +35,7 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
 !          *KIJS*         - INDEX OF FIRST GRIDPOINT
 !          *KIJL*         - INDEX OF LAST GRIDPOINT
 !          *MIJ*          - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!          *FCUT*         - ACTUAL FREQUENCY OF THE PROGNOSTIC RANGE.
 !          *LTAUWSHELTER* - if true then TAUWSHELTER 
 !          *FL1*          - WAVE SPECTRUM.
 !          *AIRD*         - AIR DENSITY IN KG/M**3.
@@ -70,7 +71,7 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : X0TAUHF, JTOT_TAUHF, WTAUHF, LLGCBZ0, LLNORMAGAM 
-      USE YOWFRED  , ONLY : ZPIFR  , FR5,   TH    ,DELTH
+      USE YOWFRED  , ONLY : ZPIFR  , FR         ,FR5,   TH    ,DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G      , GM1       ,ZPI    , ZPI4GM1,  ZPI4GM2
       USE YOWPHYS  , ONLY : ZALP   , XKAPPA    ,TAUWSHELTER, GAMNCONST
@@ -86,6 +87,7 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(KIJL)
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: FCUT
       LOGICAL, INTENT(IN) :: LTAUWSHELTER
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC, Z0M
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -116,6 +118,8 @@ SUBROUTINE TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CONST1, CONST2, CONSTTAU, CONSTPHI
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1DCOS2, F1DCOS3 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1D, F1DSIN2 
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: FCUT5, ZW1
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG) ::  ZNFL1
 
 
 ! ----------------------------------------------------------------------
@@ -137,7 +141,7 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 
       DO IJ=KIJS,KIJL
         XLOGGZ0(IJ) = LOG(G*Z0M(IJ))
-        OMEGACC = MAX(ZPIFR(MIJ(IJ)), X0G/UST(IJ))
+        OMEGACC = MAX(ZPI*FCUT(IJ), X0G/UST(IJ))
         SQRTZ0OG(IJ)  = SQRT(Z0M(IJ)*GM1)
         SQRTGZ0(IJ) = 1.0_JWRB/SQRTZ0OG(IJ)
         YC = OMEGACC*SQRTZ0OG(IJ)
@@ -145,26 +149,39 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
       ENDDO
 
       DO IJ=KIJS,KIJL
-        CONSTTAU(IJ) = ZPI4GM2*FR5(MIJ(IJ))
+        FCUT5(IJ) = FCUT(IJ)**5
+      ENDDO
+
+      DO IJ=KIJS,KIJL
+        CONSTTAU(IJ) = ZPI4GM2*FCUT5(IJ)
+      ENDDO
+
+      DO IJ=KIJS,KIJL
+        ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
+      ENDDO
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+         ZNFL1(IJ,K) = ZW1(IJ)*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1(IJ))*FL1(IJ,K,MIJ(IJ))
+        ENDDO
       ENDDO
 
       K=1
       DO IJ=KIJS,KIJL
         COSW     = MAX(COSWDIF(IJ,K), 0.0_JWRB)
-        FCOSW2   = FL1(IJ,K,MIJ(IJ))*COSW**2
+        FCOSW2   = ZNFL1(IJ,K)*COSW**2
         F1DCOS3(IJ) = FCOSW2*COSW
         F1DCOS2(IJ) = FCOSW2
-        F1DSIN2(IJ) = FL1(IJ,K,MIJ(IJ))*SINWDIF2(IJ,K)
-        F1D(IJ) = FL1(IJ,K,MIJ(IJ))
+        F1DSIN2(IJ) = ZNFL1(IJ,K)*SINWDIF2(IJ,K)
+        F1D(IJ) = ZNFL1(IJ,K)
       ENDDO
       DO K=2,NANG
         DO IJ=KIJS,KIJL
           COSW     = MAX(COSWDIF(IJ,K), 0.0_JWRB)
-          FCOSW2   = FL1(IJ,K,MIJ(IJ))*COSW**2
+          FCOSW2   = ZNFL1(IJ,K)*COSW**2
           F1DCOS3(IJ) = F1DCOS3(IJ) + FCOSW2*COSW
           F1DCOS2(IJ) = F1DCOS2(IJ) + FCOSW2 
-          F1DSIN2(IJ) = F1DSIN2(IJ) + FL1(IJ,K,MIJ(IJ))*SINWDIF2(IJ,K)
-          F1D(IJ) = F1D(IJ) + FL1(IJ,K,MIJ(IJ))
+          F1DSIN2(IJ) = F1DSIN2(IJ) + ZNFL1(IJ,K)*SINWDIF2(IJ,K)
+          F1D(IJ) = F1D(IJ) + ZNFL1(IJ,K)
         ENDDO
       ENDDO
       DO IJ=KIJS,KIJL
@@ -176,7 +193,7 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
 
       IF (LLNORMAGAM) THEN
         DO IJ=KIJS,KIJL
-          CONFG = GAMNCONST*FR5(MIJ(IJ))*RNFAC(IJ)*SQRTGZ0(IJ)
+          CONFG = GAMNCONST*FCUT5(IJ)*RNFAC(IJ)*SQRTGZ0(IJ)
           CONST1(IJ) = CONFG*F1DSIN2(IJ)
           CONST2(IJ) = CONFG*F1D(IJ)
         ENDDO
@@ -255,7 +272,7 @@ IF (LHOOK) CALL DR_HOOK('TAU_PHI_HF',0,ZHOOK_HANDLE)
         ENDDO
 
         DO IJ=KIJS,KIJL
-          CONSTPHI(IJ) = AIRD(IJ)*ZPI4GM1*FR5(MIJ(IJ))
+          CONSTPHI(IJ) = AIRD(IJ)*ZPI4GM1*FCUT5(IJ)
         ENDDO
 
        ! Intergrals are integrated following a change of variable : Z=LOG(Y)

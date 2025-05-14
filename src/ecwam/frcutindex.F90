@@ -51,7 +51,7 @@
      &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,ZPI        ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,ZPI        ,EPSMIN   ,ROWATER
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -70,6 +70,7 @@
       INTEGER(KIND=JWIM) :: IJ, M
 
       REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4, ZLOG10FR1
+      REAL(KIND=JWRB) :: ZHRWGDELTH, ZW1, ZRCUT
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -102,11 +103,16 @@
       ENDDO
 
 !     SET RHOWGDFTH
+      ZHRWGDELTH=0.5_JWRB*ROWATER*G*DELTH
       DO IJ=KIJS,KIJL
-        DO M=1,MIJ(IJ)
+        ZW1 = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
+        DO M=1,MIJ(IJ)-2
           RHOWGDFTH(IJ,M) = RHOWG_DFIM(M)
         ENDDO
-        IF (MIJ(IJ) /= NFRE) RHOWGDFTH(IJ,MIJ(IJ))=0.5_JWRB*RHOWGDFTH(IJ,MIJ(IJ))
+        ZRCUT = LOG(FCUT(IJ)/FR(MIJ(IJ)-1))
+        RHOWGDFTH(IJ,MIJ(IJ)-1)=0.5_JWRB*RHOWGDFTH(IJ,MIJ(IJ)-1) + ZHRWGDELTH*FR(MIJ(IJ)-1)*ZRCUT*(1.0_JWRB+ZW1)
+        RHOWGDFTH(IJ,MIJ(IJ))=ZHRWGDELTH*FR(MIJ(IJ))*ZRCUT*(1.0_JWRB-ZW1)
+
         DO M=MIJ(IJ)+1,NFRE
           RHOWGDFTH(IJ,M) = 0.0_JWRB
         ENDDO

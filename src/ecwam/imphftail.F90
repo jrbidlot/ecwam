@@ -26,7 +26,7 @@
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
 !          *MIJ*     - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
-!          *FCUT*    - ACTUAL FREQUENCY OF THE PROGNOSTIV RANGE,
+!          *FCUT*    - ACTUAL FREQUENCY OF THE PROGNOSTIC RANGE,
 !          *FLM*     - SPECTAL DENSITY MINIMUM VALUE
 !          *WAVNUM*  - WAVENUMBER
 !          *XK2CG*   - (WAVNUM)**2 * GROUP SPEED
@@ -61,9 +61,9 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB) :: ZW1, ZNFL1, ZSCL
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP1, TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ZW1, ZSCL
 
 ! ----------------------------------------------------------------------
 
@@ -72,24 +72,26 @@
 !*    DIAGNOSTIC TAIL.
 !     ----------------
 
+!     APPLY F**-5 TAIL FROM FCUT WHEN FCUT < FR(MIJ)
       DO IJ=KIJS,KIJL
-!       APPLY F**-5 TAIL FROM FCUT WHEN FCUT < FR(MIJ)
-        ZSCL =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
-        ZW1 = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
-        DO K=1,NANG
-          ZNFL1 = ZW1*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1)*FL1(IJ,K,MIJ(IJ))
-          FL1(IJ,K,MIJ(IJ)) = ZNFL1 * ZSCL
+        ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
+        ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
+      ENDDO
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          FL1(IJ,K,MIJ(IJ)) = (ZW1(IJ)*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1(IJ))*FL1(IJ,K,MIJ(IJ))) * ZSCL(IJ)
         ENDDO
-
-        TEMP1(IJ) = 1.0_JWRB/XK2CG(IJ,MIJ(IJ))/WAVNUM(IJ,MIJ(IJ))
       ENDDO
 
 !*    MERGE TAIL INTO SPECTRA.
 !     ------------------------
       DO IJ=KIJS,KIJL
+        TEMP1(IJ) = XK2CG(IJ,MIJ(IJ))/WAVNUM(IJ,MIJ(IJ))
+      ENDDO
+      DO IJ=KIJS,KIJL
         DO M=MIJ(IJ)+1,NFRE
           TEMP2(IJ) = 1.0_JWRB/XK2CG(IJ,M)/WAVNUM(IJ,M)
-          TEMP2(IJ) = TEMP2(IJ)/TEMP1(IJ)
+          TEMP2(IJ) = TEMP2(IJ)*TEMP1(IJ)
 
           DO K=1,NANG
             FL1(IJ,K,M) = MAX(TEMP2(IJ)*FL1(IJ,K,MIJ(IJ)),FLM(IJ,K))

@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,         &
+      SUBROUTINE STRESSO (KIJS, KIJL, MIJ, FCUT, RHOWGDFTH,   &
      &                    FL1, SL, SPOS,                      &
      &                    CINV,                               &
      &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,    &
@@ -33,7 +33,7 @@
 !**   INTERFACE.
 !     ----------
 
-!        *CALL* *STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH, 
+!        *CALL* *STRESSO (KIJS, KIJL, MIJ, FCUT, RHOWGDFTH, 
 !                         FL1, SL, SPOS,
 !    &                    CINV,
 !    &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,
@@ -42,6 +42,7 @@
 !         *KIJS*        - INDEX OF FIRST GRIDPOINT.
 !         *KIJL*        - INDEX OF LAST GRIDPOINT.
 !         *MIJ*         - LAST FREQUENCY INDEX OF THE PROGNOSTIC RANGE.
+!         *FCUT*        - ACTUAL FREQUENCY OF THE PROGNOSTIC RANGE.
 !         *RHOWGDFTH    - WATER DENSITY * G * DF * DTHETA
 !         *FL1*         - WAVE SPECTRUM.
 !         *SL*          - WIND INPUT SOURCE FUNCTION ARRAY (positive and negative contributions).
@@ -95,6 +96,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(KIJL)
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: FCUT
       REAL(KIND=JWRB),DIMENSION(KIJL,NFRE), INTENT(IN) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: CINV
@@ -202,9 +204,9 @@
       ENDIF
 
       !$loki inline
-      CALL TAU_PHI_HF(KIJS, KIJL, MIJ, LTAUWSHELTER, UFRIC, Z0M, &
-     &                FL1, AIRD, RNFAC,                          &
-     &                COSWDIF, SINWDIF2,                         &
+      CALL TAU_PHI_HF(KIJS, KIJL, MIJ, FCUT, LTAUWSHELTER, UFRIC, Z0M, &
+     &                FL1, AIRD, RNFAC,                                &
+     &                COSWDIF, SINWDIF2,                               &
      &                UST, TAUHF, PHIHF, LLPHIWA)
 
       DO IJ=KIJS,KIJL
