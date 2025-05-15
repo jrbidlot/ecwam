@@ -70,7 +70,7 @@
       INTEGER(KIND=JWIM) :: IJ, M
 
       REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4, ZLOG10FR1
-      REAL(KIND=JWRB) :: ZHRWGDELTH, ZW1, ZRCUT
+      REAL(KIND=JWRB) :: ZHRWGDELTH, ZW1, ZRCUT, ZLOGFRATIOM1
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -100,18 +100,23 @@
           MIJ(IJ) = NFRE
           FCUT(IJ) = FR(NFRE)
         ENDIF
+!!!silly test
+       if ( FCUT(IJ) < FR(MIJ(IJ)-1) .OR. FCUT > FR(MIJ(IJ)) ) then
+         write (*,*) 'debile we have a problem ',FCUT(IJ), FR(MIJ(IJ)-1),FR(MIJ(IJ))
+       endif
       ENDDO
 
 !     SET RHOWGDFTH
       ZHRWGDELTH=0.5_JWRB*ROWATER*G*DELTH
+      ZLOGFRATIOM1=1.0_JWRB/LOG(FRATIO)
       DO IJ=KIJS,KIJL
-        ZW1 = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
         DO M=1,MIJ(IJ)-2
           RHOWGDFTH(IJ,M) = RHOWG_DFIM(M)
         ENDDO
+        ZW1 = LOG(FR(MIJ(IJ))/FCUT(IJ))*ZLOGFRATIOM1
         ZRCUT = LOG(FCUT(IJ)/FR(MIJ(IJ)-1))
-        RHOWGDFTH(IJ,MIJ(IJ)-1)=0.5_JWRB*RHOWG_DFIM(MIJ(IJ)-1) + ZHRWGDELTH*ZRCUT*(FR(MIJ(IJ)-1)+ZW1*FCUT(IJ))
-        RHOWGDFTH(IJ,MIJ(IJ))=ZHRWGDELTH*FCUT(IJ))*ZRCUT*(1.0_JWRB-ZW1)
+        RHOWGDFTH(IJ,MIJ(IJ)-1)=0.5_JWRB*RHOWG_DFIM(MIJ(IJ)-1) + ZHRWGDELTH*FR(MIJ(IJ)-1)*ZRCUT*(1.0_JWRB+ZW1)
+        RHOWGDFTH(IJ,MIJ(IJ))=ZHRWGDELTH*FR(MIJ(IJ))*ZRCUT*(1.0_JWRB-ZW1)
 
         DO M=MIJ(IJ)+1,NFRE
           RHOWGDFTH(IJ,M) = 0.0_JWRB
