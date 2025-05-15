@@ -86,13 +86,11 @@
 !*    MERGE TAIL INTO SPECTRA.
 !     ------------------------
       DO IJ=KIJS,KIJL
-        TEMP1(IJ) = XK2CG(IJ,MIJ(IJ))/WAVNUM(IJ,MIJ(IJ))
+        TEMP1(IJ) = XK2CG(IJ,MIJ(IJ))*WAVNUM(IJ,MIJ(IJ))
       ENDDO
       DO IJ=KIJS,KIJL
         DO M=MIJ(IJ)+1,NFRE
-          TEMP2(IJ) = 1.0_JWRB/XK2CG(IJ,M)/WAVNUM(IJ,M)
-          TEMP2(IJ) = TEMP2(IJ)*TEMP1(IJ)
-
+          TEMP2(IJ) = TEMP1(IJ)/(XK2CG(IJ,M)*WAVNUM(IJ,M))
           DO K=1,NANG
             FL1(IJ,K,M) = MAX(TEMP2(IJ)*FL1(IJ,K,MIJ(IJ)),FLM(IJ,K))
           ENDDO

@@ -100,10 +100,6 @@
           MIJ(IJ) = NFRE
           FCUT(IJ) = FR(NFRE)
         ENDIF
-!!!silly test
-       if ( FCUT(IJ) < FR(MIJ(IJ)-1) .OR. FCUT(IJ) > FR(MIJ(IJ)) ) then
-         write (*,*) 'debile we have a problem ',FCUT(IJ), FR(MIJ(IJ)-1),FR(MIJ(IJ))
-       endif
       ENDDO
 
 !     SET RHOWGDFTH
