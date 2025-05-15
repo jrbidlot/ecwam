@@ -74,16 +74,6 @@
 
 !     APPLY F**-5 TAIL FROM FCUT WHEN FCUT < FR(MIJ)
 
-!     CHECK THAT SPECTRUM IS BEHAVING like f**-4 just before the tail
-      DO IJ=KIJS,KIJL
-        ZSCL(IJ) =  (1.0_JWRB/FRATIO)**4
-      ENDDO
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          FL1(IJ,K,MIJ(IJ)) = MIN(FL1(IJ,K,MIJ(IJ)-1)*ZSCL(IJ), FL1(IJ,K,MIJ(IJ)))
-        ENDDO
-      ENDDO
-
       DO IJ=KIJS,KIJL
         ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
         ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
