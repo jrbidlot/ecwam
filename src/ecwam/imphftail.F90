@@ -45,7 +45,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWFRED  , ONLY : FR       ,FRM5
+      USE YOWFRED  , ONLY : FR       ,FRM5  ,FRATIO
       USE YOWPARAM , ONLY : NANG     ,NFRE
 ! ----------------------------------------------------------------------
 
@@ -73,6 +73,13 @@
 !     ----------------
 
 !     APPLY F**-5 TAIL FROM FCUT WHEN FCUT < FR(MIJ)
+      ZSCL(IJ) =  (1.0_JWRB/FRATIO)**4
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          FL1(IJ,K,MIJ(IJ)) = MIN(FL1(IJ,K,MIJ(IJ)-1)*ZSCL(IJ), FL1(IJ,K,MIJ(IJ)))
+        ENDDO
+      ENDDO
+
       DO IJ=KIJS,KIJL
         ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
         ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
