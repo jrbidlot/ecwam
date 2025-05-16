@@ -45,11 +45,17 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
-      USE YOWFRED  , ONLY : FR       ,FRM5  ,FRATIO
+      USE YOWFRED  , ONLY : FR       ,FRM5  ,FRATIO,  DELTH
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : EPSMIN
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
+!!!!????
+#include "sebtmean.intfb.h"
+#include "semean.intfb.h"
+!!!!????
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: MIJ
@@ -62,8 +68,12 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+      REAL(KIND=JWRB) :: TEWHMIN, TEWHMAX
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ZW1, ZSCL
+!!!!????
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEAN, EMEANLF, ZSUM_OLD
+!!!!????
 
 ! ----------------------------------------------------------------------
 
@@ -83,6 +93,36 @@
           FL1(IJ,K,MIJ(IJ)) = (ZW1(IJ)*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1(IJ))*FL1(IJ,K,MIJ(IJ))) * ZSCL(IJ)
         ENDDO
       ENDDO
+
+
+
+!!!!????
+      CALL SEMEAN (FL1, KIJS, KIJL, EMEAN, .FALSE.)
+
+      ZSUM_OLD(:)=EPSMIN
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          ZSUM_OLD(IJ)= ZSUM_OLD(IJ) + FL1(IJ,K,MIJ(IJ))
+        ENDDO
+      ENDDO
+
+      TEWHMAX = 1.0_JWRB /FR(1)
+      DO IJ=KIJS,KIJL
+        TEWHMIN=1.0_JWRB/FR(MIJ(IJ))
+        CALL SEBTMEAN (1, 1, FL1(IJ,:,:), TEWHMIN, TEWHMAX, EMEANLF(IJ))
+      ENDDO
+
+! ensure energy conservation????
+      DO IJ=KIJS,KIJL
+        ZSCL(IJ) = MAX(4.0_JWRB*(EMEAN(IJ) - EMEANLF(IJ))/FR(MIJ(IJ)), 0.0_JWRB)/(ZSUM_OLD(IJ)*DELTH)
+      ENDDO
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          FL1(IJ,K,MIJ(IJ)) = FL1(IJ,K,MIJ(IJ)) * ZSCL(IJ)
+        ENDDO
+      ENDDO
+
+!!!!????
 
 !*    MERGE TAIL INTO SPECTRA.
 !     ------------------------
