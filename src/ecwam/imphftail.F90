@@ -72,7 +72,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ZW1, ZSCL
 !!!!????
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEAN, EMEANLF, ZSUM_OLD
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEAN, EMEANLF, F1DMIJ
 !!!!????
 
 ! ----------------------------------------------------------------------
@@ -114,10 +114,10 @@
 !!!!????
       CALL SEMEAN (FL1, KIJS, KIJL, EMEAN, .FALSE.)
 
-      ZSUM_OLD(:)=EPSMIN
+      F1DMIJ(:)=EPSMIN
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          ZSUM_OLD(IJ)= ZSUM_OLD(IJ) + FL1(IJ,K,MIJ(IJ))
+          F1DMIJ(IJ)= F1DMIJ(IJ) + FL1(IJ,K,MIJ(IJ))*DELTH
         ENDDO
       ENDDO
 
@@ -129,7 +129,7 @@
 
 ! ensure energy conservation????
       DO IJ=KIJS,KIJL
-        ZSCL(IJ) = MAX(4.0_JWRB*(EMEAN(IJ) - EMEANLF(IJ))/FR(MIJ(IJ)), 0.0_JWRB)/(ZSUM_OLD(IJ)*DELTH)
+        ZSCL(IJ) = (0.25_JWRB*FR(MIJ(IJ))*F1DMIJ(IJ))/ MAX(EMEAN(IJ)-EMEANLF(IJ),EPSMIN)
       ENDDO
       DO K=1,NANG
         DO IJ=KIJS,KIJL
