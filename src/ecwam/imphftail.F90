@@ -130,10 +130,13 @@
 ! ensure energy conservation????
       DO IJ=KIJS,KIJL
         ZSCL(IJ) = (0.25_JWRB*FR(MIJ(IJ))*F1DMIJ(IJ))/ MAX(EMEAN(IJ)-EMEANLF(IJ),EPSMIN)
+write(*,*) 'debile imphftail ',MIJ(IJ), ZSCL(IJ)
       ENDDO
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          FL1(IJ,K,MIJ(IJ)) = FL1(IJ,K,MIJ(IJ)) * ZSCL(IJ)
+      DO M=MIJ(IJ),NFRE
+        DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            FL1(IJ,K,M) = FL1(IJ,K,M) * ZSCL(IJ)
+          ENDDO
         ENDDO
       ENDDO
 
