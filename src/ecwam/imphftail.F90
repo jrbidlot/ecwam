@@ -132,9 +132,9 @@
         ZSCL(IJ) = (0.25_JWRB*FR(MIJ(IJ))*F1DMIJ(IJ))/ MAX(EMEAN(IJ)-EMEANLF(IJ),EPSMIN)
 write(*,*) 'debile imphftail ',MIJ(IJ), ZSCL(IJ)
       ENDDO
-      DO M=MIJ(IJ),NFRE
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
+      DO IJ=KIJS,KIJL
+        DO M=MIJ(IJ),NFRE
+          DO K=1,NANG
             FL1(IJ,K,M) = FL1(IJ,K,M) * ZSCL(IJ)
           ENDDO
         ENDDO

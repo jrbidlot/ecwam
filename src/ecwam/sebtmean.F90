@@ -112,6 +112,9 @@
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTION.
 !        -----------------------------------------
 
+!!! 
+      write(*,*) 'debile sebtmean ',MCUTB,MCUTT,FBOT,FTOP,FR(1),FR(NFRE)
+
       DO M=MCUTB,MCUTT
         K=1
         DO IJ=KIJS,KIJL
@@ -127,7 +130,7 @@
         ENDDO
       ENDDO
 
-!     CHECK IF A THE REQUESTED FREQUENCIES ARE ABOVE FR(NFRE)
+!     CHECK IF THE REQUESTED FREQUENCIES ARE ABOVE FR(NFRE)
       IF ( FBOT < FTOP ) THEN
 
         ZW = 0.25_JWRB * DELTH * FR5(NFRE) * ( 1.0_JWRB/FBOT**4 - 1.0_JWRB/FTOP**4 )
