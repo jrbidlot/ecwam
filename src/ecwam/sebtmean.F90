@@ -113,10 +113,6 @@
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTION.
 !        -----------------------------------------
 
-!!! 
-      write(*,*) 'debile sebtmean ',MCUTB,MCUTT,FBOT,FTOP,FR(1),FR(NFRE)
-      write(*,*) 'debile sebtmean dfs ',DFIMLOC(MCUTB),DFIM(MCUTB),DFIMLOC(MCUTT),DFIM(MCUTT)
-
       DO M=MCUTB,MCUTT
         K=1
         DO IJ=KIJS,KIJL

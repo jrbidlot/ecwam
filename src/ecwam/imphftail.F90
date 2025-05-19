@@ -52,11 +52,6 @@
 
       IMPLICIT NONE
 
-!!!!????
-#include "sebtmean.intfb.h"
-#include "semean.intfb.h"
-!!!!????
-
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: FCUT 
@@ -71,9 +66,6 @@
       REAL(KIND=JWRB) :: TEWHMIN, TEWHMAX
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP1, TEMP2
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ZW1, ZSCL
-!!!!????
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEAN, EMEANLF, F1DMIJ
-!!!!????
 
 ! ----------------------------------------------------------------------
 
@@ -82,7 +74,7 @@
 !*    DIAGNOSTIC TAIL.
 !     ----------------
 
-!     APPLY F**-5 TAIL FROM FCUT WHEN FCUT < FR(MIJ)
+!     APPLY F**-5 TAIL FROM FCUT WHENEVER FCUT < FR(MIJ)
 
       DO IJ=KIJS,KIJL
         ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
@@ -96,7 +88,6 @@
 
 
 
-
 !*    MERGE TAIL INTO SPECTRA.
 !     ------------------------
       DO IJ=KIJS,KIJL
@@ -106,51 +97,11 @@
         DO M=MIJ(IJ)+1,NFRE
           TEMP2(IJ) = TEMP1(IJ)/(XK2CG(IJ,M)*WAVNUM(IJ,M))
           DO K=1,NANG
-            FL1(IJ,K,M) = TEMP2(IJ)*FL1(IJ,K,MIJ(IJ))
-!!!!debile            FL1(IJ,K,M) = MAX(TEMP2(IJ)*FL1(IJ,K,MIJ(IJ)),FLM(IJ,K))
+            FL1(IJ,K,M) = MAX(TEMP2(IJ)*FL1(IJ,K,MIJ(IJ)),FLM(IJ,K))
           ENDDO
         ENDDO
       ENDDO
 
-!!!!????
-      CALL SEMEAN (FL1, KIJS, KIJL, EMEAN, .FALSE.)
-
-      F1DMIJ(:)=EPSMIN
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          F1DMIJ(IJ)= F1DMIJ(IJ) + FL1(IJ,K,MIJ(IJ))*DELTH
-        ENDDO
-      ENDDO
-
-      TEWHMAX = 1.0_JWRB /FR(1)
-      DO IJ=KIJS,KIJL
-        TEWHMIN=1.0_JWRB/FR(MIJ(IJ))
-        CALL SEBTMEAN (1, 1, FL1(IJ,:,:), TEWHMIN, TEWHMAX, EMEANLF(IJ))
-      ENDDO
-
-! ensure energy conservation????
-      DO IJ=KIJS,KIJL
-        ZSCL(IJ) = (0.25_JWRB*FR(MIJ(IJ))*F1DMIJ(IJ))/ MAX(EMEAN(IJ)-EMEANLF(IJ),EPSMIN)
-write(*,*) 'debile imphftail ',MIJ(IJ), ZSCL(IJ)
-      ENDDO
-      DO IJ=KIJS,KIJL
-        DO M=MIJ(IJ),NFRE
-          DO K=1,NANG
-            FL1(IJ,K,M) = FL1(IJ,K,M) * ZSCL(IJ)
-          ENDDO
-        ENDDO
-      ENDDO
-
-!!!!????
-
-!!!debile
-      DO IJ=KIJS,KIJL
-        DO M=MIJ(IJ)+1,NFRE
-          DO K=1,NANG
-            FL1(IJ,K,M) = MAX(FL1(IJ,K,M),FLM(IJ,K))
-          ENDDO
-        ENDDO
-      ENDDO
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('IMPHFTAIL',1,ZHOOK_HANDLE)
