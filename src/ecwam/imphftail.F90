@@ -106,7 +106,8 @@
         DO M=MIJ(IJ)+1,NFRE
           TEMP2(IJ) = TEMP1(IJ)/(XK2CG(IJ,M)*WAVNUM(IJ,M))
           DO K=1,NANG
-            FL1(IJ,K,M) = MAX(TEMP2(IJ)*FL1(IJ,K,MIJ(IJ)),FLM(IJ,K))
+            FL1(IJ,K,M) = TEMP2(IJ)*FL1(IJ,K,MIJ(IJ))
+!!!!debile            FL1(IJ,K,M) = MAX(TEMP2(IJ)*FL1(IJ,K,MIJ(IJ)),FLM(IJ,K))
           ENDDO
         ENDDO
       ENDDO
@@ -141,6 +142,15 @@ write(*,*) 'debile imphftail ',MIJ(IJ), ZSCL(IJ)
       ENDDO
 
 !!!!????
+
+!!!debile
+      DO IJ=KIJS,KIJL
+        DO M=MIJ(IJ)+1,NFRE
+          DO K=1,NANG
+            FL1(IJ,K,M) = MAX(FL1(IJ,K,M),FLM(IJ,K))
+          ENDDO
+        ENDDO
+      ENDDO
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('IMPHFTAIL',1,ZHOOK_HANDLE)
