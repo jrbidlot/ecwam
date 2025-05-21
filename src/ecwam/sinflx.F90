@@ -156,7 +156,7 @@ IF(LUPDTUS) THEN
   IF(ICALL == NCALL ) THEN
     CALL DOMINANT_PERIOD (KIJS, KIJL, FL1, DP)
     CALL SEMEAN (FL1, KIJS, KIJL, EM, .false.)
-    write (*,*) 'debile sinflx ', G*DP(1)/(ZPI*UFRIC(1)), G*G*EM(1)/(UFRIC(1)**4), 2._JWRB*HALP(1)
+    write (*,'(a7,1x,3(f9.6,1x)') 'sinflx ', G*DP(1)/(ZPI*UFRIC(1)), G*G*EM(1)/(UFRIC(1)**4), 2._JWRB*HALP(1)
   ENDIF
 !!!!debile
 
