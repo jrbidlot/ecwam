@@ -75,14 +75,14 @@
 !*    DIAGNOSTIC TAIL.
 !     ----------------
 
-!!!!silly test f**-4 tail ahead of f**-5 tail
+!!!!silly test f**-5 tail ahead of f**-5 tail
       DO IJ=KIJS,KIJL
         MIJFM4(IJ) = MAX(MIJ(IJ)-2,1)
-        TEMP1(IJ) = XK2CG(IJ,MIJFM4(IJ))*SQRT(WAVNUM(IJ,MIJFM4(IJ)))
+        TEMP1(IJ) = XK2CG(IJ,MIJFM4(IJ))*WAVNUM(IJ,MIJFM4(IJ))
       ENDDO
       DO IJ=KIJS,KIJL
         DO M=MIJFM4(IJ)+1,MIJ(IJ)-1
-          TEMP2(IJ) = TEMP1(IJ)/(XK2CG(IJ,M)*SQRT(WAVNUM(IJ,M)))
+          TEMP2(IJ) = TEMP1(IJ)/(XK2CG(IJ,M)*WAVNUM(IJ,M))
           DO K=1,NANG
             FL1(IJ,K,M) = TEMP2(IJ)*FL1(IJ,K,MIJFM4(IJ))
           ENDDO
