@@ -78,14 +78,15 @@
 
       DO IJ=KIJS,KIJL
 !!!        ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
-!!!test
-        ZSCL(IJ) = (FCUT(IJ)/FR(MIJ(IJ)))**4
-
-        ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
+!!!        ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
+!!!!test
+        ZSCL(IJ) =  FR(MIJ(IJ)-1)**4 * FCUT(IJ) * FRM5(MIJ(IJ))
       ENDDO
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          FL1(IJ,K,MIJ(IJ)) = (ZW1(IJ)*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1(IJ))*FL1(IJ,K,MIJ(IJ))) * ZSCL(IJ)
+!!!!          FL1(IJ,K,MIJ(IJ)) = (ZW1(IJ)*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1(IJ))*FL1(IJ,K,MIJ(IJ))) * ZSCL(IJ)
+!!!!test
+          FL1(IJ,K,MIJ(IJ)) = FL1(IJ,K,MIJ(IJ)-1) * ZSCL(IJ)
         ENDDO
       ENDDO
 
