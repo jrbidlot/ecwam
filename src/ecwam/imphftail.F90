@@ -62,7 +62,6 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      INTEGER, DIMENSION(KIJL) :: MIJFM4
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: TEWHMIN, TEWHMAX
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP1, TEMP2
@@ -75,25 +74,13 @@
 !*    DIAGNOSTIC TAIL.
 !     ----------------
 
-!!!!silly test f**-5 tail ahead of f**-5 tail
-      DO IJ=KIJS,KIJL
-        MIJFM4(IJ) = MAX(MIJ(IJ)-2,1)
-        TEMP1(IJ) = XK2CG(IJ,MIJFM4(IJ))*WAVNUM(IJ,MIJFM4(IJ))
-      ENDDO
-      DO IJ=KIJS,KIJL
-        DO M=MIJFM4(IJ)+1,MIJ(IJ)-1
-          TEMP2(IJ) = TEMP1(IJ)/(XK2CG(IJ,M)*WAVNUM(IJ,M))
-          DO K=1,NANG
-            FL1(IJ,K,M) = TEMP2(IJ)*FL1(IJ,K,MIJFM4(IJ))
-          ENDDO
-        ENDDO
-      ENDDO
-!!!!!
-
 !     APPLY F**-5 TAIL FROM FCUT WHENEVER FCUT < FR(MIJ)
 
       DO IJ=KIJS,KIJL
-        ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
+!!!        ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
+!!!test
+        ZSCL(IJ) = (FCUT(IJ)/FR(MIJ(IJ)))**4
+
         ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
       ENDDO
       DO K=1,NANG
