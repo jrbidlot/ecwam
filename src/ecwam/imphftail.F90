@@ -77,19 +77,15 @@
 !     APPLY F**-5 TAIL FROM FCUT WHENEVER FCUT < FR(MIJ)
 
       DO IJ=KIJS,KIJL
-!!!        ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
-!!!        ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
-!!!!test
-        ZSCL(IJ) =  FR(MIJ(IJ)-1)**4 * FCUT(IJ) * FRM5(MIJ(IJ))
+        ZSCL(IJ) =  FCUT(IJ)**5 * FRM5(MIJ(IJ))
+        ZW1(IJ) = (FR(MIJ(IJ))-FCUT(IJ))/(FR(MIJ(IJ)) - FR(MIJ(IJ)-1))
       ENDDO
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-!!!!          FL1(IJ,K,MIJ(IJ)) = (ZW1(IJ)*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1(IJ))*FL1(IJ,K,MIJ(IJ))) * ZSCL(IJ)
-!!!!test
-          FL1(IJ,K,MIJ(IJ)) = FL1(IJ,K,MIJ(IJ)-1) * ZSCL(IJ)
+          FL1(IJ,K,MIJ(IJ)) = (ZW1(IJ)*FL1(IJ,K,MIJ(IJ)-1) + (1.0_JWRB-ZW1(IJ))*FL1(IJ,K,MIJ(IJ))) * ZSCL(IJ)
+          FL1(IJ,K,MIJ(IJ)) = MAX(FL1(IJ,K,MIJ(IJ)),FLM(IJ,K))
         ENDDO
       ENDDO
-
 
 
 !*    MERGE TAIL INTO SPECTRA.
