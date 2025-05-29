@@ -677,7 +677,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         WRITE(IU06,*) ' MSWELL LOOPS ',ICHNK
         CALL FLUSH(IU06)
           CALL MSWELL (1, NPROMA_WAM, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK), NXFFS, NXFFE, NYFFS, &
-     &                 NYFFE, FIELDG, FL1(:,:,:,ICHNK) )
+!!!!debile     &                 NYFFE, FIELDG, FL1(:,:,:,ICHNK) )
+     &                 NYFFE, FL1(:,:,:,ICHNK) )
         ENDDO
 !!!! !$OMP END PARALLEL DO
         WRITE(IU06,*) '  '
