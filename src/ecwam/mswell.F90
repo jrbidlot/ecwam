@@ -120,7 +120,7 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : WVGRIDLOC, FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWPARAM , ONLY : NANG     ,NFRE
