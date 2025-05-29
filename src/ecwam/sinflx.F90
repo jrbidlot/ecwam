@@ -31,9 +31,8 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 
       USE YOWCOUP  , ONLY : LWCOU    ,LLCAPCHNK , LLGCBZ0, LLNORMAGAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
-!!debile
       USE YOWPCONS , ONLY : G        ,ZPI
-
+      USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U 
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
@@ -44,15 +43,13 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
       IMPLICIT NONE
 
 #include "airsea.intfb.h"
+#include "dominant_period.intfb.h"
 #include "femeanws.intfb.h"
 #include "frcutindex.intfb.h"
 #include "halphap.intfb.h"
+#include "semean.intfb.h"
 #include "sinput.intfb.h"
 #include "stresso.intfb.h"
-
-!!!debile
-#include "dominant_period.intfb.h"
-#include "semean.intfb.h"
 
 INTEGER(KIND=JWIM), INTENT(IN) :: ICALL  !! CALL NUMBER.
 INTEGER(KIND=JWIM), INTENT(IN) :: NCALL  !! TOTAL NUMBER OF CALLS.
@@ -102,7 +99,6 @@ INTEGER(KIND=JWIM) :: NGST
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 REAL(KIND=JWRB), DIMENSION(KIJL) :: RNFAC
 REAL(KIND=JWRB), DIMENSION(KIJL) :: FCUT 
-!!!debile
 REAL(KIND=JWRB), DIMENSION(KIJL) :: DP, EM 
 
 LOGICAL :: LLPHIWA, LLSNEG
@@ -152,13 +148,12 @@ IF(LUPDTUS) THEN
 &              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC,  &
 &              UFRIC, Z0M, Z0B, CHRNCK, ICODE_WND, IUSFG) 
 
-!!!!debile
-  IF(ICALL == NCALL ) THEN
+  
+  IF(ICALL == NCALL .AND. CLDOMAIN == 's' ) THEN
     CALL DOMINANT_PERIOD (KIJS, KIJL, FL1, DP)
-    CALL SEMEAN (FL1, KIJS, KIJL, EM, .false.)
-    write (*,'(a6,1x,3(f11.6,1x))') 'sinflx', G*DP(1)/(ZPI*UFRIC(1)), G*G*EM(1)/(UFRIC(1)**4), 2._JWRB*HALP(1)
+    CALL SEMEAN (FL1, KIJS, KIJL, EM, .FALSE.)
+    write (*,'(a22,1x,3(f11.6,1x))') 'nondimensional_growth ', G*DP(1)/(ZPI*UFRIC(1)), G*G*EM(1)/(UFRIC(1)**4), 2._JWRB*HALP(1)
   ENDIF
-!!!!debile
 
 ENDIF
 
