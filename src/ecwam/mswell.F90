@@ -7,8 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-!!!debile      SUBROUTINE MSWELL (KIJS, KIJL, IFROMIJ, JFROMIJ, NXS, NXE, NYS, NYE, FIELDG, FL1)
-      SUBROUTINE MSWELL (KIJS, KIJL, IFROMIJ, JFROMIJ, NXS, NXE, NYS, NYE, FL1)
+      SUBROUTINE MSWELL (KIJS, KIJL, XLON, YLAT, FL1)
 ! ----------------------------------------------------------------------
 
 !**** *MSWELL* - MAKES START SWELL FIELDS FOR WAMODEL.
@@ -23,12 +22,9 @@
 !**   INTERFACE.
 !     ----------
 
-!   *CALL* *MSWELL (KIJS, KIJL, IFROMIJ, JFROMIJ, NXS, NXE, NYS, NYE, FIELDG, FL1)
-!     *IFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
-!     *JFROMIJ*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
-!      *NXS:NXE*  FIRST DIMENSION OF FIELDG
-!      *NYS:NYE*  SECOND DIMENSION OF FIELDG
-!      *FIELDG*   INPUT FORCING FIELDS ON THE WAVE MODEL GRID
+!   *CALL* *MSWELL (KIJS, KIJL, XLON, YLAT, FL1)
+!      *XLON*     REAL      LONGITUDES
+!      *XLAT*     REAL      LATITUDE 
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
 
 !     METHOD.
@@ -133,9 +129,7 @@
       IMPLICIT NONE
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
-      INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: IFROMIJ, JFROMIJ
-      INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
-!!!debile      TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: XLON, YLAT
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG, NFRE), INTENT(OUT) :: FL1
 
 
@@ -198,7 +192,6 @@
 
         NSP=5
 
-
         DO ILOC=1,NLOC
           THETA0(ILOC)=RAD*THETA0(ILOC)
           COSLAT2(ILOC)=COS(RAD*YLAT0(ILOC))**2
@@ -233,7 +226,7 @@
             IF (COSDIR > 0.0_JWRB) THEN
               Q0(K) = CQ0*COSDIR**4
             ELSE
-              Q0(K) = 0. 
+              Q0(K) = 0._JWRB 
             ENDIF
           ENDDO
           E0=H0(ILOC)**2/16.0_JWRB
@@ -250,14 +243,9 @@
         ENDDO
 
         DO IJ = KIJS, KIJL
-          IX = IFROMIJ(IJ)
-          JY = JFROMIJ(IJ)
-
-          XLO=ZMISS
-          YLA=ZMISS
-!!!debile          XLO=FIELDG%XLON(IX,JY)
-!!!!          YLA=FIELDG%YLAT(IX,JY)
-          IF (YLA == ZMISS .OR. XLO == ZMISS) CYCLE 
+          IF (YLAT(IJ) == ZMISS .OR. XLON(IJ) == ZMISS) CYCLE 
+          XLO = XLON(IJ)
+          YLA = YLAT(IJ)
 
           DO ILOC=1,NLOC
             DIST = 0.0_JWRU
