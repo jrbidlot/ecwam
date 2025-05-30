@@ -51,7 +51,7 @@
      &            LFDB     ,                                            &
      &            IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,ITOBOUT  ,   &
      &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
-     &            IRWDIR, IRCD ,IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
+     &            IRWDIR, IRCD ,IRTAUW, IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
      &            IRHS     ,IRTP     ,IRT1       ,IRPHIAW  ,IRPHIOC ,   &
      &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,IRMSS   ,   &
      &            NTEWH     ,                                           &
@@ -127,7 +127,7 @@
 
 !     PARAMETER 008
       ! Use a spare extra grib parameter number
-      IR = DEFINE_PARAMETER( 8, '008', 140083, 0, 0, 0, .True., .True., &
+      IRTAUW = DEFINE_PARAMETER( 8, '008', 140083, 0, 0, 0, .True., .True., &
                            & 'NORMALISED WAVE STRESS' )
       IF (GFLAG(IR) ) THEN
         WRITE(IU06,*) ' ******************* NOTE ********************'
