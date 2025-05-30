@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE MSWELL (KIJS, KIJL, XLON, YLAT, FL1)
+      SUBROUTINE MSWELL (XLON, YLAT, FL1)
 ! ----------------------------------------------------------------------
 
 !**** *MSWELL* - MAKES START SWELL FIELDS FOR WAMODEL.
@@ -22,9 +22,9 @@
 !**   INTERFACE.
 !     ----------
 
-!   *CALL* *MSWELL (KIJS, KIJL, XLON, YLAT, FL1)
-!      *XLON*     REAL      LONGITUDES
-!      *XLAT*     REAL      LATITUDE 
+!   *CALL* *MSWELL (XLON, YLAT, FL1)
+!      *XLON*     REAL      GRID POINT LONGITUDES
+!      *XLAT*     REAL      GRID POINT LATITUDES
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
 
 !     METHOD.
@@ -120,6 +120,7 @@
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWFRED  , ONLY : FR       ,TH
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
       USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE
@@ -128,13 +129,12 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: XLON, YLAT
-      REAL(KIND=JWRB), DIMENSION(KIJL, NANG, NFRE), INTENT(OUT) :: FL1
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM,NCHNK), INTENT(IN) :: XLON, YLAT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL1
 
 
       INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
-      INTEGER(KIND=JWIM) :: IJ, K, M, ILOC, IX, JY
+      INTEGER(KIND=JWIM) :: IPRM, ICHNK, K, M, ILOC
       INTEGER(KIND=JWIM) :: NSP
       INTEGER(KIND=JWIM), DIMENSION(NLOC) :: KLOC, MLOC
 
@@ -152,14 +152,6 @@
 !----------------------------------------------------------------------
 
         CQ0=16.0_JWRB/(3*ZPI)
-
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ = KIJS, KIJL
-              FL1(IJ,K,M)=0.0_JWRB
-            ENDDO
-          ENDDO
-        ENDDO
 
 !       DEFINE THE SWELL SYSTEMS
         H0(1)=4.0_JWRB
@@ -242,26 +234,44 @@
           ENDDO
         ENDDO
 
-        DO IJ = KIJS, KIJL
-          IF (YLAT(IJ) == ZMISS .OR. XLON(IJ) == ZMISS) CYCLE 
-          XLO = XLON(IJ)
-          YLA = YLAT(IJ)
 
-          DO ILOC=1,NLOC
-            DIST = 0.0_JWRU
-            CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
-
-            DIST=2*R*DIST/XL(ILOC)
-            IF (DIST < 10.0_JWRU) THEN
-              SPRD=EXP(-DIST)
-              DO M=1,NFRE
-                DO K=1,NANG
-                  FL1(IJ,K,M)=FL1(IJ,K,M)+FL0(ILOC,K,M)*SPRD 
-                ENDDO
+!!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,IPRM,M,K,XLO,YLA,ILOC,DIST,SPRD)
+        DO ICHNK = 1, NCHNK
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IPRM = 1, NPROMA_WAM
+                FL1(IPRM,K,M,ICHNK)=0.0_JWRB
               ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO ICHNK = 1, NCHNK
+          DO IPRM = 1, NPROMA_WAM
+            IF (YLAT(IPRM,ICHNK) /= ZMISS .AND. XLON(IPRM,ICHNK) /= ZMISS) THEN
+
+              XLO = REAL(XLON(IPRM,ICHNK),JWRU)
+              YLA = REAL(YLAT(IPRM,ICHNK),JWRU)
+
+              DO ILOC=1,NLOC
+                DIST = 0.0_JWRU
+                CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
+
+                DIST=DIST*REAL(2*R/XL(ILOC),JWRU)
+                IF (DIST < 10.0_JWRU) THEN
+                  SPRD=EXP(REAL(-DIST,JWRB))
+                  DO M=1,NFRE
+                    DO K=1,NANG
+                      FL1(IPRM,K,M,ICHNK)=FL1(IPRM,K,M,ICHNK)+FL0(ILOC,K,M)*SPRD 
+                    ENDDO
+                  ENDDO
+                ENDIF
+              ENDDO
+
             ENDIF
           ENDDO
-
         ENDDO
+!!!! !$OMP END PARALLEL DO
+
 
       END SUBROUTINE MSWELL
