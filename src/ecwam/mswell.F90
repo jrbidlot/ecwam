@@ -118,6 +118,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+      USE YOWPARAM , ONLY : NANG     ,NFRE
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
