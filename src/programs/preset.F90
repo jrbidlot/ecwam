@@ -152,7 +152,7 @@ PROGRAM preset
       INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
       INTEGER(KIND=JWIM) :: IJ, K, M, IX, JY
       INTEGER(KIND=JWIM) :: IPRM, ICHNK
-      INTEGER(KIND=JWIM) :: IJSG, IJLG, IFCST
+      INTEGER(KIND=JWIM) :: IJSG, IJLG, IJSB, IJLB, KIJS, KIJL, IFCST
       INTEGER(KIND=JWIM) :: IU05
 
       INTEGER(KIND=JWIM) :: I4(2)
@@ -166,6 +166,7 @@ PROGRAM preset
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: XLON, YLAT
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:,:) :: FL1
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:, :, :) :: FLCHNK 
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:, :, :) :: SPEC
 
       TYPE(FORCING_FIELDS) :: FIELDG
@@ -575,9 +576,15 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IREAD=1
 
-      IF (.NOT. ALLOCATED(FL1)) ALLOCATE(FL1(NPROMA_WAM,NANG,NFRE,NCHNK))
+      IF (LGRIBOUT) THEN
+        IJSG = IJFROMCHNK(1,1)
+        IJLG = IJSG + SUM(KIJL4CHNK) - 1
+        ALLOCATE(SPEC(IJSG:IJLG, NANG, NFRE))
+      ELSE
+        IF (.NOT. ALLOCATED(FL1)) ALLOCATE(FL1(NPROMA_WAM,NANG,NFRE,NCHNK))
+      ENDIF
       WRITE(IU06,*) '  '
-      WRITE(IU06,*) ' FL1 ALLOCATED'
+      WRITE(IU06,*) ' FL1 .OR. SPEC ALLOCATED'
       CALL FLUSH(IU06)
 
       IF (IOPTI /= 3 .OR. .NOT.LGRIBOUT ) THEN
@@ -656,7 +663,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         DO ICHNK = 1, NCHNK
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
+!!!!!to change
      &                 1, NPROMA_WAM, FL1(:,:,:,ICHNK),                  &
+
      &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK))
         ENDDO
 !$OMP END PARALLEL DO
@@ -681,7 +690,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
         IF (.NOT. ALLOCATED(XLON)) ALLOCATE(XLON(NPROMA_WAM,NCHNK))
         IF (.NOT. ALLOCATED(YLAT)) ALLOCATE(YLAT(NPROMA_WAM,NCHNK))
-!!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,IPRM,IX,JY)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,IPRM,IX,JY)
         DO ICHNK = 1, NCHNK
            DO IPRM = 1, NPROMA_WAM
              IX = BLK2LOC%IFROMIJ(IPRM,ICHNK)
@@ -690,7 +699,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
              YLAT(IPRM,ICHNK)=FIELDG%YLAT(IX,JY)
           ENDDO
         ENDDO
-!!!! !$OMP END PARALLEL DO
+!$OMP END PARALLEL DO
 
         CALL FIELDG%DEALLOC()
 
@@ -700,7 +709,45 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         WRITE(IU06,*) ' MSWELL STARTS'
         CALL FLUSH(IU06)
 
-        CALL MSWELL (XLON, YLAT, FL1)
+        IF (.NOT. ALLOCATED(FL)) ALLOCATE(FL(NPROMA_WAM, NANG, NFRE))
+
+!!!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,KIJS,KIJL,IJSB,IJLB,M,K,FL)
+        DO ICHNK = 1, NCHNK
+
+          KIJS = 1
+          IJSB = IJFROMCHNK(KIJS, ICHNK)
+          KIJL = KIJL4CHNK(ICHNK)
+          IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+          CALL MSWELL (XLON(:,ICHNK), YLAT(:,ICHNK), FL)
+
+          IF (LLUNSTR) THEN
+!         reset points with no flux out of the boundary to 0
+#ifdef WAM_HAVE_UNWAM
+            DO M=1,NFRE
+              DO K=1,NANG
+                FL(KIJS:KIJL,K,M) = FL(KIJS:KIJL,K,M) * IOBPD(K,KIJS:KIJL)
+              ENDDO
+            ENDDO
+#endif
+          ENDIF
+
+          IF (LGRIBOUT) THEN
+            DO M = 1, NFRE
+              DO K = 1, NANG
+                SPEC(IJSB:IJLB,K,M) = FL(KIJS:KIJL,K,M)
+              ENDDO
+            ENDDO
+          ELSE
+            DO M=1,NFRE
+              DO K=1,NANG
+                FL1(KIJS:KIJL,K,M,ICHNK) = FL(KIJS:KIJL,K,M)
+              ENDDO
+            ENDDO
+          ENDIF
+
+        ENDDO
+!!!!! !$OMP END PARALLEL DO
 
         WRITE(IU06,*) '  '
         WRITE(IU06,*) ' MSWELL DONE'
@@ -708,22 +755,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
         DEALLOCATE(XLON)
         DEALLOCATE(YLAT)
+        DEALLOCATE(FL)
 
-        IF (LLUNSTR) THEN
-#ifdef WAM_HAVE_UNWAM
-!         reset points with no flux out of the boundary to 0
-          DO ICHNK = 1, NCHNK
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IPRM = 1, KIJL4CHNK(ICHNK)
-                  IJ = IJFROMCHNK(IPRM, ICHNK)
-                  FL1(IPRM, K, M, ICHNK) = FL1(IPRM, K, M, ICHNK) * IOBPD(K,IJ)
-                ENDDO
-              ENDDO
-            ENDDO
-          ENDDO
-#endif
-        ENDIF
 
       ENDIF
 
@@ -746,30 +779,15 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
         CDTPRO = CDATEA
         IF (IOPTI /= 3) THEN
+!!!!!to change
           CALL OUTSPEC(FL1, FF_NOW)
         ELSE
           IF (FF_NOW%LALLOC) CALL FF_NOW%DEALLOC()
-
-!!!          CALL OUTSPEC(FL1)
-!!!silly test
-          DEALLOCATE(FL1)
-      WRITE (IU06,*) ' after FL1 DEALLOCATE '
-      CALL FLUSH(IU06)
-
-          IJSG = IJFROMCHNK(1,1)
-          IJLG = IJSG + SUM(KIJL4CHNK) - 1
-          ALLOCATE(SPEC(IJSG:IJLG, NANG, NFRE))
-
-          SPEC=0.00001_JWRB
-      WRITE (IU06,*) ' after SPEC=0 '
-      CALL FLUSH(IU06)
 
           CDATE=CDTPRO
           CDATED=CDTPRO
           IFCST = 0
           CALL OUTWSPEC(IJSG, IJLG, SPEC, MARSTYPE, CDATE, CDATED, IFCST)
-!!!!
-
         ENDIF
 
       ELSE

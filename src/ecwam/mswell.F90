@@ -120,7 +120,7 @@
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
+      USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
       USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE
@@ -129,12 +129,12 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM,NCHNK), INTENT(IN) :: XLON, YLAT
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL1
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM), INTENT(IN) :: XLON, YLAT
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE), INTENT(OUT) :: FL1
 
 
       INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
-      INTEGER(KIND=JWIM) :: IPRM, ICHNK, K, M, ILOC
+      INTEGER(KIND=JWIM) :: IPRM, K, M, ILOC
       INTEGER(KIND=JWIM) :: NSP
       INTEGER(KIND=JWIM), DIMENSION(NLOC) :: KLOC, MLOC
 
@@ -235,41 +235,37 @@
         ENDDO
 
 
-!!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,IPRM,M,K,XLO,YLA,ILOC,DIST,SPRD)
-        DO ICHNK = 1, NCHNK
-          DO M=1,NFRE
-            DO K=1,NANG
-              DO IPRM = 1, NPROMA_WAM
-                FL1(IPRM,K,M,ICHNK)=0.0_JWRB
-              ENDDO
+!!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IPRM,M,K,XLO,YLA,ILOC,DIST,SPRD)
+        DO M=1,NFRE
+          DO K=1,NANG
+            DO IPRM = 1, NPROMA_WAM
+              FL1(IPRM,K,M)=0.0_JWRB
             ENDDO
           ENDDO
         ENDDO
 
-        DO ICHNK = 1, NCHNK
-          DO IPRM = 1, NPROMA_WAM
-            IF (YLAT(IPRM,ICHNK) /= ZMISS .AND. XLON(IPRM,ICHNK) /= ZMISS) THEN
+        DO IPRM = 1, NPROMA_WAM
+          IF (YLAT(IPRM) /= ZMISS .AND. XLON(IPRM) /= ZMISS) THEN
 
-              XLO = REAL(XLON(IPRM,ICHNK),JWRU)
-              YLA = REAL(YLAT(IPRM,ICHNK),JWRU)
+            XLO = REAL(XLON(IPRM),JWRU)
+            YLA = REAL(YLAT(IPRM),JWRU)
 
-              DO ILOC=1,NLOC
-                DIST = 0.0_JWRU
-                CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
+            DO ILOC=1,NLOC
+              DIST = 0.0_JWRU
+              CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
 
-                DIST=DIST*REAL(2*R/XL(ILOC),JWRU)
-                IF (DIST < 10.0_JWRU) THEN
-                  SPRD=EXP(REAL(-DIST,JWRB))
-                  DO M=1,NFRE
-                    DO K=1,NANG
-                      FL1(IPRM,K,M,ICHNK)=FL1(IPRM,K,M,ICHNK)+FL0(ILOC,K,M)*SPRD 
-                    ENDDO
+              DIST=DIST*REAL(2*R/XL(ILOC),JWRU)
+              IF (DIST < 10.0_JWRU) THEN
+                SPRD=EXP(REAL(-DIST,JWRB))
+                DO M=1,NFRE
+                  DO K=1,NANG
+                    FL1(IPRM,K,M)=FL1(IPRM,K,M)+FL0(ILOC,K,M)*SPRD 
                   ENDDO
-                ENDIF
-              ENDDO
+                ENDDO
+              ENDIF
+            ENDDO
 
-            ENDIF
-          ENDDO
+          ENDIF
         ENDDO
 !!!! !$OMP END PARALLEL DO
 
