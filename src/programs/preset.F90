@@ -138,6 +138,7 @@ PROGRAM preset
 #include "mstart.intfb.h"
 #include "mswell.intfb.h"
 #include "outspec.intfb.h"
+#include "outwspec.intfb.h"
 #include "preset_wgrib_template.intfb.h"
 #include "prewind.intfb.h"
 #include "readmdlconf.intfb.h"
@@ -151,6 +152,7 @@ PROGRAM preset
       INTEGER(KIND=JWIM) :: ILEN, IREAD, IOPTI
       INTEGER(KIND=JWIM) :: IJ, K, M, IX, JY
       INTEGER(KIND=JWIM) :: IPRM, ICHNK
+      INTEGER(KIND=JWIM) :: IJSG, IJLG, IFCST
       INTEGER(KIND=JWIM) :: IU05
 
       INTEGER(KIND=JWIM) :: I4(2)
@@ -164,9 +166,12 @@ PROGRAM preset
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: XLON, YLAT
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:,:) :: FL1
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:, :, :) :: SPEC
+
       TYPE(FORCING_FIELDS) :: FIELDG
 
       CHARACTER(LEN=1) :: CLTUNIT
+      CHARACTER(LEN=14) :: CDATE, CDATED
       CHARACTER(LEN=70) :: HEADER
       CHARACTER(LEN=120) :: SFILENAME, ISFILENAME
 
@@ -733,8 +738,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       IF (.NOT.LGRIBOUT) THEN
         CALL SAVSTRESS(WVENVI, FF_NOW, NBLKS, NBLKE, CDATEA, CDATEA) 
       ENDIF
-
       IF (WVENVI%LALLOC) CALL WVENVI%DEALLOC()
+
 
 !     SPECTRA :
       WRITE (IU06,*) ' SAVING SPECTRA '
@@ -746,7 +751,27 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
           CALL OUTSPEC(FL1, FF_NOW)
         ELSE
           IF (FF_NOW%LALLOC) CALL FF_NOW%DEALLOC()
-          CALL OUTSPEC(FL1)
+
+!!!          CALL OUTSPEC(FL1)
+!!!silly test
+          DEALLOCATE(FL1)
+      WRITE (IU06,*) ' after FL1 DEALLOCATE '
+      CALL FLUSH(IU06)
+
+          IJSG = IJFROMCHNK(1,1)
+          IJLG = IJSG + SUM(KIJL4CHNK) - 1
+          ALLOCATE(SPEC(IJSG:IJLG, NANG, NFRE))
+
+          SPEC=0.0_JWRB
+      WRITE (IU06,*) ' after SPEC=0 '
+      CALL FLUSH(IU06)
+
+          CDATE=CDTPRO
+          CDATED=CDTPRO
+          IFCST = 0
+          CALL OUTWSPEC(IJSG, IJLG, SPEC, MARSTYPE, CDATE, CDATED, IFCST)
+!!!!
+
         ENDIF
 
       ELSE
