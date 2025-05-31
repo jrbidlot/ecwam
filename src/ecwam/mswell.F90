@@ -117,9 +117,13 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
+      USE YOWFRED  , ONLY : FR       ,TH
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
+      USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE
 
 ! ----------------------------------------------------------------------
 
@@ -128,6 +132,146 @@
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM,NCHNK), INTENT(IN) :: XLON, YLAT
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL1
 
-      FL1=0._JWRB
+
+      INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
+      INTEGER(KIND=JWIM) :: IPRM, ICHNK, K, M, ILOC
+      INTEGER(KIND=JWIM) :: NSP
+      INTEGER(KIND=JWIM), DIMENSION(NLOC) :: KLOC, MLOC
+
+      REAL(KIND=JWRB) :: CQ0, COSDIRMAX, COSDIR
+      REAL(KIND=JWRB) :: OMEGA, OMEGADIFFMIN, OMEGADIFF
+      REAL(KIND=JWRB) :: E0, CEX, CS0, S0, SPRD
+      REAL(KIND=JWRB), DIMENSION(NLOC) :: H0, OMEGAP, XL
+      REAL(KIND=JWRB), DIMENSION(NLOC) :: THETA0, COSLAT2
+      REAL(KIND=JWRB), DIMENSION(NANG) :: Q0
+      REAL(KIND=JWRB), DIMENSION(NLOC,NANG,NFRE):: FL0
+
+      REAL(KIND=JWRU) :: XLO, YLA, DIST
+      REAL(KIND=JWRU), DIMENSION(NLOC) :: YLAT0, XLON0
+
+!----------------------------------------------------------------------
+
+        CQ0=16.0_JWRB/(3*ZPI)
+
+!       DEFINE THE SWELL SYSTEMS
+        H0(1)=4.0_JWRB
+        THETA0(1)=135.0_JWRB
+        OMEGAP(1)=0.3117_JWRB
+        XL(1)=250000.0_JWRB
+        YLAT0(1)=47.0_JWRU
+        XLON0(1)=165.0_JWRU
+
+        H0(2)=4.0_JWRB
+        THETA0(2)=90.0_JWRB
+        OMEGAP(2)=0.3117_JWRB
+        XL(2)=200000.0_JWRB
+        YLAT0(2)=-50.0_JWRU
+        XLON0(2)=20.0_JWRU
+
+        H0(3)=4.0_JWRB
+        THETA0(3)=180.0_JWRB
+        OMEGAP(3)=0.3117_JWRB
+        XL(3)=200000.0_JWRB
+        YLAT0(3)=35.0_JWRU
+        XLON0(3)=331.0_JWRU
+
+        H0(4)=4.0_JWRB
+        THETA0(4)=45.0_JWRB
+        OMEGAP(4)=0.3117_JWRB
+        XL(4)=150000.0_JWRB
+        YLAT0(4)=52.0_JWRU
+        XLON0(4)=329.0_JWRU
+
+        NSP=5
+
+        DO ILOC=1,NLOC
+          THETA0(ILOC)=RAD*THETA0(ILOC)
+          COSLAT2(ILOC)=COS(RAD*YLAT0(ILOC))**2
+        ENDDO
+
+        DO ILOC=1,NLOC
+          KLOC(ILOC)=1
+          COSDIRMAX=COS(TH(K)-THETA0(1))
+          DO K=2,NANG
+            COSDIR=COS(TH(K)-THETA0(ILOC))
+            IF (COSDIRMAX < COSDIR) THEN
+              KLOC(ILOC)=K
+              COSDIRMAX=COSDIR
+            ENDIF
+          ENDDO
+          MLOC(ILOC)=1
+          OMEGA=ZPI*FR(1)
+          OMEGADIFFMIN=ABS(OMEGA-OMEGAP(ILOC))
+          DO M=2,NFRE
+            OMEGA=ZPI*FR(M)
+            OMEGADIFF=ABS(OMEGA-OMEGAP(ILOC))
+            IF (OMEGADIFF < OMEGADIFFMIN) THEN
+              MLOC(ILOC)=M
+              OMEGADIFFMIN=OMEGADIFF
+            ENDIF
+          ENDDO
+        ENDDO
+
+        DO ILOC=1,NLOC
+          DO K=1,NANG
+            COSDIR=COS(TH(K)-THETA0(ILOC))
+            IF (COSDIR > 0.0_JWRB) THEN
+              Q0(K) = CQ0*COSDIR**4
+            ELSE
+              Q0(K) = 0._JWRB 
+            ENDIF
+          ENDDO
+          E0=H0(ILOC)**2/16.0_JWRB
+          CEX=REAL(NSP+1,JWRB)/REAL(NSP,JWRB)
+          CS0=(NSP+1)*E0*OMEGAP(ILOC)**NSP
+          DO M=1,NFRE
+            OMEGA=ZPI*FR(M)
+            S0=(CS0/OMEGA**(NSP+1))*EXP(-CEX*(OMEGAP(ILOC)/OMEGA)**NSP)
+            IF (S0 < 0.001_JWRB) S0=0.0_JWRB
+            DO K=1,NANG
+              FL0(ILOC,K,M)= Q0(K)*S0
+            ENDDO
+          ENDDO
+        ENDDO
+
+
+!!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK,IPRM,M,K,XLO,YLA,ILOC,DIST,SPRD)
+        DO ICHNK = 1, NCHNK
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IPRM = 1, NPROMA_WAM
+                FL1(IPRM,K,M,ICHNK)=0.0_JWRB
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DO ICHNK = 1, NCHNK
+          DO IPRM = 1, NPROMA_WAM
+            IF (YLAT(IPRM,ICHNK) /= ZMISS .AND. XLON(IPRM,ICHNK) /= ZMISS) THEN
+
+              XLO = REAL(XLON(IPRM,ICHNK),JWRU)
+              YLA = REAL(YLAT(IPRM,ICHNK),JWRU)
+
+              DO ILOC=1,NLOC
+                DIST = 0.0_JWRU
+                CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
+
+                DIST=DIST*REAL(2*R/XL(ILOC),JWRU)
+                IF (DIST < 10.0_JWRU) THEN
+                  SPRD=EXP(REAL(-DIST,JWRB))
+                  DO M=1,NFRE
+                    DO K=1,NANG
+                      FL1(IPRM,K,M,ICHNK)=FL1(IPRM,K,M,ICHNK)+FL0(ILOC,K,M)*SPRD 
+                    ENDDO
+                  ENDDO
+                ENDIF
+              ENDDO
+
+            ENDIF
+          ENDDO
+        ENDDO
+!!!! !$OMP END PARALLEL DO
+
 
       END SUBROUTINE MSWELL
