@@ -72,7 +72,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G, GM1, EPSUS, EPSMIN, ACD, BCD, ACDLIN, BCDLIN, CDMAX
       USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNU, RNUM, ALPHA, ALPHAMIN, ALPHAMAX, &
-     &                      ANG_GC_A, ANG_GC_B, ANG_GC_C, TAUWOTAUMAX
+     &                      ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_MIN, TAUWOTAUMAX
       USE YOWTABL  , ONLY : EPS1 
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -194,7 +194,7 @@ IF (LLGCBZ0) THEN
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
           TAUV = RNUKAPPAM1*USTOLD/Z0(IJ)
 
-          ANG_GC(IJ) = ANG_GC_A + ANG_GC_B * TANH(ANG_GC_C * TAUOLD)
+          ANG_GC(IJ) = MAX( ANG_GC_A + ANG_GC_B * TANH(ANG_GC_C * TAUOLD), ANG_GC_MIN)
 
           TAUUNR(IJ) = STRESS_GC(ANG_GC(IJ), USTAR(IJ), Z0(IJ), Z0MIN, HALP(IJ), RNFAC(IJ))
 

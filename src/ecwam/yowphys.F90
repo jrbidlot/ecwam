@@ -66,6 +66,9 @@
 !     MAXIMUM VALUE FOR RATIO OF WAVE STRESS TO TOTAL STRESS
       REAL(KIND=JWRB) :: TAUWOTAUMAX=0.999_JWRB
 
+!     MINIMUM PHILLIPS PARAMETER ALLOWED
+      REAL(KIND=JWRB), PARAMETER :: ALPHAPMIN=0.002_JWRB
+
 !     DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION (SEE JANSSEN ECMWF TECH MEMO 845)
       REAL(KIND=JWRB) :: DELTA_THETA_RN
       REAL(KIND=JWRB) :: RN1_RN
@@ -83,8 +86,8 @@
       REAL(KIND=JWRB) :: TAILFACTOR_PM
 
 !     FOR THE GRAVITY-CAPILLARY MODEL, ONE NEEDS TO SPECIFY ANGULAR ADJUSTMENT ANG_GC (SEE *SETWAVPHYS*)
-!     ANG_GC = ANG_GC_A + ANG_GC_B * TANH(ANG_GC_C * USTAR**2) 
-      REAL(KIND=JWRB) :: ANG_GC_A, ANG_GC_B, ANG_GC_C
+!     ANG_GC = MAX(ANG_GC_A + ANG_GC_B * TANH(ANG_GC_C * USTAR**2), ANG_GC_MIN) 
+      REAL(KIND=JWRB) :: ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_MIN
 
 !     Negative wind input, ARDHUIN et al. 2010:
       REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
@@ -137,7 +140,6 @@
 !!!   Converserly, it will be required, in particular for the wave modified fluxes to NEMO
 !!!   when the high frequency tail is not prescribed and used in all calculation
       REAL(KIND=JWRB), PARAMETER :: SSDSC3 = 0.0_JWRB 
-
       REAL(KIND=JWRB), PARAMETER :: SSDSBRF1   = 0.5_JWRB
 !     28.16 = 22.0 * 1.6² * 1/2 with  
 !     22.0 (Banner & al. 2000, figure 6) 
