@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE MSWELL (XLON, YLAT, FL1)
+      SUBROUTINE MSWELL (KIJS, KIJL, XLON, YLAT, FL1)
 ! ----------------------------------------------------------------------
 
 !**** *MSWELL* - MAKES START SWELL FIELDS FOR WAMODEL.
@@ -22,7 +22,7 @@
 !**   INTERFACE.
 !     ----------
 
-!   *CALL* *MSWELL (XLON, YLAT, FL1)
+!   *CALL* *MSWELL (KIJS, KIJL, XLON, YLAT, FL1)
 !      *XLON*     REAL      GRID POINT LONGITUDES
 !      *XLAT*     REAL      GRID POINT LATITUDES
 !      *FL1*      REAL      2-D SPECTRUM FOR EACH GRID POINT 
@@ -117,10 +117,8 @@
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
       USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE
@@ -129,12 +127,13 @@
 
       IMPLICIT NONE
 
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM), INTENT(IN) :: XLON, YLAT
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE), INTENT(OUT) :: FL1
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL), INTENT(IN) :: XLON, YLAT
+      REAL(KIND=JWRB), DIMENSION(KIJS:KIJL, NANG, NFRE), INTENT(OUT) :: FL1
 
 
       INTEGER(KIND=JWIM), PARAMETER :: NLOC=4 ! TOTAL NUMBER OF SWELL SYSTEMS
-      INTEGER(KIND=JWIM) :: IPRM, K, M, ILOC
+      INTEGER(KIND=JWIM) :: IJ, K, M, ILOC
       INTEGER(KIND=JWIM) :: NSP
       INTEGER(KIND=JWIM), DIMENSION(NLOC) :: KLOC, MLOC
 
@@ -235,20 +234,19 @@
         ENDDO
 
 
-!!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IPRM,M,K,XLO,YLA,ILOC,DIST,SPRD)
         DO M=1,NFRE
           DO K=1,NANG
-            DO IPRM = 1, NPROMA_WAM
-              FL1(IPRM,K,M)=0.0_JWRB
+            DO IJ = KIJS, KIJL
+              FL1(IJ,K,M)=0.0_JWRB
             ENDDO
           ENDDO
         ENDDO
 
-        DO IPRM = 1, NPROMA_WAM
-          IF (YLAT(IPRM) /= ZMISS .AND. XLON(IPRM) /= ZMISS) THEN
+        DO IJ = KIJS, KIJL
+          IF (YLAT(IJ) /= ZMISS .AND. XLON(IJ) /= ZMISS) THEN
 
-            XLO = REAL(XLON(IPRM),JWRU)
-            YLA = REAL(YLAT(IPRM),JWRU)
+            XLO = REAL(XLON(IJ),JWRU)
+            YLA = REAL(YLAT(IJ),JWRU)
 
             DO ILOC=1,NLOC
               DIST = 0.0_JWRU
@@ -259,7 +257,7 @@
                 SPRD=EXP(REAL(-DIST,JWRB))
                 DO M=1,NFRE
                   DO K=1,NANG
-                    FL1(IPRM,K,M)=FL1(IPRM,K,M)+FL0(ILOC,K,M)*SPRD 
+                    FL1(IJ,K,M)=FL1(IJ,K,M)+FL0(ILOC,K,M)*SPRD 
                   ENDDO
                 ENDDO
               ENDIF
@@ -267,7 +265,6 @@
 
           ENDIF
         ENDDO
-!!!! !$OMP END PARALLEL DO
 
 
       END SUBROUTINE MSWELL
