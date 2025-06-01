@@ -158,28 +158,28 @@ IF (LHOOK) CALL DR_HOOK('MSWELL',0,ZHOOK_HANDLE)
         CQ0=16.0_JWRB/(3.0_JWRB*ZPI)
 
 !       DEFINE THE SWELL SYSTEMS
-        H0(1)=4.0_JWRB
+        H0(1)=12.0_JWRB
         THETA0(1)=135.0_JWRB
         OMEGAP(1)=0.3117_JWRB
         XL(1)=250000.0_JWRB
         YLAT0(1)=47.0_JWRU
         XLON0(1)=165.0_JWRU
 
-        H0(2)=4.0_JWRB
+        H0(2)=8.0_JWRB
         THETA0(2)=90.0_JWRB
         OMEGAP(2)=0.3117_JWRB
         XL(2)=200000.0_JWRB
         YLAT0(2)=-50.0_JWRU
         XLON0(2)=20.0_JWRU
 
-        H0(3)=4.0_JWRB
+        H0(3)=8.0_JWRB
         THETA0(3)=180.0_JWRB
         OMEGAP(3)=0.3117_JWRB
         XL(3)=200000.0_JWRB
         YLAT0(3)=35.0_JWRU
         XLON0(3)=331.0_JWRU
 
-        H0(4)=4.0_JWRB
+        H0(4)=8.0_JWRB
         THETA0(4)=45.0_JWRB
         OMEGAP(4)=0.3117_JWRB
         XL(4)=150000.0_JWRB
