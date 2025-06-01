@@ -123,6 +123,8 @@
       USE YOWPCONS , ONLY : ZPI      ,RAD      ,R       ,ZMISS
       USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE
 
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
@@ -148,9 +150,12 @@
       REAL(KIND=JWRU) :: XLO, YLA, DIST
       REAL(KIND=JWRU), DIMENSION(NLOC) :: YLAT0, XLON0
 
-!----------------------------------------------------------------------
+      REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
-        CQ0=16.0_JWRB/(3*ZPI)
+!----------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('MSWELL',0,ZHOOK_HANDLE)
+
+        CQ0=16.0_JWRB/(3.0_JWRB*ZPI)
 
 !       DEFINE THE SWELL SYSTEMS
         H0(1)=4.0_JWRB
@@ -252,7 +257,7 @@
               DIST = 0.0_JWRU
               CALL SPHERICAL_COORDINATE_DISTANCE(XLON0(ILOC),XLO,YLAT0(ILOC),YLA,DIST)
 
-              DIST=DIST*REAL(2*R/XL(ILOC),JWRU)
+              DIST=DIST*REAL(2.0_JWRB*R/XL(ILOC),JWRU)
               IF (DIST < 10.0_JWRU) THEN
                 SPRD=EXP(REAL(-DIST,JWRB))
                 DO M=1,NFRE
@@ -266,5 +271,6 @@
           ENDIF
         ENDDO
 
+IF (LHOOK) CALL DR_HOOK('MSWELL',1,ZHOOK_HANDLE)
 
       END SUBROUTINE MSWELL
