@@ -727,7 +727,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
             DO M=1,NFRE
               DO K=1,NANG
                 DO IJ=KIJS,KIJL
-                  FL(IJ,K,M) = FLCHNK(IJ,K,M) * IOBPD(K,IJ)
+                  FLCHNK(IJ,K,M) = FLCHNK(IJ,K,M) * IOBPD(K,IJ)
               ENDDO
             ENDDO
 #endif
