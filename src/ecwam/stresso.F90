@@ -79,11 +79,13 @@
 ! ----------------------------------------------------------------------
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LLGCBZ0
       USE YOWFRED  , ONLY : FR       ,RHOWG_DFIM ,DELTH    ,TH       ,    &
      &            COSTH    ,SINTH    ,FR5
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPHYS  , ONLY : TAUWSHELTER, TAUWOTAUMAX  
+      USE YOWPHYS  , ONLY : TAUWSHELTER
       USE YOWSTAT  , ONLY : IPHYS
+      USE YOWTABL  , ONLY : EPS1
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -106,6 +108,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II
 
+      REAL(KIND=JWRB) :: TAUTOUS2
       REAL(KIND=JWRB) :: COSW, FCOSW2
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJL) :: XSTRESS, YSTRESS
@@ -214,10 +217,12 @@
         TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
 
-      !!! LIMIT HOW LARGE TAUW CAN BECOME
-      DO IJ=KIJS,KIJL
-        TAUW(IJ) = MIN(TAUW(IJ),UFRIC(IJ)**2*TAUWOTAUMAX)
-      ENDDO
+      IF ( .NOT. LLGCBZ0) THEN
+        TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
+        DO IJ=KIJS,KIJL
+          TAUW(IJ) = MIN(TAUW(IJ),UFRIC(IJ)**2*TAUTOUS2)
+        ENDDO
+      ENDIF
 
       IF ( LLPHIWA ) THEN
         DO IJ=KIJS,KIJL
