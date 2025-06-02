@@ -72,7 +72,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : G, GM1, EPSUS, EPSMIN, ACD, BCD, ACDLIN, BCDLIN, CDMAX
       USE YOWPHYS  , ONLY : XKAPPA, XNLEV, RNU, RNUM, ALPHA, ALPHAMIN, ALPHAMAX, &
-     &                      ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_MIN, TAUWOTAUMAX
+     &                      ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_MIN
       USE YOWTABL  , ONLY : EPS1 
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -168,7 +168,7 @@ IF (LLGCBZ0) THEN
           IF ( UTOP(IJ) < 1.0_JWRB ) THEN
             CDFG = 0.002_JWRB
           ELSEIF ( LLCOSDIFF(IJ) ) THEN
-            X = MIN(TAUWACT(IJ)/MAX(USTAR(IJ),EPSUS)**2, TAUWOTAUMAX)
+            X = MIN(TAUWACT(IJ)/MAX(USTAR(IJ),EPSUS)**2,PMAX)
             ZCHAR = MIN( ALPHAGM1 * USTAR(IJ)**2 / SQRT(1.0_JWRB - X), 0.05_JWRB*EXP(-0.05_JWRB*(UTOP(IJ)-35._JWRB)) )
             ZCHAR = MIN(ZCHAR,ALPHAMAX)
             CDFG = ACDLIN + BCDLIN*SQRT(ZCHAR) * UTOP(IJ)
@@ -214,7 +214,7 @@ IF (LLGCBZ0) THEN
         X = TAUWEFF(IJ)/TAUOLD
 
         ! protection just in case there is no convergence
-        IF (ITER > NITER .AND. X >= TAUWOTAUMAX ) THEN
+        IF (ITER > NITER .AND. X >= PMAX ) THEN
           CDFG = CDM(UTOP(IJ))
           USTAR(IJ) = UTOP(IJ)*SQRT(CDFG)
           Z0MINRST = USTAR(IJ)**2 * ALPHA*GM1
@@ -255,10 +255,8 @@ IF (LLGCBZ0) THEN
 
             IF (DELF /= 0.0_JWRB) USTAR(IJ) = USTOLD-F/DELF
 !           CONVERGENCE ?
-!!!!            TAUNEW = MAX(USTAR(IJ)**2,TAUWEFF(IJ))
-!!!!            USTAR(IJ) = SQRT(TAUNEW)
-            TAUNEW = USTAR(IJ)**2
-
+            TAUNEW = MAX(USTAR(IJ)**2,TAUWEFF(IJ))
+            USTAR(IJ) = SQRT(TAUNEW)
             DEL = TAUNEW-TAUOLD
             IF (ABS(DEL) < PCE_GC*TAUOLD) EXIT
             TAUOLD = TAUNEW
