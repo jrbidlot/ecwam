@@ -1003,7 +1003,6 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       CALL FLUSH (IU06)
 
 !    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
-!!!! might need to restrict call when needed !!!
       IF(LCIWA1) CALL CIGETDEAC
 
 ! ----------------------------------------------------------------------
