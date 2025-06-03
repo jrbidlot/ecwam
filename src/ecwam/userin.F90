@@ -137,7 +137,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
-     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,              &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LLUNSETICE,   &
      &            LNSESTART,                                            &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
@@ -914,6 +914,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ELSE
         WRITE(IU06,*) ' ADVECTION ONLY RUN '
         WRITE(IU06,*) ' NO CONTRIBUTION FROM SOURCE TERMS'
+      ENDIF
+ 
+      IF (.NOT. LLUNSETICE) THEN
+        WRITE(IU06,*) ''
+        WRITE(IU06,*) ' UNSETICE WILL NOT BE CALLED !!!!'
+        WRITE(IU06,*) ''
       ENDIF
 
 !     WHEN IMPOSING THE ICE MASK SET THRESHOLD TO 0.3

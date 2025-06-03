@@ -200,7 +200,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
      &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
-     &            IREFRA   ,LNSESTART, LLSOURCE,                        &
+     &            IREFRA   ,LNSESTART, LLSOURCE, LLUNSETICE,            &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
@@ -1021,7 +1021,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         WRITE(IU06,*) ' '
         CALL FLUSH (IU06)
 
-        IF (CDTPRO == CDATEA .AND. LLSOURCE ) THEN
+        IF (CDTPRO == CDATEA .AND. LLSOURCE .AND. LLUNSETICE ) THEN
 !         INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
 !         FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT RESTARTED
 !         IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
