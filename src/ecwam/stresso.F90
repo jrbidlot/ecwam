@@ -220,7 +220,7 @@
       IF (LLGCBZ0) THEN
 !       As a protection
 !???????
-        TAUTOUS2 = 1.1_JWRB
+        TAUTOUS2 = 1.01_JWRB
       ELSE
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
       ENDIF
