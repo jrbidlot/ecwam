@@ -144,8 +144,8 @@ IF(LUPDTUS) THEN
   ENDIF
 
   !$loki inline
-  CALL AIRSEA (KIJS, KIJL,                                  &
-&              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC,  &
+  CALL AIRSEA (KIJS, KIJL,                                           &
+&              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC, CICOVER,  &
 &              UFRIC, Z0M, Z0B, CHRNCK, ICODE_WND, IUSFG) 
 
   

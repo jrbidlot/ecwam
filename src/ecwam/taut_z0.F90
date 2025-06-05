@@ -8,7 +8,7 @@
 !
 
 SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
-&                  HALP, UTOP, UDIR, TAUW, TAUWDIR, RNFAC, &
+&                  HALP, UTOP, UDIR, TAUW, TAUWDIR, RNFAC, CICOVER, &
 &                  USTAR, Z0, Z0B, CHRNCK)
 
 ! ----------------------------------------------------------------------
@@ -20,7 +20,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
 !     ----------
 
 !       *CALL* *TAUT_Z0(KIJS, KIJL, IUSFG, FL1, WAVNUM,
-!                       UTOP, UDIR, TAUW, TAUWDIR, RNFAC,
+!                       UTOP, UDIR, TAUW, TAUWDIR, RNFAC, CICOVER
 !                       USTAR, Z0, Z0B, CHRNCK)
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT
 !          *KIJL*    - INDEX OF LAST GRIDPOINT
@@ -34,6 +34,8 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
 !          *TAUW*    - WAVE STRESS.
 !          *TAUWDIR* - WAVE STRESS DIRECTION.
 !          *RNFAC*   - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!          *CICOVER* - SEA ICE COVER
+
 !          *USTAR*   - FRICTION VELOCITY
 !          *Z0*      - ROUGHNESS LENGTH
 !          *Z0B*     - BACKGROUND ROUGHNESS LENGTH
@@ -85,7 +87,7 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
 #include "stress_gc.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, IUSFG
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: HALP, UTOP, UDIR, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: HALP, UTOP, UDIR, TAUW, TAUWDIR, RNFAC, CICOVER
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: USTAR
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: Z0, Z0B, CHRNCK
 
@@ -149,7 +151,7 @@ IF (LLGCBZ0) THEN
 
       IF (LLCAPCHNK) THEN
         DO IJ=KIJS,KIJL
-          CHARNOCK_MIN = CHNKMIN(UTOP(IJ))
+          CHARNOCK_MIN = CHNKMIN(UTOP(IJ), CICOVER(IJ))
           ALPHAOG(IJ) = CHARNOCK_MIN*GM1
         ENDDO
       ELSE
