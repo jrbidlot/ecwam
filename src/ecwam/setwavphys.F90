@@ -70,7 +70,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         IF(LLGCBZ0) THEN
           !!! not yet fully tested !!!
-          ALPHA   = 0.0055_JWRB
+          ALPHA   = 0.005_JWRB
           CHNKMIN_U = 28._JWRB
 
           IF(LLNORMAGAM) THEN
@@ -123,7 +123,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         RN1_RN = 0.25_JWRB
 
         IF(LLGCBZ0) THEN
-          ALPHA   = 0.0055_JWRB
+          ALPHA   = 0.005_JWRB
           ALPHAMIN = 0.0001_JWRB
           CHNKMIN_U = 28._JWRB
           ALPHAPMAX = 0.03_JWRB
