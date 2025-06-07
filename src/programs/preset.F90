@@ -4,7 +4,7 @@
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation
-! nor does it submit to any jurisdiction.
+! nor does it submit to any jurisdiction
 !
 
 PROGRAM preset
@@ -102,7 +102,7 @@ PROGRAM preset
      &            IDELPRO  ,IDELWI   ,IDELWO   ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,              &
      &            IREFDATE ,ISTREAM  ,NLOCGRB  ,IREFRA
-      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,VARS_4D  ,    &
+      USE YOWSPEC  , ONLY : NSTART   ,NEND     ,FF_NOW   ,              &
      &            NBLKS    ,NBLKE
       USE YOWTABL  , ONLY :  FAC0     ,FAC1     ,FAC2     ,FAC3    ,    &
      &            FAK      ,FRHF      ,DFIMHF    , OMEGA   ,THH    ,    &
@@ -162,6 +162,7 @@ PROGRAM preset
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
+      REAL(KIND=JWRB), ALLOCATABLE :: FL1(:,:,:,:) 
       TYPE(FORCING_FIELDS) :: FIELDG
 
       CHARACTER(LEN=1) :: CLTUNIT
@@ -542,7 +543,10 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       WRITE (IU06,*) '  '
       WRITE (IU06,*) ' END OF USER INPUT PROTOCOLL'
       WRITE (IU06,'(''  NUMBER OF DIRECTION BINS  NANG = '',I4)') NANG
+      WRITE (IU06,'(''  NUMBER OF FREQUENCY BINS  NFRE_RED = '',I4)') NFRE_RED
       WRITE (IU06,'(''  NUMBER OF FREQUENCY BINS  NFRE = '',I4)') NFRE
+      WRITE (IU06,'(''  NPROMA_WAM = '',I8)') NPROMA_WAM
+      WRITE (IU06,'(''  NCHNK = '',I8)') NCHNK
 
 ! ----------------------------------------------------------------------
 
@@ -562,36 +566,46 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       IREAD=1
 
-      IF (.NOT. VARS_4D%LALLOC) CALL VARS_4D%ALLOC(UBOUNDS=[NPROMA_WAM,NANG,NFRE,NCHNK])
+      IF (.NOT. ALLOCATED(FL1)) ALLOCATE(FL1(NPROMA_WAM,NANG,NFRE,NCHNK))
+      WRITE(IU06,*) '  '
+      WRITE(IU06,*) ' FL1 ALLOCATED'
+      CALL FLUSH(IU06)
 
-      IF (.NOT. FF_NOW%LALLOC) CALL FF_NOW%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK]) 
+      IF (IOPTI /= 3 .OR. .NOT.LGRIBOUT ) THEN
+        IF (.NOT. FF_NOW%LALLOC) CALL FF_NOW%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK]) 
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' FF_NOW ALLOCATED'
+        CALL FLUSH(IU06)
 
-      WSPMIN = 0.0_JWRB
-      DO ICHNK=1,NCHNK
-        FF_NOW%WSWAVE(:,ICHNK) = WSPMIN
-        FF_NOW%WDWAVE(:,ICHNK) = 0.0_JWRB
-        FF_NOW%USTRA(:,ICHNK) = 0.0_JWRB
-        FF_NOW%VSTRA(:,ICHNK) = 0.0_JWRB
-        FF_NOW%UFRIC(:,ICHNK) =  FF_NOW%WSWAVE(:,ICHNK)*0.035847_JWRB
-        FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB*FF_NOW%UFRIC(:,ICHNK)
-        FF_NOW%TAUWDIR(:,ICHNK) = 0.0_JWRB
-        FF_NOW%Z0M(:,ICHNK) = 0.00001_JWRB
-        FF_NOW%CHRNCK(:,ICHNK) = 0.018_JWRB
-        FF_NOW%AIRD(:,ICHNK) = ROAIR
-        FF_NOW%WSTAR(:,ICHNK) = 0.0_JWRB
-        FF_NOW%CICOVER(:,ICHNK) = 0.0_JWRB
-        FF_NOW%CITHICK(:,ICHNK) = 0.0_JWRB
-      ENDDO
+        WSPMIN = 0.0_JWRB
+        DO ICHNK=1,NCHNK
+          FF_NOW%WSWAVE(:,ICHNK) = WSPMIN
+          FF_NOW%WDWAVE(:,ICHNK) = 0.0_JWRB
+          FF_NOW%USTRA(:,ICHNK) = 0.0_JWRB
+          FF_NOW%VSTRA(:,ICHNK) = 0.0_JWRB
+          FF_NOW%UFRIC(:,ICHNK) =  FF_NOW%WSWAVE(:,ICHNK)*0.035847_JWRB
+          FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB*FF_NOW%UFRIC(:,ICHNK)
+          FF_NOW%TAUWDIR(:,ICHNK) = 0.0_JWRB
+          FF_NOW%Z0M(:,ICHNK) = 0.00001_JWRB
+          FF_NOW%CHRNCK(:,ICHNK) = 0.018_JWRB
+          FF_NOW%AIRD(:,ICHNK) = ROAIR
+          FF_NOW%WSTAR(:,ICHNK) = 0.0_JWRB
+          FF_NOW%CICOVER(:,ICHNK) = 0.0_JWRB
+          FF_NOW%CITHICK(:,ICHNK) = 0.0_JWRB
+        ENDDO
+      ENDIF
 
-      IF (.NOT. FF_NEXT%LALLOC) CALL FF_NEXT%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK])
 
-      IF (.NOT. NEMO2WAM%LALLOC) CALL NEMO2WAM%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK])
+      IF (IOPTI /= 3) THEN
+        IF (.NOT. FF_NEXT%LALLOC) CALL FF_NEXT%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK])
+        IF (.NOT. NEMO2WAM%LALLOC) CALL NEMO2WAM%ALLOC(UBOUNDS=[NPROMA_WAM,NCHNK])
+      ENDIF
 
       IF (IOPTI > 0 .AND. IOPTI /= 3) THEN
 
-!!!! might need to restict call when needed !!!
+!!!! might need to restrict call when needed !!!
 !!! remove that call in 40R3
-      CALL CIGETDEAC
+        CALL CIGETDEAC
 
         LLINIT = .FALSE.
         LLINIT_FIELDG = .TRUE.
@@ -603,9 +617,9 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
      &                FIELDS, LWCUR, MASK_IN,                      &
      &                NEMO2WAM)
 
-      DO ICHNK=1,NCHNK
-        FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB * FF_NOW%UFRIC(:,ICHNK)**2
-      ENDDO
+        DO ICHNK=1,NCHNK
+          FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB * FF_NOW%UFRIC(:,ICHNK)**2
+        ENDDO
 
       ENDIF
 
@@ -633,7 +647,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
         DO ICHNK = 1, NCHNK
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
-     &                 1, NPROMA_WAM, VARS_4D%FL1(:,:,:,ICHNK),              &
+     &                 1, NPROMA_WAM, FL1(:,:,:,ICHNK),                  &
      &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK))
         ENDDO
 !$OMP END PARALLEL DO
@@ -645,19 +659,30 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 
       ELSE
 
+        IF(.NOT. FIELDG%LALLOC) CALL FIELDG%ALLOC(LBOUNDS=[NXFFS, NYFFS], UBOUNDS=[NXFFE, NYFFE])
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' FIELDG ALLOCATED'
+        CALL FLUSH(IU06)
+
         LLINIALL=.FALSE.
         LLOCAL=.TRUE.
-        IF(.NOT. FIELDG%LALLOC) CALL FIELDG%ALLOC(LBOUNDS=[NXFFS, NYFFS], UBOUNDS=[NXFFE, NYFFE])
-
         CALL INIT_FIELDG(BLK2LOC, LLINIALL, LLOCAL, &
      &                   NXFFS, NXFFE, NYFFS, NYFFE, FIELDG)
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' MSWELL STARTS'
+        CALL FLUSH(IU06)
+!!!! !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
+        WRITE(IU06,*) ' MSWELL LOOPS ',ICHNK
+        CALL FLUSH(IU06)
           CALL MSWELL (1, NPROMA_WAM, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK), NXFFS, NXFFE, NYFFS, &
-     &                 NYFFE, FIELDG, VARS_4D%FL1(:,:,:,ICHNK) )
+     &                 NYFFE, FIELDG, FL1(:,:,:,ICHNK) )
         ENDDO
-!$OMP END PARALLEL DO
+!!!! !$OMP END PARALLEL DO
+        WRITE(IU06,*) '  '
+        WRITE(IU06,*) ' MSWELL DONE'
+        CALL FLUSH(IU06)
 
         CALL FIELDG%DEALLOC()
 
@@ -670,7 +695,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
               DO K=1,NANG
                 DO IPRM = 1, KIJL4CHNK(ICHNK)
                   IJ = IJFROMCHNK(IPRM, ICHNK)
-                  VARS_4D%FL1(IPRM, K, M, ICHNK) = VARS_4D%FL1(IPRM, K, M, ICHNK) * IOBPD(K,IJ)
+                  FL1(IPRM, K, M, ICHNK) = FL1(IPRM, K, M, ICHNK) * IOBPD(K,IJ)
                 ENDDO
               ENDDO
             ENDDO
@@ -696,11 +721,15 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       CALL FLUSH(IU06)
       IF (LGRIBOUT) THEN
 !       THE COLD START SPECTRA WILL BE SAVED AS GRIB FILES.
-        CDTPRO  = CDATEA
-        CALL OUTSPEC(VARS_4D%FL1, FF_NOW)
+        CDTPRO = CDATEA
+        IF (IOPTI /= 3) THEN
+          CALL OUTSPEC(FL1, FF_NOW)
+        ELSE
+          CALL OUTSPEC(FL1)
+        ENDIF
 
       ELSE
-        CALL SAVSPEC(VARS_4D%FL1, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
+        CALL SAVSPEC(FL1, NBLKS, NBLKE, CDATEA, CDATEA, CDUM)
       ENDIF
 
 ! ----------------------------------------------------------------------
