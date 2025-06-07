@@ -137,7 +137,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
-     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,              &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LLUNSETICE,   &
      &            LNSESTART,                                            &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
@@ -915,6 +915,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' ADVECTION ONLY RUN '
         WRITE(IU06,*) ' NO CONTRIBUTION FROM SOURCE TERMS'
       ENDIF
+ 
+      IF (.NOT. LLUNSETICE) THEN
+        WRITE(IU06,*) ''
+        WRITE(IU06,*) ' UNSETICE WILL NOT BE CALLED !!!!'
+        WRITE(IU06,*) ''
+      ENDIF
 
 !     WHEN IMPOSING THE ICE MASK SET THRESHOLD TO 0.3
       IF (LMASKICE) THEN
@@ -931,7 +937,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 !     BUT ENFORCE FULL BLOCKING CI > CIBLOCK
         CIBLOCK=1.0_JWRB
 !     HIGH FREQUENCY SPECTRAL TAIL WILL ONLY BE IMPOSED IF SEA ICE COVER <=CITHRSH_TAIL
-        CITHRSH_TAIL=0.5_JWRB
+        CITHRSH_TAIL=0.1_JWRB
 !     ICE WATER DRAG COEFFICIENT
         IF (LCIWA2) THEN
           CDICWA=0.01_JWRB

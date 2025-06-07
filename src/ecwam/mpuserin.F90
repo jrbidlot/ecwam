@@ -107,7 +107,8 @@
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
-     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LNSESTART,    &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LLUNSETICE,   &
+     &            LNSESTART,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            LRELWIND ,                                            &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
@@ -216,6 +217,7 @@
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,                           &
      &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,         &
      &   LLSOURCE,                                                      &
+     &   LLUNSETICE,                                                    &
      &   LNSESTART,                                                     &
      &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,                           &
      &   WAE_SOLVERTHR, JGS_DIFF_SOLVERTHR,                             &
@@ -491,6 +493,7 @@
 !               ARE PROVIDED WITH THE WIND FIELDS (FALSE BY DEFAULT). 
 !     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION 
 !                IS COMPUTED.
+!     LLUNSETICE : FLAG CONTROLLING WHETHER OR NOT UNSETICE IS CALLED
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
 !                 RESET TO NOISE LEVEL.
 !     LSMSSIG_WAM : .T. = send signals to ECFLOW (ECMWF supervisor)
@@ -767,6 +770,8 @@
       LICETH = .FALSE.
 
       LLSOURCE = .TRUE.
+
+      LLUNSETICE = .TRUE.
 
       LNSESTART = .FALSE.
 
