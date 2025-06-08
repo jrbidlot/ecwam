@@ -165,6 +165,7 @@ PROGRAM preset
       REAL(KIND=JWRB) :: X4(2)
       REAL(KIND=JWRB) :: FIELDS(NGPTOTG,NFIELDS)
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: XLON, YLAT
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: WSWAVE, WDWAVE
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: FLCHNK 
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:) :: SPEC
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:,:,:) :: FL1
@@ -633,12 +634,18 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
      &                FIELDS, LWCUR, MASK_IN,                      &
      &                NEMO2WAM)
 
+        IF (.NOT. ALLOCATED(WSWAVE)) ALLOCATE(WSWAVE(NPROMA_WAM,NCHNK))
+        IF (.NOT. ALLOCATED(WDWAVE)) ALLOCATE(WDWAVE(NPROMA_WAM,NCHNK))
+
         DO ICHNK=1,NCHNK
           FF_NOW%TAUW(:,ICHNK) = 0.1_JWRB * FF_NOW%UFRIC(:,ICHNK)**2
+          WSWAVE(:,ICHNK) = FF_NOW%WSWAVE(:,ICHNK)
+          WDWAVE(:,ICHNK) = FF_NOW%WDWAVE(:,ICHNK)
         ENDDO
 
         IF (FF_NEXT%LALLOC) CALL FF_NEXT%DEALLOC()
         IF (NEMO2WAM%LALLOC) CALL NEMO2WAM%DEALLOC()
+        IF (FF_NOW%LALLOC) CALL FF_NOW%DEALLOC()
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -671,7 +678,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
           CALL MSTART (IOPTI, FETCH, FRMAX, THETAQ,                      &
      &                 FM, ALFA, GAMMA, SA, SB,                          &
      &                 1, NPROMA_WAM, FLCHNK,                            &
-     &                 FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK))
+     &                 WSWAVE(:,ICHNK), WDWAVE(:,ICHNK))
 
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -696,6 +703,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
 !$OMP END PARALLEL DO
 
         DEALLOCATE(FLCHNK)
+        IF (ALLOCATED(WSWAVE)) DEALLOCATE(WSWAVE)
+        IF (ALLOCATED(WDWAVE)) DEALLOCATE(WDWAVE)
 
         CDTPRO  = ZERO
         CDATEWO = ZERO
