@@ -59,7 +59,8 @@ PROGRAM preset
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
       USE YOWICE   , ONLY : LCIWA1
-      USE YOWMAP   , ONLY : BLK2LOC  ,NGX      ,NGY      ,NIBLO 
+      USE YOWMAP   , ONLY : CLDOMAIN ,BLK2GLO  ,BLK2LOC  ,NGX      ,    &
+     &            NGY      ,NIBLO 
       USE YOWNEMOFLDS , ONLY : NEMO2WAM
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NINF     ,NSUP     ,    &
