@@ -164,6 +164,13 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       SIG = 1._JWRB
       GOZPI=G/ZPI
 
+
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          COSWDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
+        ENDDO
+      ENDDO
+
       IF (IREFRA == 2 .OR. IREFRA == 3) THEN
         CALL INTPOL (KIJS, KIJL, FL1, FL2ND, WAVNUM, UCUR, VCUR, IRA)
       ELSE
@@ -184,8 +191,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              IF (FL2ND(IJ,K,M) <= ZTHRS(IJ)) THEN
-                FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL2ND(IJ,K,M), ZTHRS(IJ)*ZRDUC(IJ)**2)
+              IF (FL1(IJ,K,M) <= ZTHRS(IJ)) THEN
+                FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL2ND(IJ,K,M), ZTHRS(IJ)*(ZRDUC(IJ)*MAX(0.0_JWRB, COSWDIF(IJ,K)))**2)
               ENDIF
             ENDDO
           ENDDO
@@ -193,12 +200,6 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       ENDIF
 
 !     COMPUTE MEAN PARAMETERS
-
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          COSWDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
-        ENDDO
-      ENDDO
 
       CALL FEMEAN (KIJS, KIJL, FL2ND, EM, FM)
 
