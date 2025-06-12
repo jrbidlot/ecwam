@@ -63,7 +63,8 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT  ,NTEWH    ,IPRMINFO
       USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
-      USE YOWFRED  , ONLY : FR, TH , DFIM, DELTH, COSTH, SINTH, XKMSS_CUTOFF
+      USE YOWFRED  , ONLY : FR, TH , DFIM, DELTH, COSTH, SINTH, XKMSS_CUTOFF, &
+     &                      FR5, FRM5
       USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10, G, ZPI
@@ -184,19 +185,30 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
           ZTHRS(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
         ENDDO
 
-        DO M=1,NFRE
+        DO M=1,MIN(NFRE,36)
           DO IJ=KIJS,KIJL
             ZRDUC(IJ) = EXP(-10.0_JWRB*FR(M)**2/SQRT(MAX(WSWAVE(IJ),1.0_JWRB)))
           ENDDO
 
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              IF (FL1(IJ,K,M) <= ZTHRS(IJ)) THEN
+              IF (FL1(IJ,K,M) <= ZTHRS(IJ) .AND. CICOVER(IJ) > 0.0_JWRB ) THEN
                 FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL2ND(IJ,K,M), ZTHRS(IJ)*ZRDUC(IJ)**2)
               ENDIF
             ENDDO
           ENDDO
         ENDDO
+
+        DO M=37,NFRE
+          DO K=1,NANG
+            DO IJ=KIJS,KIJL
+              IF (CICOVER(IJ) > 0.0_JWRB ) THEN
+                FL2ND(IJ,K,M) = FL2ND(IJ,K,36) FR5(36)*FRM5(M)
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+
       ENDIF
 
 !     COMPUTE MEAN PARAMETERS
