@@ -122,6 +122,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 
       INTEGER(KIND=JWIM) :: IJ, K, M, ITG, ITR, IH
       INTEGER(KIND=JWIM) :: IRA
+      INTEGER(KIND=JWIM), PARAMETER :: NFRE_TAIL=36 
       
       REAL(KIND=JWRB) :: SIG
       REAL(KIND=JWRB) :: GOZPI 
@@ -185,7 +186,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
           ZTHRS(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
         ENDDO
 
-        DO M=1,MIN(NFRE,36)
+        DO M=1,MIN(NFRE,NFRE_TAIL)
           DO IJ=KIJS,KIJL
             ZRDUC(IJ) = EXP(-10.0_JWRB*FR(M)**2/SQRT(MAX(WSWAVE(IJ),1.0_JWRB)))
           ENDDO
@@ -199,11 +200,11 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
 
-        DO M=37,NFRE
+        DO M=NFRE_TAIL+1,NFRE
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               IF (CICOVER(IJ) > 0.0_JWRB ) THEN
-                FL2ND(IJ,K,M) = FL2ND(IJ,K,36) FR5(36)*FRM5(M)
+                FL2ND(IJ,K,M) = FL2ND(IJ,K,NFRE_TAIL)*FR5(NFRE_TAIL)*FRM5(M)
               ENDIF
             ENDDO
           ENDDO
