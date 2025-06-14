@@ -298,13 +298,13 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       !... Expressing the IGST loop in this way enables the compiler to
       !... unroll it whilst still retaining correctness for the case
       !... where NGST == 1. This is an important optimisation for GPUs.
-      DO IGST=1,2
-        IF(IGST <= NGST)THEN
-          DO IJ=KIJS,KIJL
-            USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
-          ENDDO
-        ENDIF
-      ENDDO
+!!!      DO IGST=1,2
+!!!        IF(IGST <= NGST)THEN
+!!!          DO IJ=KIJS,KIJL
+!!!            USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
+!!!          ENDDO
+!!!        ENDIF
+!!!      ENDDO
 
       IF (LTAUWSHELTER) THEN
         DO IGST=1,2
