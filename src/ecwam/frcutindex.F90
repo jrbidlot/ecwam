@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE FRCUTINDEX (KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
+      SUBROUTINE FRCUTINDEX (KIJS, KIJL, FM, FMWS, UFRIC, CICOVER, WSWAVE, &
      &                       MIJ, FCUT, RHOWGDFTH)
 
 ! ----------------------------------------------------------------------
@@ -24,7 +24,8 @@
 !          *FM*     - MEAN FREQUENCY
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
 !          *UFRIC*  - FRICTION VELOCITY IN M/S
-!          *CICOVER*- CICOVER 
+!          *CICOVER*- SEA ICE COVER 
+!          *WSWAVE* - WIND SPEED
 !          *MIJ*    - LAST FREQUENCY INDEX for imposing high frequency tail
 !          *FCUT*   - THE ACTUAL FREQUENCY OF THE PROGNOSTIC PART OF SPECTRUM.
 !          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
@@ -53,6 +54,7 @@
       USE YOWPARAM , ONLY : NFRE
       USE YOWPCONS , ONLY : G        ,ZPI        ,EPSMIN   ,ROWATER
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
+      USE YOWWIND  , ONLY : WSPMIN_WAVE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -62,7 +64,7 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJL)
-      REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(IN) :: FM, FMWS, UFRIC, CICOVER
+      REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(IN) :: FM, FMWS, UFRIC, CICOVER, WSWAVE
       REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(OUT) :: FCUT
       REAL(KIND=JWRB),DIMENSION(KIJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
@@ -88,7 +90,7 @@
       ZLOG10FR1 = LOG10(FR(1))
 
       DO IJ=KIJS,KIJL
-        IF (CICOVER(IJ) <= CITHRSH_TAIL) THEN
+        IF (CICOVER(IJ) <= CITHRSH_TAIL .AND. WSWAVE >= WSPMIN_WAVE) THEN
           FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
           FPM = FPPM/MAX(UFRIC(IJ),EPSMIN)
           FPM4 = MAX(FM2,FPM)
