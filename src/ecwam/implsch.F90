@@ -243,6 +243,12 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
+!!!!debile test
+        DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            IF(WSWAVE(IJ) < 1.5_JWRB) FL1(IJ,K,NFRE) = FLM(IJ,K) 
+          ENDDO
+        ENDDO
 ! ----------------------------------------------------------------------
 
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
