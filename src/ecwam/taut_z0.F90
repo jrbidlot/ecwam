@@ -115,9 +115,9 @@ SUBROUTINE TAUT_Z0(KIJS, KIJL, IUSFG,          &
       REAL(KIND=JWRB) :: USNRF, Z0NRF, Z0BNRF, ALPOG
       REAL(KIND=JWRB) :: USTM1, Z0TOT, Z0CH, Z0VIS, HZ0VISO1MX, ZZ
       REAL(KIND=JWRB) :: CONST, TAUV, DEL
-      REAL(KIND=JWRB) :: RNUEFF
+      REAL(KIND=JWRB) :: ZNURDC
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: ALPHAOG, XMIN, RNUKAPPAM1
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ALPHAOG, XMIN, ZNURDCKAPM1
       REAL(KIND=JWRB), DIMENSION(KIJL) :: W1
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TAUWACT, TAUWEFF
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ANG_GC, TAUUNR
@@ -135,14 +135,10 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
       XLOGXL=LOG(XNLEV)
       US2TOTAUW=1.0_JWRB+EPS1
 
-      RNUEFF = 0.04_JWRB*RNU
       DO IJ = KIJS, KIJL
-        IF (UTOP(IJ) < WSPMIN_WAVE) THEN
-!         Below WSPMIN_WAVE we assume very little waves would exist and the viscous stress should not be reduced
-          RNUKAPPAM1(IJ) = RNU/XKAPPA
-        ELSE
-          RNUKAPPAM1(IJ) = RNUEFF/XKAPPA
-        ENDIF
+!       Below WSPMIN_WAVE we assume very little waves would exist and the viscous stress should not be reduced
+        ZNURDC =  0.04_JWRB + 0.48_JWRB*(1.0_JWRB-TANH(2.0_JWRB*(WSWAVE(IJ)-WSPMIN_WAVE)))
+        ZNURDCKAPM1(IJ) = ZNURDC*RNU/XKAPPA
       ENDDO
 
       PCE_GC = 0.001_JWRB * IUSFG + (1-IUSFG) * 0.005_JWRB
@@ -203,7 +199,7 @@ IF (LLGCBZ0) THEN
 !         Z0 IS DERIVED FROM THE NEUTRAL LOG PROFILE: UTOP = (USTAR/XKAPPA)*LOG((XNLEV+Z0)/Z0)
           Z0(IJ) = MAX(XNLEV/(EXP(MIN(XKUTOP/USTOLD, 50.0_JWRB))-1.0_JWRB), Z0MIN)
           ! Viscous kinematic stress nu_air * dU/dz at z=0 of the neutral log profile reduced by factor 25 (0.04)
-          TAUV = RNUKAPPAM1(IJ)*USTOLD/Z0(IJ)
+          TAUV = ZNURDCKAPM1(IJ)*USTOLD/Z0(IJ)
 
           ANG_GC(IJ) = MAX( ANG_GC_A + ANG_GC_B * TANH(ANG_GC_C * TAUOLD), ANG_GC_MIN)
 
