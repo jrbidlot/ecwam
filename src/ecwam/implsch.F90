@@ -239,6 +239,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       DO K=1,NANG
         DO IJ=KIJS,KIJL
           ! still allow noise in full sea ice cover, but only ten percent
+          ! Also reduced noise for winds below 3 m/s
           FLM(IJ,K) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN*(MIN(WSWAVE(IJ),3.0_JWRB)**2/9.0_JWRB)*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
         ENDDO
       ENDDO
