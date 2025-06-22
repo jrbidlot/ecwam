@@ -110,7 +110,7 @@
      &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LLUNSETICE,   &
      &            LNSESTART,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
-     &            LRELWIND ,                                            &
+     &            LRELWIND ,LADDGUST ,                                  &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD    ,TOOSHALLOW
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
@@ -215,7 +215,7 @@
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,ALTGRTHRSH,HSALTCUT, &
      &   ISTREAM, NLOCGRB, IREFDATE,                                    &
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,                           &
-     &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,         &
+     &   LGUST, LADEN, LRELWIND, LADDGUST, LALTGRDOUT, LSUBGRID, LALTPAS,         &
      &   LLSOURCE,                                                      &
      &   LLUNSETICE,                                                    &
      &   LNSESTART,                                                     &
@@ -442,6 +442,7 @@
 !     LADEN:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO AIR DENSITY
 !     LRELWIND: IF TRUE THEN RELATIVE WINDS ARE USED WITH RESPECT TO
 !               SURFACE CURRENTS.
+!     LADDGUST: ADD WIND GUST CORRECTION TO MEAN WIND
 !     LLWSWAVE: FLAG USE TO ACTIVATE USE OF WAVE PARAMETER WIND SPEED AS
 !               INPUT TO CONSTRUCT THE WIND FORCING - UNCOUPLED RUNS ONLY
 !     LLWDWAVE: FLAG USE TO ACTIVATE USE OF WAVE PARAMETER WIND DIRECTION
@@ -776,6 +777,8 @@
       LNSESTART = .FALSE.
 
       LRELWIND = .TRUE.
+
+      LADDGUST = .FALSE.
 
       NDELW_LST = 0
 

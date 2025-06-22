@@ -140,7 +140,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LLUNSETICE,   &
      &            LNSESTART,                                            &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
-     &            LRELWIND ,                                            &
+     &            LRELWIND ,LADDGUST ,                                  &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
@@ -886,7 +886,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE (IU06,*) ' '
 
         IF (LGUST) THEN
-          WRITE(IU06,*) ' GUSTINESS EFFECT IS INCLUDED.'
+          WRITE(IU06,*) ' GUSTINESS EFFECT ON THE WIND INPUT IS INCLUDED.'
         ENDIF
         IF (LADEN) THEN
           WRITE(IU06,*) ' VARIABLE AIR DENSITY EFFECT IS INCLUDED.'
@@ -911,6 +911,26 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             ENDIF
           ENDIF
         ENDIF
+
+        IF (LADDGUST .AND. LGUST) THEN
+          WRITE(IU06,*) ''
+          IF (LWCOU) THEN
+            LADDGUST=.FALSE.
+            WRITE(IU06,*) ' THE GUST CORRECTION TO THE MEAN WIND IS ALREADY DONE IN THE ATMOSPHERE MODEL !!!' 
+            WRITE(IU06,*) ' LADDGUST IS SET TO FALSE'
+          ELSE
+            WRITE(IU06,*) ' THE GUST CORRECTION TO THE MEAN WIND WILL BE APPLIED'
+          ENDIF
+          WRITE(IU06,*) ''
+        ELSEIF (LADDGUST .AND. .NOT. LGUST .AND. .NOT. LWCOU) THEN
+          LADDGUST=.FALSE.
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) ' THE WIND GUST CORRECTION TO THE MEAN WIND WAS REQUESTED'
+          WRITE(IU06,*) ' BUT NO WIND GUST FIELD WAS PROVIDED !!!!!'
+          WRITE(IU06,*) ' LADDGUST IS SET TO FALSE'
+          WRITE(IU06,*) ''
+        ENDIF
+
       ELSE
         WRITE(IU06,*) ' ADVECTION ONLY RUN '
         WRITE(IU06,*) ' NO CONTRIBUTION FROM SOURCE TERMS'
