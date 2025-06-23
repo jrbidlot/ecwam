@@ -254,7 +254,7 @@
 !       ADD WIND GUST CORRECTION TO THE MEAN WIND
         IF (LADDGUST) THEN
           DO IJ = KIJS, KIJL
-            U10(IJ) = U10(IJ) * SQRT(U10(IJ)**2 + WSTAR(IJ)**2)/MAX(U10(IJ), EPSUS) 
+            U10(IJ) = SQRT(U10(IJ)**2 + WSTAR(IJ)**2)
           ENDDO
         ENDIF
 
