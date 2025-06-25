@@ -202,7 +202,7 @@
             Tws   = G*ITIME/USTAR
             E     = HSWS**2/16.0_JWRB
             Ews   = G**2*E/(USTAR**4)
-            Fws   = USTAR/(GOUT(IRT1WS,I,J)*G)
+            Fws   = USTAR/(GOUT(IPT1WS,I,J)*G)
 
             TSTAR_0 = 4.26_JWRB*10.0_JWRB**5
             XP      = 1.5_JWRB
