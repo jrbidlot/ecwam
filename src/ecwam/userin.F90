@@ -1338,7 +1338,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,'("  ENSEMBLE FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
-        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ********************* ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE IF ( ISTREAM == 1085 ) THEN
@@ -1348,14 +1348,14 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,'("  NEW ENSEMBLE FORECAST HINDCAST RUN OVERLAP: ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
-        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ********************* ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE IF ( ISTREAM == 1079 ) THEN
         WRITE(IU06,'("  NEW ENSEMBLE FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
-        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ********************* ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE IF ( ISTREAM == 1088 ) THEN
@@ -1366,7 +1366,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ELSE
         IF (NENSFNB /= 0 .OR. NTOTENS /= 0) THEN
           WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
-          WRITE(IU06,'("  ************************************ ")')
+          WRITE(IU06,'("  ********************* ")')
           WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
           WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
         ENDIF

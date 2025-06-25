@@ -196,12 +196,13 @@
             DSTAR = G*DEPTH/(USTAR**2)
             E     = HS**2/16.0_JWRB
             ESTAR = G**2*E/(USTAR**4)
-            FMSTAR=USTAR/(GOUT(IPT1,I,J)*G)
+            FMSTAR= USTAR/(GOUT(IPT1,I,J)*G)
 
             HSWS  = GOUT(IPHSWS,I,J) 
             Tws   = G*ITIME/USTAR
             E     = HSWS**2/16.0_JWRB
             Ews   = G**2*E/(USTAR**4)
+            Fws   = USTAR/(GOUT(IRT1WS,I,J)*G)
 
             TSTAR_0 = 4.26_JWRB*10.0_JWRB**5
             XP      = 1.5_JWRB
@@ -261,6 +262,7 @@
               TAUWN=0.0_JWRB
             ENDIF
 
+!!!! for the one grid point empirical laws for the wave DA, it is, Tws, Fws and Ews that you need  !!!!
             WRITE(IU_INTP,60) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,          &
      &                       LOG10(TSTAR),LOG10(FETCHSTAR),HS,          &
      &                       FP,LOG10(ESTAR),LOG10(E_STAR_OBS),         &
