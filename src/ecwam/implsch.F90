@@ -433,6 +433,9 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
+!!!! silly test
+      DO ICALL = 1, NCALL 
+
       !$loki inline
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                      &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
@@ -447,6 +450,8 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
       !$loki inline
       CALL IMPHFTAIL(KIJS, KIJL, MIJ, FCUT, FLM, WAVNUM, XK2CG, FL1)
+
+      ENDDO
 
 
 !     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
