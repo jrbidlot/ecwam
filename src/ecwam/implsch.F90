@@ -60,7 +60,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !     -------
 
 !       THE SPECTRUM AT TIME (TN+1) IS COMPUTED AS
-!       FN+1=FN+DELT*(SN+SN+1)/2., WHERE SN IS THE TOTAL SOURCE
+!       FN+1=FN+DELT*((1-XIMP)*SN+ XIMP*SN+1)., WHERE SN IS THE TOTAL SOURCE
 !       FUNCTION AT TIME TN, SN+1=SN+(DS/DF)*DF - ONLY THE DIAGONAL
 !       TERMS OF THE FUNCTIONAL MATRIX DS/DF ARE YOWPUTED, THE
 !       NONDIAGONAL TERMS ARE NEGLIGIBLE.
@@ -149,7 +149,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       INTEGER(KIND=JWIM) :: ICALL, NCALL
       
       REAL(KIND=JWRB) :: DELT, DELTM, XIMP, DELT5
-      REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB, BETA
+      REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELFL(NFRE)
       REAL(KIND=JWRB), DIMENSION(KIJL) :: RAORW
@@ -240,7 +240,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         DO IJ=KIJS,KIJL
           ! still allow noise in full sea ice cover, but only ten percent
           ! Also reduced noise for winds below 3 m/s
-          FLM(IJ,K) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN*(MIN(WSWAVE(IJ),3.0_JWRB)**2/9.0_JWRB)*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
+          FLM(IJ,K) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN*(MIN(WSWAVE(IJ),3._JWRB)**2/9._JWRB)*MAX(0._JWRB, COSWDIF(IJ,K))**2
         ENDDO
       ENDDO
 
@@ -312,44 +312,44 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       !$loki inline
       CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
+
       IF ( LICERUN ) THEN
 
-!        Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
-         IF (LCISCAL) THEN
-           DO M = 1,NFRE
-             DO K = 1,NANG
-               DO IJ = KIJS,KIJL
-                  BETA=1._JWRB-CICOVER(IJ)
-                  SL(IJ,K,M)  = BETA*SL(IJ,K,M)  
-                  FLD(IJ,K,M) = BETA*FLD(IJ,K,M) 
-               END DO
-             END DO
-           END DO
-         ENDIF
-
-!        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
-         IF(LWNEMOCOUIBR) THEN 
-          CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
-         ENDIF
-
-!        Save source term contributions relevant for the calculation of ice fluxes
-         IF(LWNEMOCOUWRS) THEN 
-           DO M=1,NFRE
-             DO K=1,NANG
-               DO IJ=KIJS,KIJL
-                 SLTEMP(IJ,K,M) = SL(IJ,K,M)
-               ENDDO
-             ENDDO
-           ENDDO
+!       Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
+        IF (LCISCAL) THEN
+          DO M = 1,NFRE
+            DO K = 1,NANG
+              DO IJ = KIJS,KIJL
+                SL(IJ,K,M)  = (1._JWRB-CICOVER(IJ))*SL(IJ,K,M)  
+                FLD(IJ,K,M) = (1._JWRB-CICOVER(IJ))*FLD(IJ,K,M) 
+              ENDDO
+            ENDDO
+          ENDDO
         ENDIF
 
-!        Attenuation of waves in ice
-         IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
-            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
-         ENDIF
+!       Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
+        IF (LWNEMOCOUIBR) THEN 
+          CALL ICEBREAK_MODIFY_ATTENUATION (KIJS, KIJL, IBRMEM, ALPFAC)           
+        ENDIF
 
-!        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LWNEMOCOUWRS) THEN
+!       Save source term contributions relevant for the calculation of ice fluxes
+        IF (LWNEMOCOUWRS) THEN 
+          DO M=1,NFRE
+            DO K=1,NANG
+              DO IJ=KIJS,KIJL
+                SLTEMP(IJ,K,M) = SL(IJ,K,M)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
+
+!       Attenuation of waves in ice
+        IF (LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
+           CALL SDICE (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
+        ENDIF
+
+!       Save source term contributions relevant for the calculation of ice fluxes
+        IF (LWNEMOCOUWRS) THEN
           IF (.NOT. LWFLUX_IMPCOR) THEN
             DO M=1,NFRE
               DO K=1,NANG
@@ -368,7 +368,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
               ENDDO
             ENDDO
           ENDIF
-       ENDIF
+        ENDIF
 
       ENDIF
 
@@ -433,9 +433,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
 
-!!!! silly test
-      DO ICALL = 1, NCALL 
-
       !$loki inline
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                      &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
@@ -450,8 +447,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
       !$loki inline
       CALL IMPHFTAIL(KIJS, KIJL, MIJ, FCUT, FLM, WAVNUM, XK2CG, FL1)
-
-      ENDDO
 
 
 !     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE

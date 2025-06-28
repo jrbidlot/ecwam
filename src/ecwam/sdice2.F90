@@ -104,9 +104,9 @@
                TEMP        = -CICV(IJ)*ALP*CGROUP(IJ,M)  
                SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
                FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
-            END DO
-         END DO
-      END DO
+            ENDDO
+         ENDDO
+      ENDDO
       
       IF (LHOOK) CALL DR_HOOK('SDICE2',1,ZHOOK_HANDLE)
 

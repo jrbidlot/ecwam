@@ -9,7 +9,7 @@
 
       SUBROUTINE SDICE1 (KIJS, KIJL, FL1, FLD, SL,            &
      &                   WAVNUM, CGROUP,                      &
-     &                   CICV,CITH)
+     &                   CICV, CITH)
 ! ----------------------------------------------------------------------
 
 !**** *SDICE1* - COMPUTATION OF SEA ICE ATTENUATION DUE TO SCATTERING (CAME FROM CIWAF)
@@ -26,7 +26,7 @@
 
 !       *CALL* *SDICE1 (KIJS, KIJL, FL1, FLD,SL,
 !                       WAVNUM, CGROUP,                      
-!                       CICV,CITH)*
+!                       CICV, CITH)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
@@ -80,9 +80,6 @@
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CITH
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      REAL(KIND=JWRB)    :: TEMP
-
-
       INTEGER(KIND=JWIM) :: ICM, I, MAXICM
       INTEGER(KIND=JWIM) :: IT, IT1, IH, IH1
 
@@ -91,8 +88,9 @@
       REAL(KIND=JWRB) :: TW, X
       REAL(KIND=JWRB) :: A, B, C
       REAL(KIND=JWRB) :: CIDEAC_INT, WT, WT1, WH, WH1
-      REAL(KIND=JWRB),DIMENSION(KIJL) :: DINV
-      REAL(KIND=JWRB),DIMENSION(KIJL,NFRE) :: ALP
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: DINV
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: ALP
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: TEMP
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -119,7 +117,7 @@
 !     to insure that CIDMEAN will be increasing with increasing sea ice cover
       MAXICM=INT(LOG(A/CIDMIN)/LOG(CIFRGMT))
       DO IJ=KIJS,KIJL
-        IF(CITH(IJ) > 0.0_JWRB) THEN
+        IF (CITH(IJ) > 0.0_JWRB) THEN
           ! sea ice foes maxmimum size (m)
 !!!       testing making it function of sea ice cover
           CIDMAX=A+C*CICV(IJ)
@@ -148,7 +146,7 @@
         WT1=MAX(MIN(1.0_JWRB,(TW-(TICMIN+(IT-1)*DTIC))/DTIC),0.0_JWRB)
         WT=1.0_JWRB-WT1
         DO IJ=KIJS,KIJL
-          IF(CITH(IJ) > 0.0_JWRB) THEN
+          IF (CITH(IJ) > 0.0_JWRB) THEN
             IH=FLOOR((CITH(IJ)-HICMIN)/DHIC+1)
             IH=MAX(1,MIN(IH,NICH))
             IH1=IH+1
@@ -168,16 +166,19 @@
       ENDDO
 
       DO M = 1,NFRE
+         DO IJ = KIJS,KIJL
+           TEMP(IJ,M) = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)         
+         ENDDO
+      ENDDO
+      DO M = 1,NFRE
          DO K = 1,NANG
             DO IJ = KIJS,KIJL
+               SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP(IJ,M)
+               FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP(IJ,M)
 
-               TEMP        = -CICV(IJ)*ALP(IJ,M)*CGROUP(IJ,M)         
-               SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
-               FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
-
-            END DO
-         END DO
-      END DO
+            ENDDO
+         ENDDO
+      ENDDO
       
       IF (LHOOK) CALL DR_HOOK('SDICE1',1,ZHOOK_HANDLE)
 

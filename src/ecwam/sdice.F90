@@ -9,7 +9,7 @@
 
       SUBROUTINE SDICE (KIJS, KIJL, FL1, FLD, SL,             &
      &                  WAVNUM, CGROUP,                       &
-     &                  CICV,CITH, ALPFAC)
+     &                  CICV, CITH, ALPFAC)
 ! ----------------------------------------------------------------------
 
 !**** *SDICE* - CALLING OF DIFFERENT SEA ICE ATTENUATION TERMS
@@ -26,7 +26,7 @@
 
 !       *CALL* *SDICE (KIJS, KIJL, FL1, FLD,SL,*
 !                       WAVNUM, CGROUP,
-!                       CICV,CITH, ALPFAC)*
+!                       CICV, CITH, ALPFAC)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
@@ -90,13 +90,13 @@
       IF (LHOOK) CALL DR_HOOK('SDICE',0,ZHOOK_HANDLE)
 
 !     Attenuation of waves in ice (type 1): scattering
-      IF(LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICV, CITH)
+      IF (LCIWA1) CALL SDICE1 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICV, CITH)
 
 !     Attenuation of waves in ice (type 2): bottom friction
-      IF(LCIWA2) CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICV      )
+      IF (LCIWA2) CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICV      )
 
 !     Attenuation of waves in ice (type 3): viscous friction
-      IF(LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICV, CITH, ALPFAC)
+      IF (LCIWA3) CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICV, CITH, ALPFAC)
       
       IF (LHOOK) CALL DR_HOOK('SDICE',1,ZHOOK_HANDLE)
 
