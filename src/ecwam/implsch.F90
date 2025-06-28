@@ -428,25 +428,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDDO
       ENDIF
 
-      IF (LCFLX) THEN
-        !$loki inline
-        CALL WNFLUXES (KIJS, KIJL,                       &
-     &                 MIJ, RHOWGDFTH,                   &
-     &                 CINV,                             &
-     &                 SSOURCE, SLICE, CICOVER,          &
-     &                 PHIWA,                            &
-     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,    &
-     &                 USTRA, VSTRA,                     &
-     &                 UFRIC, AIRD,                      &
-     &                 NPHIEPS, NTAUOC, NSWH, NMWP,      &
-     &                 NEMOTAUX, NEMOTAUY,               &
-     &                 NEMOTAUICX, NEMOTAUICY,           &
-     &                 NEMOWSWAVE, NEMOPHIF,             &
-     &                 TAUXD, TAUYD, TAUOCXD, TAUOCYD,   &
-     &                 TAUOC, TAUICX, TAUICY,            &
-     &                 PHIOCD, PHIEPS, PHIAW,            &
-     &                 .TRUE.)
-      ENDIF
 ! ----------------------------------------------------------------------
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
@@ -480,6 +461,31 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
             WSFMEAN(IJ) = FMEANWS(IJ) 
           ENDIF
         ENDDO
+      ENDIF
+
+
+      IF (LCFLX) THEN
+!       FL1 was updated, need to recompute EMEAN and F1MEAN
+        CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                    &
+     &              EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
+
+        !$loki inline
+        CALL WNFLUXES (KIJS, KIJL,                       &
+     &                 MIJ, RHOWGDFTH,                   &
+     &                 CINV,                             &
+     &                 SSOURCE, SLICE, CICOVER,          &
+     &                 PHIWA,                            &
+     &                 EMEAN, F1MEAN, WSWAVE, WDWAVE,    &
+     &                 USTRA, VSTRA,                     &
+     &                 UFRIC, AIRD,                      &
+     &                 NPHIEPS, NTAUOC, NSWH, NMWP,      &
+     &                 NEMOTAUX, NEMOTAUY,               &
+     &                 NEMOTAUICX, NEMOTAUICY,           &
+     &                 NEMOWSWAVE, NEMOPHIF,             &
+     &                 TAUXD, TAUYD, TAUOCXD, TAUOCYD,   &
+     &                 TAUOC, TAUICX, TAUICY,            &
+     &                 PHIOCD, PHIEPS, PHIAW,            &
+     &                 .TRUE.)
       ENDIF
 
 
