@@ -27,8 +27,7 @@ SUBROUTINE READMDLCONF (LLREADPRE, LLREADBATHY)
      &            IJS      ,IJL
       USE YOWMAP   , ONLY : BLK2GLO  ,NGX      ,NGY      ,NIBLO    ,    &
      &            IPER     ,IRGG     ,AMOWEP   ,AMOSOP   ,AMOEAP   ,    &
-     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG  ,    &
-     &            IQGAUSS
+     &            AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,NLONRGG
       USE YOWMPP   , ONLY : IRANK
       USE YOWPCONS , ONLY : CIRC     ,RAD
       USE YOWSHAL  , ONLY : BATHY    ,LLOCEANMASK

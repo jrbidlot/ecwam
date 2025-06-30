@@ -576,6 +576,8 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
             IREPR=4
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'dataRepresentationType',IREPR)
           ENDIF
+        ELSEIF ( IQGAUSS == 2 ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_gg')
         ELSE
           IF (IRGG == 0) THEN
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'gridType','regular_ll')
@@ -586,7 +588,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
 
         ! NUMBER OF POINTS ALONG A MERIDIAN
-        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
+        IF ( CLDOMAIN == 'g' .AND. IQGAUSS == 0 ) THEN 
           NJ = NINT(180.0_JWRU/DXDELLA) + 1
         ELSE
           NJ = NGY
@@ -602,7 +604,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ELSE
           ALLOCATE(PL(NJ))
           PL(:)=0
-          IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN 
+          IF ( CLDOMAIN == 'g' .AND. IQGAUSS == 0 ) THEN 
             KST = NINT((90.0_JWRU - DAMONOP ) / DXDELLA)
           ELSE
             KST = 0
@@ -624,7 +626,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'resolutionAndComponentFlags',IRESFLAGS)
 
         ! LATITUDE OF THE FIRST GRID POINT
-        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
+        IF ( CLDOMAIN == 'g' .AND. IQGAUSS == 0 ) THEN 
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',90.)
         ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfFirstGridPointInDegrees',DAMONOP)
@@ -634,14 +636,14 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'longitudeOfFirstGridPointInDegrees',DAMOWEP)
 
         ! LATITUDE OF THE LAST GRID POINT
-        IF ( CLDOMAIN == 'g' .AND. IQGAUSS /= 1 ) THEN
+        IF ( CLDOMAIN == 'g' .AND. IQGAUSS == 0 ) THEN 
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',-90.)
         ELSE
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'latitudeOfLastGridPointInDegrees',DAMOSOP)
         ENDIF
 
         ! LONGITUDE OF EXTREME POINT (EAST)
-        IF ( IQGAUSS /= 1 ) THEN
+        IF ( IQGAUSS == 0 ) THEN
           RMOEAP = DAMOEAP
         ELSE
           IF ( IGRIB_VERSION == 1 ) THEN
@@ -659,7 +661,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ENDIF
 
         ! LATITUDE INCREMENT
-        IF ( IQGAUSS /= 1 ) THEN 
+        IF ( IQGAUSS == 0 ) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'jDirectionIncrementInDegrees',DXDELLA)
         ENDIF
 

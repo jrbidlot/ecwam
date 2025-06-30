@@ -328,7 +328,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !        -------------------
 
       IF (LWCOU) THEN
-        IF ( IQGAUSS /= 1 ) THEN
+        IF ( IQGAUSS /= 1 .AND. IQGAUSS /= 2 ) THEN
           IF ( AMONOP < 90._JWRB ) THEN
               WRITE (IU06,*) ' *********************************'
               WRITE (IU06,*) ' *                               *'
@@ -645,11 +645,14 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,3002) ' EASTERNMOST LONGITUDE IN GRID IS .......: ', AMOEAP, ' DEGREE'
       WRITE(IU06,*) '  '
       IF ( IQGAUSS == 1 ) THEN
-        WRITE(IU06,*) '   GAUSSIAN GRID ..........................: '
+        WRITE(IU06,*) '   REDUCED GAUSSIAN GRID ....................: '
+        WRITE(IU06,3002) ' APPROXIMATE LATITUDE INCREMENT IS ......: ', XDELLA, ' DEGREE'
+      ELSEIF ( IQGAUSS == 2 ) THEN
+        WRITE(IU06,*) '   REGULAR GAUSSIAN GRID ....................: '
         WRITE(IU06,3002) ' APPROXIMATE LATITUDE INCREMENT IS ......: ', XDELLA, ' DEGREE'
       ELSE
         IF ( IRGG == 1 ) THEN
-          WRITE(IU06,*) ' IRREGULAR LAT/LON  GRID ................: '
+          WRITE(IU06,*) ' REDUCED LAT/LON  GRID .................: '
           WRITE(IU06,3002) ' LATITUDE INCREMENT IS ..................: ', XDELLA, ' DEGREE'
         ELSE
           WRITE(IU06,*) ' LAT/LON  GRID ..........................: '
