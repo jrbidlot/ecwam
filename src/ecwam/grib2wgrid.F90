@@ -386,7 +386,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
       CALL WSTREAM_STRG(ISTREAM,CSTREAM,IDUM,IDUM,CDUM,IDUM,LASTREAM)
 
       IF (CSTREAM == '****' .OR.                                        &
-     &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212 .AND.    &
+     &   (LASTREAM .AND. ILEVTYPE /= 209 .AND. ILEVTYPE /= 212 .AND. ITABLE /= 140 .AND.    &
      &    .NOT.LLOCEAN) ) THEN 
         LLNONWAVE=.TRUE.
       ELSE
