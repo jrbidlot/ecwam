@@ -242,15 +242,15 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       DO IJ=KIJS,KIJL
         IF (CICOVER(IJ) > 0.0_JWRB) THEN
           ! still allow noise in full sea ice cover, but only ten percent
-          ZRDC(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))
+          ZRDC(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
         ELSE
           ! Reduce it for low winds (not over sea ice for now)
-          ZRDC(IJ) = MIN(WSWAVE(IJ),3._JWRB)**2/9._JWRB 
+          ZRDC(IJ) = (MIN(WSWAVE(IJ),3._JWRB)**2/9._JWRB)*FLMIN
         ENDIF
       ENDDO
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          FLM(IJ,K) = ZRDC(IJ)FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
+          FLM(IJ,K) = ZRDC(IJ)*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
         ENDDO
       ENDDO
 
