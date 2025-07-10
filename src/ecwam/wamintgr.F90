@@ -58,7 +58,8 @@ IMPLICIT NONE
 CHARACTER(LEN=14), INTENT(IN)                                            :: CDTPRA  ! DATE FOR CALL PROPAGATION
 CHARACTER(LEN=14), INTENT(INOUT)                                         :: CDATE  ! CURRENT DATE
 CHARACTER(LEN=14), INTENT(INOUT)                                         :: CDATEWH ! DATE OF THE NEXT FORCING FIELDS
-CHARACTER(LEN=14), INTENT(INOUT)                                         :: CDTIMP  ! START DATE OF SOURCE FUNCTION INTEGRATION
+CHARACTER(LEN=14), INTENT(INOUT)                                         :: CDTIMP  ! INPUT: START DATE OF SOURCE FUNCTION INTEGRATION
+                                                                                    ! OUPUT: DATE OF END OF SOURCE TERMS INTEGRATION 
 CHARACTER(LEN=14), INTENT(INOUT)                                         :: CDTIMPNEXT  ! NEXT START DATE OF SOURCE FUNCTION INTEGRATION
 TYPE(WVGRIDGLO), INTENT(IN)                                              :: BLK2GLO  ! BLOCK TO GRID TRANSFORMATION
 TYPE(ENVIRONMENT), INTENT(INOUT)                                         :: WVENVI !  WAVE ENVIRONMENT FIELDS
