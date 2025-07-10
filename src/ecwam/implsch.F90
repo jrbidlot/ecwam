@@ -157,6 +157,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEANWS, FMEANWS, USFM, FCUT
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ZRDC
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF, SINWDIF2
@@ -236,11 +237,20 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                    &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
+
+      ! Noise level
+      DO IJ=KIJS,KIJL
+        IF (CICOVER(IJ) > 0.0_JWRB) THEN
+          ! still allow noise in full sea ice cover, but only ten percent
+          ZRDC(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))
+        ELSE
+          ! Reduce it for low winds (not over sea ice for now)
+          ZRDC(IJ) = MIN(WSWAVE(IJ),3._JWRB)**2/9._JWRB 
+        ENDIF
+      ENDDO
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          ! still allow noise in full sea ice cover, but only ten percent
-          ! Also reduced noise for winds below 3 m/s
-          FLM(IJ,K) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN*(MIN(WSWAVE(IJ),3._JWRB)**2/9._JWRB)*MAX(0._JWRB, COSWDIF(IJ,K))**2
+          FLM(IJ,K) = ZRDC(IJ)FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
         ENDDO
       ENDDO
 

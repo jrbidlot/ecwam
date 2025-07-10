@@ -182,7 +182,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       ! Adapting the noise level structure to be more consistent in sea ice conditions
       IF (LICERUN .AND. .NOT. LMASKICE .AND. LLSOURCE) THEN
         DO IJ=KIJS,KIJL
-          ZTHRS(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN*(MIN(WSWAVE(IJ),3.0_JWRB)**2/9.0_JWRB)
+          ZTHRS(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
         ENDDO
 
         DO M=1,NFRE
