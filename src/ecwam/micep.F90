@@ -70,7 +70,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     , &
-     &               HICMIN
+     &               HICMIN, LCIWA1
       USE YOWMAP   , ONLY : NGX      ,NGY     ,CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPCITH
@@ -237,19 +237,16 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 
       ELSE
 
-!!!!   define a representative sea ice thickness that account for sea ice coverage
-        DO IJ=KIJS,KIJL
-          CITH(IJ)=CICVR(IJ)*CITH(IJ)
-        ENDDO
-
-!       CONSISTENCY CHECK:
-!       no ice if thickness < 0.5*HICMIN
-        DO IJ=KIJS,KIJL
-          IF (CICVR(IJ) > 0.0_JWRB .AND. CITH(IJ) < 0.5_JWRB*HICMIN) THEN
-            CICVR(IJ)=0.0_JWRB
-            CITH(IJ)=0.0_JWRB
-          ENDIF
-        ENDDO
+        IF (LCIWA1) THEN
+!         CONSISTENCY CHECK:
+!         no ice if thickness < 0.5*HICMIN
+          DO IJ=KIJS,KIJL
+            IF (CICVR(IJ) > 0.0_JWRB .AND. CITH(IJ) < 0.5_JWRB*HICMIN) THEN
+              CICVR(IJ)=0.0_JWRB
+              CITH(IJ)=0.0_JWRB
+            ENDIF
+          ENDDO
+        ENDIF
 
       ENDIF
 
