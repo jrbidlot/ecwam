@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
+SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
  &                NXS, NXE, NYS, NYE, FIELDG,              &
  &                CICVR, CITH, NEMOCICOVER, NEMOCITHICK)
 
@@ -35,13 +35,12 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 
 !**   INTERFACE
 !     ---------
-!             *CALL MICEP* *(IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,
+!             *CALL MICEP* *(KIJS, KIJL, IFROMIJ, JFROMIJ,
 !                            NXS, NXE, NYS, NYE, FIELDG,
 !                            CICVR, CITH, NEMOCICOVER, NEMOCITHICK)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELDG*CICOVER
 !      *KIJS*      INDEX OF FIRST GRIDPOINT
 !      *KIJL*      INDEX OF LAST GRIDPOINT
 !      *IFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
@@ -85,7 +84,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM, KIJS, KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
@@ -141,7 +140,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
             CICVR(IJ) = NEMOCICOVER(IJ)
           ENDDO
         ENDIF
-      ELSEIF (IPARAM == 31) THEN
+      ELSE
         DO IJ=KIJS,KIJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
@@ -149,20 +148,8 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
      &        FIELDG%CICOVER(IX,IY) < 0.01_JWRB .OR.                    &
      &        FIELDG%CICOVER(IX,IY) > 1.01_JWRB ) THEN
             CICVR(IJ) = 0.0_JWRB
-          ELSEIF (FIELDG%CICOVER(IX,IY) .GT. 0.95_JWRB) THEN
-            CICVR(IJ) = 1.0_JWRB
           ELSE
             CICVR(IJ) = FIELDG%CICOVER(IX,IY)
-          ENDIF
-        ENDDO
-      ELSEIF (IPARAM == 139) THEN
-        DO IJ=KIJS,KIJL
-          IX = IFROMIJ(IJ)
-          IY = JFROMIJ(IJ)
-          IF (FIELDG%CICOVER(IX,IY) < 271.5_JWRB) THEN
-            CICVR(IJ) = 1.0_JWRB
-          ELSE
-            CICVR(IJ) = 0.0_JWRB
           ENDIF
         ENDDO
       ENDIF 
