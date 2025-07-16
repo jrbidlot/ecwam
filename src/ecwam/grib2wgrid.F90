@@ -15,7 +15,7 @@ SUBROUTINE GRIB2WGRID (IU06, KPROMA,                                &
      &                 XLON, YLAT,                                  &
      &                 PMISS, PPREC, PPEPS,                         &
      &                 CDATE, IFORP, IPARAM, KZLEV, KKK, MMM, FIELD,&
-     &                 PARAMID)
+     &                 IPARAMID)
 
 ! ----------------------------------------------------------------------    
 
