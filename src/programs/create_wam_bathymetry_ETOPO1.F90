@@ -327,7 +327,17 @@ PROGRAM CREATE_BATHY_ETOPO1
         NGX=NINT((DAMOEAP-DAMOWEP)/DXDELLO)+1
         NGY=NINT((DAMONOP-DAMOSOP)/DXDELLA)+1
 
+        WRITE(IU06,*) "NGX = ",NGX
+        WRITE(IU06,*) "NGY = ",NGY
+        CALL FLUSH(IU06)
+
         ALLOCATE(NLONRGG(NGY))
+
+        IF (IPER == 1) THEN
+          CLDOMAIN = 'g'
+        ELSE
+          CLDOMAIN = 'm'
+        ENDIF
       ENDIF
 
       AMONOP = REAL(DAMONOP,JWRB)
