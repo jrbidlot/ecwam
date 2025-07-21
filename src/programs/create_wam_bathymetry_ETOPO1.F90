@@ -896,7 +896,6 @@ IF ( LLOBSTROUT ) THEN
 !       IS=1 is for the south-north advection
 !       IS=2 is for the north-south advection
         WRITE(IU06,*) 'CREATE NORTH-SOUTH OBSTRUCTIONS '
-        CALL FLUSH(IU06)
         DO IS=1,2
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
 !$OMP& PRIVATE(K,KT,KB,STEPT,STEPB,XLATT,XLATB,ILATT,ILATB,IX) &
@@ -1075,7 +1074,6 @@ IF ( LLOBSTROUT ) THEN
 !       IS=1 is for the west-east advection
 !       IS=2 is for the east-west advection
         WRITE(IU06,*) 'CREATE EAST-WEST OBSTRUCTIONS '
-        CALL FLUSH(IU06)
         DO IS=1,2
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) &
 !$OMP& PRIVATE(K,XLATT,XLATB,ILATT,ILATB,IX) &
@@ -1245,7 +1243,6 @@ IF ( LLOBSTROUT ) THEN
 !       IS=2 is for the northwest-southeast advection
 
         WRITE(IU06,*) 'CREATE NORTH-WEST-SOUTH-EAST OBSTRUCTIONS '
-        CALL FLUSH(IU06)
 
 !       first search north-south
         DO IS=1,2
@@ -1543,7 +1540,6 @@ IF ( LLOBSTROUT ) THEN
 !       IS=2 is for the northeast-southwest advection
 
         WRITE(IU06,*) 'CREATE SOUTH-WEST-NORTH-EAST OBSTRUCTIONS '
-        CALL FLUSH(IU06)
 
 !       first search north-south
         DO IS=1,2
@@ -1843,7 +1839,6 @@ IF ( LLOBSTROUT ) THEN
 !       IS=4 is for the northwest-southeast advection
 
         WRITE(IU06,*) 'CREATE GRID CORNER OBSTRUCTIONS '
-        CALL FLUSH(IU06)
 
 !       first search north-south
         DO IS=1,4
