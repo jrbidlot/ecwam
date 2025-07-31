@@ -28,7 +28,7 @@ INTEGER(KIND=JWIM), INTENT(IN) :: IPARAMID   ! grib parameter id (6 digit)
 
 ! ----------------------------------------------------------------------
 
-IF ( IPARAMID >= 140131 .AND. IPARAMID <= 140134 ) THEN
+IF ( IPARAMID >= 140131 .AND. IPARAMID <= 140150 ) THEN
   WGRIB_EDITION = 2
 ELSE
   WGRIB_EDITION = 0 

@@ -92,13 +92,14 @@
 #include "mwp2.intfb.h"
 #include "sep3tr.intfb.h"
 #include "sthq.intfb.h"
+#include "swellmask.intfb.h"
 #include "wdirspread.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: MIJ
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: XLLWS
-      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: CINV 
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: CINV
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: UFRIC, WSWAVE, WDWAVE
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG), INTENT(IN) :: COSWDIF
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(OUT) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
@@ -108,8 +109,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, K, M
 
-      REAL(KIND=JWRB) :: COEF
-      REAL(KIND=JWRB) :: CHECKTA
+      REAL(KIND=JWRB) :: ZPMLIM, CHECKTA
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(KIJL) :: R
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: XINVWVAGE
@@ -120,44 +120,12 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('SEPWISH',0,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SEPWISW',0,ZHOOK_HANDLE)
 
 !*    1. THE SWELL DISTRIBUTION IS COMPUTED.
 !        -----------------------------------
 
-      COEF = OLDWSFC*FRIC
-
-      DO M=1,NFRE
-        DO IJ=KIJS,KIJL
-          XINVWVAGE(IJ,M)=UFRIC(IJ)*CINV(IJ,M)
-        ENDDO
-      ENDDO
-
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          DIRCOEF(IJ,K)=COEF*COSWDIF(IJ,K)
-        ENDDO
-      ENDDO
-
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            IF (XLLWS(IJ,K,M) /= 0.0_JWRB) THEN
-              ! this is windsea 
-              SWM(IJ,K,M)=0.0_JWRB
-            ELSE
-              CHECKTA=XINVWVAGE(IJ,M)*DIRCOEF(IJ,K)
-              IF (CHECKTA >= 1.0_JWRB) THEN
-                ! this is extra windsea 
-                SWM(IJ,K,M)=0.0_JWRB
-              ELSE
-                ! this is swell
-                SWM(IJ,K,M)=1.0_JWRB
-              ENDIF
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
+      CALL SWELLMASK (KIJS, KIJL, FL1, XLLWS, CINV, UFRIC, COSWDIF, SWM)
 
       IF (.NOT.(CLDOMAIN == 's')) THEN
 !     CHECK THAT TOTAL SWELL MEAN FREQUENCY IS LOWER THAN WINDSEA ONE
@@ -191,12 +159,21 @@
            R(IJ)=0.0_JWRB
          ENDIF
       ENDDO
+
+      DO M=1,NFRE
+        DO IJ=KIJS,KIJL
+          XINVWVAGE(IJ,M)=UFRIC(IJ)*CINV(IJ,M)
+        ENDDO
+      ENDDO
+
+      ZPMLIM = OLDWSFC*FRIC
       DO K=1,NANG
         DO IJ=KIJS,KIJL
           ! add factor to extend windsea area
-          DIRCOEF(IJ,K)=R(IJ)*COEF*SIGN(1.0_JWRB,0.4_JWRB+COSWDIF(IJ,K))
+          DIRCOEF(IJ,K)=R(IJ)*ZPMLIM*SIGN(1.0_JWRB,0.4_JWRB+COSWDIF(IJ,K))
         ENDDO
       ENDDO
+
       DO M=1,NFRE
         DO K=1,NANG
           DO IJ=KIJS,KIJL
@@ -299,6 +276,6 @@
       LLPEAKF = .TRUE.
       CALL WDIRSPREAD(KIJS, KIJL, F1, ESEA, LLPEAKF, SPRDSEA)
 
-      IF (LHOOK) CALL DR_HOOK('SEPWISH',1,ZHOOK_HANDLE)
+      IF (LHOOK) CALL DR_HOOK('SEPWISW',1,ZHOOK_HANDLE)
 
       END SUBROUTINE SEPWISW

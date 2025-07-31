@@ -446,6 +446,9 @@
       IR = DEFINE_PARAMETER( 81, 'sthmax', 140134, 0, 0, 0, .True., .True., &
                            & 'SPACE TIME MAXIMUM WAVE HEIGHT' )
 
+!     PARAMETER 082
+      IR = DEFINE_PARAMETER( 82, 'wcfr', 140146, 0, 0, 0, .True., .True., &
+                           & 'WHITECAP FRACTION' )
 
 !     add new definition here:
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
