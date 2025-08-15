@@ -299,16 +299,16 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       !... unroll it whilst still retaining correctness for the case
       !... where NGST == 1. This is an important optimisation for GPUs.
       DO IGST=1,2
-       IF(IGST <= NGST)THEN
-         DO IJ=KIJS,KIJL
-           USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
-         ENDDO
-       ENDIF
+        IF (IGST <= NGST) THEN
+          DO IJ=KIJS,KIJL
+            USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
+          ENDDO
+        ENDIF
       ENDDO
 
       IF (LTAUWSHELTER) THEN
         DO IGST=1,2
-          IF(IGST <= NGST)THEN
+          IF (IGST <= NGST) THEN
             DO IJ=KIJS,KIJL
               XSTRESS(IJ,IGST)=0.0_JWRB
               YSTRESS(IJ,IGST)=0.0_JWRB
@@ -348,14 +348,14 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         SIG2 = SIG**2
         CONST=SIG*CONST1
 
-        IF(LLSNEG)THEN
+        IF (LLSNEG) THEN
           COEF =-SWELLF*16._JWRB*SIG2/G
           COEF5=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG)
         ENDIF
 
         IF (LTAUWSHELTER) THEN
           DO IGST=1,2
-            IF(IGST <= NGST)THEN
+            IF (IGST <= NGST) THEN
               DO IJ=KIJS,KIJL
                 TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
                 TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
@@ -376,7 +376,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 !       ----------------------------------
 
         DO IGST=1,2
-          IF(IGST <= NGST)THEN
+          IF (IGST <= NGST) THEN
             DO IJ=KIJS,KIJL
               UCN(IJ,IGST) = USTP(IJ,IGST)*CINV(IJ,M)
               UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
@@ -412,9 +412,9 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDIF
 
         DO IGST=1,2
-          IF(IGST <= NGST)THEN
+          IF (IGST <= NGST) THEN
             DO K=1,NANG
-              IF(LTAUWSHELTER)THEN
+              IF (LTAUWSHELTER) THEN
                 DO IJ=KIJS,KIJL
                   COSLP(IJ,K) = COS(TH(K)-USDIRP(IJ,IGST))
                 ENDDO
@@ -470,7 +470,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         DO K=1,NANG
 
           DO IGST=1,2
-            IF(IGST <= NGST)THEN
+            IF (IGST <= NGST) THEN
               DO IJ=KIJS,KIJL
                 ! SLP: only the positive contributions
                 SLP(IJ) =  GAM0(IJ,K,IGST) * GAMNORMA(IJ,IGST)
@@ -492,7 +492,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
                 ENDDO
               ENDIF
   
-              IF(IGST == 1)THEN
+              IF (IGST == 1) THEN
                 DO IJ=KIJS,KIJL
                   SLP_AVG(IJ) = SLP(IJ)
                   FLP_AVG(IJ) = FLP(IJ)
