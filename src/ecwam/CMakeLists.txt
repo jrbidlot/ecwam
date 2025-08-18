@@ -246,6 +246,7 @@ list( APPEND ecwam_srcs
   spr.F90
   stat_nl.F90
   sthq.F90
+  stkdrfwd.F90
   stokesdrift.F90
   stokestrn.F90
   stress_gc.F90
