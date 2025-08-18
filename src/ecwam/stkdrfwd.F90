@@ -90,7 +90,7 @@
 
       IF (LHOOK) CALL DR_HOOK('STKDRFWD',0,ZHOOK_HANDLE)
 
-      IF (ZD < 0._JWRD) THEN
+      IF (ZD < 0._JWRB) THEN
         CALL WAM_ABORT("IN STKDRFWD: REFERENCE DEPTH ZD MUST BE POSITIVE")
       ENDIF
 
@@ -105,40 +105,40 @@
 !     ------------------------
  
       DO IJ = KIJS,KIJL
-         USTOKES(IJ) = 0.0_JWRB
-         VSTOKES(IJ) = 0.0_JWRB
+        USTOKES(IJ) = 0.0_JWRB
+        VSTOKES(IJ) = 0.0_JWRB
       ENDDO
 
       DO M=1,NFRE_ODD
-         DO IJ = KIJS,KIJL
-           ZKD = WAVNUM(IJ,M)*DEPTH(IJ)
-           IF ( ZKD <= 10.0_JWRB) THEN
-              ZDPTFAC = COSH(2.0_JPWB*WAVNUM(IJ,M)*(MAX(DEPTH(IJ)-ZD,0.0_JWRB))) / COSH(2.0_JWRB*ZKD)
-           ELSE IF ( ZD >= BATHYMAX ) THEN
-              ZDPTFAC = 0.0_JWRB
-           ELSE
-              ZDPTFAC = EXP(-2.0_JWRB*WAVNUM(IJ,M)*ZD)
-           ENDIF
-           STFAC(IJ) = STOKFAC(IJ,M)*ZDPTFAC*DFIM_SIM(M)
-         ENDDO
-         DO K=1,NANG
-            DO IJ = KIJS,KIJL
-               FAC3 = STFAC(IJ)*FL1(IJ,K,M)
-               USTOKES(IJ) = USTOKES(IJ)+FAC3*SINTH(K)
-               VSTOKES(IJ) = VSTOKES(IJ)+FAC3*COSTH(K)
-            ENDDO
-         ENDDO
+        DO IJ = KIJS,KIJL
+          ZKD = WAVNUM(IJ,M)*DEPTH(IJ)
+          IF ( ZKD <= 10.0_JWRB) THEN
+            ZDPTFAC = COSH(2.0_JWRB*WAVNUM(IJ,M)*(MAX(DEPTH(IJ)-ZD,0.0_JWRB))) / COSH(2.0_JWRB*ZKD)
+          ELSE IF ( ZD >= BATHYMAX ) THEN
+            ZDPTFAC = 0.0_JWRB
+          ELSE
+            ZDPTFAC = EXP(-2.0_JWRB*WAVNUM(IJ,M)*ZD)
+          ENDIF
+          STFAC(IJ) = STOKFAC(IJ,M)*ZDPTFAC*DFIM_SIM(M)
+        ENDDO
+        DO K=1,NANG
+          DO IJ = KIJS,KIJL
+            FAC3 = STFAC(IJ)*FL1(IJ,K,M)
+            USTOKES(IJ) = USTOKES(IJ)+FAC3*SINTH(K)
+            VSTOKES(IJ) = VSTOKES(IJ)+FAC3*COSTH(K)
+          ENDDO
+        ENDDO
       ENDDO
  
 !***  1.2 ADD CONTRIBUTION OF UNRESOLVED WAVES.
 !     -----------------------------------------
       DO K=1,NANG
-         FAC1 = CONST*SINTH(K)
-         FAC2 = CONST*COSTH(K)
-         DO IJ = KIJS,KIJL
-            USTOKES(IJ) = USTOKES(IJ)+FAC1*FL1(IJ,K,NFRE_ODD)
-            VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FL1(IJ,K,NFRE_ODD)
-         ENDDO
+        FAC1 = CONST*SINTH(K)
+        FAC2 = CONST*COSTH(K)
+        DO IJ = KIJS,KIJL
+          USTOKES(IJ) = USTOKES(IJ)+FAC1*FL1(IJ,K,NFRE_ODD)
+          VSTOKES(IJ) = VSTOKES(IJ)+FAC2*FL1(IJ,K,NFRE_ODD)
+        ENDDO
       ENDDO
 
 !***  1.3 Sea Ice exception
@@ -157,8 +157,8 @@
 !     --------------
 
       DO IJ = KIJS,KIJL
-         USTOKES(IJ) = MIN(MAX(USTOKES(IJ),-STMAX),STMAX)
-         VSTOKES(IJ) = MIN(MAX(VSTOKES(IJ),-STMAX),STMAX)
+        USTOKES(IJ) = MIN(MAX(USTOKES(IJ),-STMAX),STMAX)
+        VSTOKES(IJ) = MIN(MAX(VSTOKES(IJ),-STMAX),STMAX)
       ENDDO
 
       IF (LHOOK) CALL DR_HOOK('STKDRFWD',1,ZHOOK_HANDLE)
