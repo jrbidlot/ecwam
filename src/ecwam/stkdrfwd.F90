@@ -144,7 +144,7 @@
 !***  1.3 Sea Ice exception
 !     ---------------------
       IF (LICERUN .AND. LWAMRSETCI) THEN
-        ZDPTFAC = EXP(-2.0_JWRB*(ZPI*0.1)**2*ZD/G)
+        ZDPTFAC = EXP(-2.0_JWRB*(ZPI*0.1_JWRB)**2*ZD/G)
         DO IJ=KIJS,KIJL
           IF (CICOVER(IJ) > CITHRSH) THEN
             USTOKES(IJ) = 0.016_JWRB*WSWAVE(IJ)*ZDPTFAC*SIN(WDWAVE(IJ))*(1.0_JWRB - CICOVER(IJ))
