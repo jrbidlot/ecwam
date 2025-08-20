@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SDICE2 (KIJS, KIJL, FL1, FLD, SL,            &
+      SUBROUTINE SDICE2 (KIJS, KIJL, FL1, FLD, SL, SLICE,     &
      &                   WAVNUM, CGROUP,                      &
      &                   CICV)
 ! ----------------------------------------------------------------------
@@ -34,6 +34,7 @@
 !          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
+!          *SLICE*  - TOTAL SOURCE FUNCTION ARRAY, ICE
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
 !          *CICV*   - SEA ICE COVER
@@ -58,12 +59,12 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LWNEMOCOUWRS
       USE YOWFRED  , ONLY : DFIM
-      USE YOWICE   , ONLY : CDICWA
+      USE YOWICE   , ONLY : CDICWA  ,ZALPFACB
       USE YOWPARAM , ONLY : NANG    ,NFRE
       USE YOWPCONS , ONLY : EPSMIN  
-
-      USE YOWTEST  , ONLY : IU06
+      USE YOWSTAT  , ONLY : IDELT   ,XIMP
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
@@ -75,39 +76,61 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: SLICE
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICV
 
-      REAL(KIND=JWRB), DIMENSION(NFRE)    :: XK2
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-      REAL(KIND=JWRB)    :: EWH
-      REAL(KIND=JWRB)    :: ALP              !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
-      REAL(KIND=JWRB)    :: TEMP
-      
+
+      REAL(KIND=JWRB) :: EWH
+      REAL(KIND=JWRB) :: ALP              !! ALP=SPATIAL ATTENUATION RATE OF ENERGY
+      REAL(KIND=JWRB) :: DELTM, DELT5, DELT, GTEMP1
+
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
-
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: XK2
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: FLDICE
+      
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SDICE2',0,ZHOOK_HANDLE)
 
-!      WRITE (IU06,*)'Ice attenuation due to bottom friction based on: '
-!      WRITE (IU06,*)'  KOHOUT A., M. MEYLAN, D PLEW, 2011'
+      DELT  = IDELT
+      DELTM = 1.0_JWRB/DELT
+      DELT5 = XIMP*DELT
 
       DO M = 1,NFRE
-         DO K = 1,NANG
-            DO IJ = KIJS,KIJL
-               EWH         = 4.0_JWRB*SQRT(MAX(EPSMIN,FL1(IJ,K,M)*DFIM(M)))
-               XK2(M)      = WAVNUM(IJ,M)**2
-               ALP         = CDICWA*XK2(M)*EWH
-               TEMP        = -CICV(IJ)*ALP*CGROUP(IJ,M)  
-               SL(IJ,K,M)  = SL(IJ,K,M)  + FL1(IJ,K,M)*TEMP
-               FLD(IJ,K,M) = FLD(IJ,K,M) + TEMP
-            ENDDO
-         ENDDO
+        XK2(M)= WAVNUM(IJ,M)**2
       ENDDO
-      
+
+      DO M = 1,NFRE
+        DO K = 1,NANG
+          DO IJ = KIJS,KIJL
+            EWH            = 4.0_JWRB*SQRT(MAX(EPSMIN,FL1(IJ,K,M)*DFIM(M)))
+            ALP            = CDICWA*XK2(M)*EWH*ZALPFACB
+
+!           apply the source term
+            FLDICE(IJ,M)   = -ALP * CGROUP(IJ,M)
+            SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE(IJ,M)
+            SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
+            FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE(IJ,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
+      IF (LWNEMOCOUWRS) THEN
+        DO M = 1,NFRE
+          DO K = 1,NANG
+            DO IJ = KIJS,KIJL
+!             to be used for wave radiative stress calculation
+              GTEMP1        =  MAX((1.0_JWRB-DELT5*FLDICE(IJ,M)),1.0_JWRB)
+              SLICE(IJ,K,M) =  SLICE(IJ,K,M)/GTEMP1
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
       IF (LHOOK) CALL DR_HOOK('SDICE2',1,ZHOOK_HANDLE)
 
       END SUBROUTINE SDICE2

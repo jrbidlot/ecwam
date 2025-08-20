@@ -67,7 +67,7 @@
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
       USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN,        &
-                            LWNEMOCOUWRS, LWNEMOCOUIBR, LWFLUX_IMPCOR
+                            LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  ,              &
@@ -75,7 +75,7 @@
  &                          ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
-      USE YOWSTAT  , ONLY : IDELT    
+      USE YOWSTAT  , ONLY : IDELT    ,XIMP
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -122,8 +122,8 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
 
-      REAL(KIND=JWRB) :: DELT, GTEMP1, XIMP, DELT5
-      REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO, BETA
+      REAL(KIND=JWRB) :: DELTM, DELT5, DELT, GTEMP1
+      REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
@@ -133,14 +133,13 @@
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEANWS, FMEANWS
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ALPFAC
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE, SLTEMP
-
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: ALPFAC
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
@@ -152,11 +151,12 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 !*    1. INITIALISATION.
 !        ---------------
 
-      DELT = IDELT
-      XIMP = 1.0_JWRB
+      DELT  = IDELT
+      DELTM = 1.0_JWRB/DELT
       DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT
+
 ! ----------------------------------------------------------------------
 
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
@@ -184,15 +184,6 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
         DO IJ=KIJS,KIJL
           COSWDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
           SINWDIF2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
-        ENDDO
-      ENDDO
-
-      DO M=1,NFRE
-        DO K=1,NANG
-          DO IJ=KIJS,KIJL
-            SLICE(IJ,K,M)  = 0.0_JWRB
-            SLTEMP(IJ,K,M) = 0.0_JWRB
-          ENDDO
         ENDDO
       ENDDO
 
@@ -247,9 +238,8 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
             DO M = 1,NFRE
               DO K = 1,NANG
                 DO IJ = KIJS,KIJL
-                  BETA        = 1._JWRB - CICOVER(IJ)
-                  SL(IJ,K,M)  = BETA*SL(IJ,K,M)
-                  FLD(IJ,K,M) = BETA*FLD(IJ,K,M)
+                  SL(IJ,K,M)  = (1._JWRB - CICOVER(IJ))*SL(IJ,K,M)
+                  FLD(IJ,K,M) = (1._JWRB - CICOVER(IJ))*FLD(IJ,K,M)
                 END DO
               END DO
             END DO
@@ -260,46 +250,9 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
             CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
           ENDIF
 
-
-!        Save source term contributions relevant for the calculation of ice fluxes
-          IF(LWNEMOCOUWRS) THEN 
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  SLTEMP(IJ,K,M) = SL(IJ,K,M)
-                ENDDO
-              ENDDO
-            ENDDO
-         ENDIF
-
 !        Attenuation of waves in ice
-          IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
-            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
-         ENDIF
-         
+         CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
 
-!        Save source term contributions relevant for the calculation of ice fluxes
-         IF (LWNEMOCOUWRS) THEN
-          IF (.NOT. LWFLUX_IMPCOR) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  SLICE(IJ,K,M) = SL(IJ,K,M) - SLTEMP(IJ,K,M)
-                ENDDO
-              ENDDO
-            ENDDO
-          ELSEIF (LWFLUX_IMPCOR) THEN
-            DO M=1,NFRE
-              DO K=1,NANG
-                DO IJ=KIJS,KIJL
-                  GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
-                  SLICE(IJ,K,M) = (SL(IJ,K,M) - SLTEMP(IJ,K,M))/GTEMP1
-                ENDDO
-              ENDDO
-            ENDDO
-          ENDIF
-       ENDIF
-        
         ENDIF
             
         CALL WNFLUXES (KIJS, KIJL,                        &

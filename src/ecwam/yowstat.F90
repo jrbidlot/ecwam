@@ -92,6 +92,7 @@
 
       REAL(KIND=JWRB) :: TIME_PROPAG = 0._JWRB
       REAL(KIND=JWRB) :: TIME_PHYS = 0._JWRB
+      REAL(KIND=JWRB), PARAMETER :: XIMP = 1.0_JWRB !! IMPLICIT FACTOR IN *IMPLSCH*
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
