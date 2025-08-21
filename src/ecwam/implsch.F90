@@ -85,9 +85,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU, LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
-      USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE ,              &
-                            LCIWA1   ,LCIWA2   ,LCIWA3   ,LCISCAL   ,   &
- &                          ZALPFACX
+      USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE  ,ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK   ,XIMP
@@ -331,10 +329,8 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDIF
 
 !       Attenuation of waves in ice
-        IF (LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
-          !$loki inline
-          CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
-        ENDIF
+        !$loki inline
+        CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
 
       ELSE
         SLICE(:,:,:) = 0.0_JWRB

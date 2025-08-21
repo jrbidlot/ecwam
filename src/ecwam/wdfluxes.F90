@@ -70,9 +70,7 @@
                             LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWICE   , ONLY : LICERUN  ,              &
-                            LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
- &                          ZALPFACX
+      USE YOWICE   , ONLY : LICERUN  ,LCISCAL, ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
       USE YOWSTAT  , ONLY : IDELT    ,XIMP

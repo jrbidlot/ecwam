@@ -754,11 +754,11 @@
 
       LICERUN = .TRUE.
 
-      LCIWA1 = .TRUE.
+      LCIWA1 = .FALSE.
 
       LCIWA2 = .FALSE.
 
-      LCIWA3 = .FALSE.    
+      LCIWA3 = .TRUE.    
 
       LCISCAL = .FALSE.      
 
