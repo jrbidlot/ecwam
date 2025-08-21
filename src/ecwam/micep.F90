@@ -69,7 +69,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     , &
-     &               HICMIN, LCIWA1
+     &               HICMIN, LCIWA1  ,PTHC1   ,PTHC2
       USE YOWMAP   , ONLY : NGX      ,NGY     ,CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPCITH
@@ -93,10 +93,6 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
 
       INTEGER(KIND=JWIM) :: IJ, IX, IY
       INTEGER(KIND=JWIM) :: NICE
-
-!     CONSTANTS FOR PARAMETRISATION OF SEA ICE THICKNESS:
-      REAL(KIND=JWRB), PARAMETER :: C1=0.2_JWRB
-      REAL(KIND=JWRB), PARAMETER :: C2=0.4_JWRB
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -171,7 +167,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
 !       SEA ICE THICKNESS IS PARAMETERISED:
         DO IJ=KIJS,KIJL
           IF (CICVR(IJ) > 0.0_JWRB) THEN
-            CITH(IJ)=MAX(C1+C2*CICVR(IJ),0.0_JWRB)
+            CITH(IJ)=MAX(PTHC1+PTHC2*CICVR(IJ),0.0_JWRB)
           ELSE
             CITH(IJ)=0.0_JWRB
           ENDIF
@@ -189,7 +185,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
 !           We should get ice thickness information from atmopsheric model
 !           but it is not yet coded. For now, parameterise it from the cover...
               IF (CICVR(IJ) > 0.0_JWRB) THEN
-                CITH(IJ)=MAX(C1+C2*CICVR(IJ),0.0_JWRB)
+                CITH(IJ)=MAX(PTHC1+PTHC2*CICVR(IJ),0.0_JWRB)
               ELSE
                CITH(IJ)=0.0_JWRB
               ENDIF
