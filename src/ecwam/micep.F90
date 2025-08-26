@@ -69,7 +69,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
       USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     , &
-     &               HICMIN, LCIWA1  ,PTHC1   ,PTHC2
+     &               HICMIN, LCIWA1  ,LCIRSCTWC, PTHC1   ,PTHC2
       USE YOWMAP   , ONLY : NGX      ,NGY     ,CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPCITH
@@ -180,7 +180,12 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
             IY = JFROMIJ(IJ)
             IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB ) THEN
 !             if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
-              CITH(IJ)=NEMOCITHICK(IJ)
+              IF (LNEMOICEREST .OR. .NOT. LCIRSCTWC) THEN
+                CITH(IJ)=NEMOCITHICK(IJ)
+              ELSE
+!!!!    define a representative sea ice thickness that accounts for sea ice coverage
+                CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
+              ENDIF
             ELSE
 !           We should get ice thickness information from atmopsheric model
 !           but it is not yet coded. For now, parameterise it from the cover...
@@ -193,9 +198,16 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
           ENDDO
 
         ELSE
-          DO IJ=KIJS,KIJL
-            CITH(IJ)=NEMOCITHICK(IJ)
-          ENDDO
+          IF (LNEMOICEREST .OR. .NOT. LCIRSCTWC) THEN
+            DO IJ=KIJS,KIJL
+               CITH(IJ)=NEMOCITHICK(IJ)
+            ENDDO
+          ELSE
+!!!!    define a representative sea ice thickness that accounts for sea ice coverage
+            DO IJ=KIJS,KIJL
+               CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
+            ENDDO
+          ENDIF
         ENDIF
 
         IF (LCIWA1) THEN
@@ -210,6 +222,13 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
         ENDIF
 
       ELSE
+
+        IF (LCIRSCTWC) THEN
+!!!!    define a representative sea ice thickness that accounts for sea ice coverage
+          DO IJ=KIJS,KIJL
+            CITH(IJ)=CICVR(IJ)*CITH(IJ)
+          ENDDO
+        ENDIF
 
         IF (LCIWA1) THEN
 !         CONSISTENCY CHECK:
