@@ -182,7 +182,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
             IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB ) THEN
-!             if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
+!           if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
               IF (LNEMOICEREST .OR. .NOT. LCIRSCTWC) THEN
                 CITH(IJ)=NEMOCITHICK(IJ)
               ELSE
@@ -197,7 +197,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
               ELSE
                 CITH(IJ)=0.0_JWRB
               ENDIF
-            
+            ENDIF
           ENDDO
 
         ELSE
