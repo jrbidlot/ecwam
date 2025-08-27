@@ -13,10 +13,10 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
 
 !-------------------------------------------------------------------
 
-!**** *MICEP* - CLEAN UP SEA FRACTION FOR ALL SEA POINTS.
+!**** *MICEP* - CLEAN UP SEA ICE FRACTION AND THICKNESS FOR ALL SEA POINTS.
 !               DETERNINE THE SEA ICE THICKNESS IF NOT SUPPLIED
 !               AND CHECk THE CONSISTENCY BETWEEN SEA ICE COVER AND
-!               THICKNESS. IMPOSE MINIMUM THICKNESS.
+!               THICKNESS. POSSIBLY IMPOSE MINIMUM THICKNESS.
 
 !     R. PORTZ     MPI HAMBURG   OCTOBER 1992
 !     J. BIDLOT    ECMWF         JUNE 1996    MESSAGE PASSING
@@ -96,6 +96,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
       INTEGER(KIND=JWIM) :: IJ, IX, IY
       INTEGER(KIND=JWIM) :: NICE
 
+      REAL(KIND=JWRB), PARAMETER :: PNOCICOVER=0.01_JWRB  ! SEA ICE COVER MINIMUM TO HAVE VALID SEA ICE INFORMATION
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -115,20 +116,20 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
             IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB ) THEN
-!            if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO 
+!             if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO 
               CICVR(IJ) = NEMOCICOVER(IJ)
             ELSE
-!            get ice information from atmopsheric model
-              IF (FIELDG%CICOVER(IX,IY) == ZMISS .OR.                   &
-     &            FIELDG%CICOVER(IX,IY) < 0.01_JWRB .OR.                &
-     &            FIELDG%CICOVER(IX,IY) > 1.01_JWRB ) THEN
-                CICVR(IJ) = 0.0_JWRB
-              ELSEIF (FIELDG%CICOVER(IX,IY) > 0.95_JWRB) THEN
-                CICVR(IJ) = 1.0_JWRB
-              ELSE
-                CICVR(IJ) = FIELDG%CICOVER(IX,IY)
-              ENDIF
+!             get ice information from atmopsheric model for lake points
+              CICVR(IJ) = FIELDG%CICOVER(IX,IY)
             ENDIF
+
+!           Clean-up sea ice cover
+            IF (CICVR(IJ) == ZMISS .OR. CICVR(IJ) < PNOCICOVER .OR. CICVR(IJ) > 1.01_JWRB ) THEN
+              CICVR(IJ) = 0.0_JWRB
+            ELSEIF (CICVR(IJ) > 0.99_JWRB) THEN
+              CICVR(IJ) = 1.0_JWRB
+            ENDIF
+
           ENDDO
         ELSE
           DO IJ=KIJS,KIJL
@@ -142,7 +143,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
           IF (FIELDG%CICOVER(IX,IY) == ZMISS .OR.                       &
-     &        FIELDG%CICOVER(IX,IY) < 0.01_JWRB .OR.                    &
+     &        FIELDG%CICOVER(IX,IY) < PNOCICOVER .OR.                   &
      &        FIELDG%CICOVER(IX,IY) > 1.01_JWRB ) THEN
             CICVR(IJ) = 0.0_JWRB
           ELSE
@@ -189,14 +190,14 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
                 CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
               ENDIF
             ELSE
-!           We should get ice thickness information from atmopsheric model
+!           We should get ice thickness information from atmosphere model
 !           but it is not yet coded. For now, parameterise it from the cover...
               IF (CICVR(IJ) > 0.0_JWRB) THEN
                 CITH(IJ)=MAX(PTHC1+PTHC2*CICVR(IJ),0.0_JWRB)
               ELSE
                 CITH(IJ)=0.0_JWRB
               ENDIF
-            ENDIF
+            
           ENDDO
 
         ELSE
@@ -211,6 +212,12 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
             ENDDO
           ENDIF
         ENDIF
+
+!!!     Consistency check with respect to sea ice cover
+        DO IJ=KIJS,KIJL
+          IF (CICVR(IJ) < PNOCICOVER) CITH(IJ)=0.0_JWRB
+        ENDDO
+
 
         IF (LCIWA1) THEN
   !       Consistency check needed for the LCIWA1 parameterization:
@@ -231,6 +238,11 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
             CITH(IJ)=CICVR(IJ)*CITH(IJ)
           ENDDO
         ENDIF
+
+!!!     Consistency check with respect to sea ice cover
+        DO IJ=KIJS,KIJL
+          IF (CICVR(IJ) < PNOCICOVER) CITH(IJ)=0.0_JWRB
+        ENDDO
 
         IF (LCIWA1) THEN
 !         CONSISTENCY CHECK:
