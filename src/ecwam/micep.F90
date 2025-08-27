@@ -68,6 +68,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU, JWRO
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
+      USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT
       USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     , &
      &               HICMIN, LCIWA1  ,LCIRSCTWC, PTHC1   ,PTHC2
       USE YOWMAP   , ONLY : NGX      ,NGY     ,CLDOMAIN
@@ -75,7 +76,8 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
       USE YOWPARAM , ONLY : SWAMPCITH
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06
-      USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT
+
+      USE YOWNEMOFLDS, ONLY : LNEMOICEREST
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
 
@@ -192,7 +194,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
               IF (CICVR(IJ) > 0.0_JWRB) THEN
                 CITH(IJ)=MAX(PTHC1+PTHC2*CICVR(IJ),0.0_JWRB)
               ELSE
-               CITH(IJ)=0.0_JWRB
+                CITH(IJ)=0.0_JWRB
               ENDIF
             ENDIF
           ENDDO
@@ -200,12 +202,12 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
         ELSE
           IF (LNEMOICEREST .OR. .NOT. LCIRSCTWC) THEN
             DO IJ=KIJS,KIJL
-               CITH(IJ)=NEMOCITHICK(IJ)
+              CITH(IJ)=NEMOCITHICK(IJ)
             ENDDO
           ELSE
 !!!!    define a representative sea ice thickness that accounts for sea ice coverage
             DO IJ=KIJS,KIJL
-               CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
+              CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
             ENDDO
           ENDIF
         ENDIF
