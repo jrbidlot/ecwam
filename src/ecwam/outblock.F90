@@ -126,8 +126,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       
       REAL(KIND=JWRB), PARAMETER :: PSWHICE_THRS=0.008_JWRB  ! Significant Wave height minimum threshold used to impose default value in sea ice covered areas
       REAL(KIND=JWRB), PARAMETER :: PSWHICE=0.005_JWRB       ! Significant Wave height default value in sea ice covered areas
-      REAL(KIND=JWRB), PARAMETER :: PMWPICE_THRS=10.0_JWRB   ! Mean wave period minimum threshold used to impose default value in sea ice covered areas 
-      REAL(KIND=JWRB), PARAMETER :: PMWPICE=8.0_JWRB         ! Mean wave period default value in sea ice
+      REAL(KIND=JWRB), PARAMETER :: PMWPICE=15.0_JWRB         ! Mean wave period default value in sea ice
       REAL(KIND=JWRB) :: SIG
       REAL(KIND=JWRB) :: GOZPI 
       REAL(KIND=JWRB) :: XMODEL_CUTOFF
@@ -261,7 +260,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
         IF (LICERUN .AND. .NOT. LMASKICE .AND. LLSOURCE .AND. IPFGTBL(1) /= 0) THEN
 !         IMPOSE A FIXED VALUE IN SEA ICE BECAUSE FOR VERY LOW SWH THE VALUES ARE MADE UP
           DO IJ=KIJS,KIJL
-            IF (CICOVER(IJ) > 0.0_JWRB .AND. SWH(IJ) <= PSWHICE_THRS .AND. BOUT(IJ,ITOBOUT(3)) <= PMWPICE_THRS) THEN
+            IF (CICOVER(IJ) > 0.0_JWRB .AND. SWH(IJ) <= PSWHICE_THRS) THEN
               BOUT(IJ,ITOBOUT(3))=PMWPICE
             ENDIF
           ENDDO
