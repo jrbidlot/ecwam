@@ -763,7 +763,7 @@
 
       LCISCAL = .FALSE.      
 
-      LCIRSCTWC = .TRUE.
+      LCIRSCTWC = .FALSE.
 
       ZALPFACB = 1.0_JWRB
       
