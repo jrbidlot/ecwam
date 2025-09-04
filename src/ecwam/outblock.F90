@@ -124,8 +124,8 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       INTEGER(KIND=JWIM) :: IJ, K, M, ITG, ITR, IH
       INTEGER(KIND=JWIM) :: IRA
       
-      REAL(KIND=JWRB), PARAMETER :: PSWHICE_THRS=0.008_JWRB  ! Significant Wave height minimum threshold used to impose default value in sea ice covered areas
-      REAL(KIND=JWRB), PARAMETER :: PSWHICE=0.005_JWRB       ! Significant Wave height default value in sea ice covered areas
+      REAL(KIND=JWRB), PARAMETER :: PSWHICE_THRS=0.01_JWRB  ! Significant Wave height minimum threshold used to impose default value in sea ice covered areas
+      REAL(KIND=JWRB), PARAMETER :: PSWHICE=0.01_JWRB       ! Significant Wave height default value in sea ice covered areas
       REAL(KIND=JWRB), PARAMETER :: PMWPICE=15.0_JWRB         ! Mean wave period default value in sea ice
       REAL(KIND=JWRB) :: SIG
       REAL(KIND=JWRB) :: GOZPI 
