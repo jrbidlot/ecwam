@@ -97,6 +97,7 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
       INTEGER(KIND=JWIM) :: NICE
 
       REAL(KIND=JWRB), PARAMETER :: PNOCICOVER=0.01_JWRB  ! SEA ICE COVER MINIMUM TO HAVE VALID SEA ICE INFORMATION
+      REAL(KIND=JWRB) :: ZCIMAXTHRS
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -119,15 +120,17 @@ SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
 !             if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO 
 !!!!!!!!!!!! this not be true once we run NEMO over large lakes !!!!!!!!!
               CICVR(IJ) = NEMOCICOVER(IJ)
+              ZCIMAXTHRS = 1.0_JWRB
             ELSE
 !             get ice information from atmopsheric model for lake points
               CICVR(IJ) = FIELDG%CICOVER(IX,IY)
+              ZCIMAXTHRS = 0.95_JWRB
             ENDIF
 
 !           Clean-up sea ice cover
             IF (CICVR(IJ) == ZMISS .OR. CICVR(IJ) < PNOCICOVER .OR. CICVR(IJ) > 1.01_JWRB ) THEN
               CICVR(IJ) = 0.0_JWRB
-            ELSEIF (CICVR(IJ) > 0.99_JWRB) THEN
+            ELSEIF (CICVR(IJ) > ZCIMAXTHRS) THEN
               CICVR(IJ) = 1.0_JWRB
             ENDIF
 
