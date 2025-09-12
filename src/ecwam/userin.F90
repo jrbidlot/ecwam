@@ -77,7 +77,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUAST,     &
-     &             LWCOUHMF, KCOUSTEP , LWFLUX, LWVFLX_SNL,             &
+     &             LWCOUHMF, KCOUSTEP , LWFLUX, LWWCF, LWVFLX_SNL,      &
      &             LWNEMOCOUIBR,LWNEMOCOUWRS,                           &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                       &
@@ -1174,6 +1174,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IF (LWCOU .AND. LWFLUX) THEN
         WRITE(IU06,*) ''
         WRITE(IU06,*) ' OCEAN FLUXES WILL ALSO BE RETURNED TO IFS.'
+        WRITE(IU06,*) ''
+      ENDIF
+
+      IF (LWCOU .AND. LWWCF) THEN
+        WRITE(IU06,*) ''
+        WRITE(IU06,*) ' WHITECAP FIELD WILL ALSO BE RETURNED TO IFS.'
         WRITE(IU06,*) ''
       ENDIF
 

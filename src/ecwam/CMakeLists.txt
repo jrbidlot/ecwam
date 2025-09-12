@@ -188,6 +188,7 @@ list( APPEND ecwam_srcs
   peak.F90
   peak_ang.F90
   peak_freq.F90
+  peak_waveage.F90
   peakfri.F90
   preset_wgrib_template.F90
   prewind.F90
@@ -252,6 +253,7 @@ list( APPEND ecwam_srcs
   stress_gc.F90
   stresso.F90
   strspec.F90
+  swellmask.F90
   tables_2nd.F90
   tabu_swellft.F90
   tau_phi_hf.F90
@@ -299,6 +301,7 @@ list( APPEND ecwam_srcs
   wgribencode_values.F90
   wgribenout.F90
   wgribout.F90
+  whitecap_fraction.F90
   wnfluxes.F90
   wposnam.F90
   writefl.F90

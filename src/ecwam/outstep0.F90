@@ -121,6 +121,7 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
      &                   FF_NOW%CICOVER(:,ICHNK), &
      &                   FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), &
      &                   FF_NOW%Z0B(:,ICHNK), FF_NOW%CHRNCK(:,ICHNK), FF_NOW%CITHICK(:,ICHNK), &
+     &                   INTFLDS%WCF(:,ICHNK), INTFLDS%TLEMEAN(:,ICHNK), &
      &                   INTFLDS%WSEMEAN(:,ICHNK), INTFLDS%WSFMEAN(:,ICHNK), &
      &                   INTFLDS%USTOKES(:,ICHNK), INTFLDS%VSTOKES(:,ICHNK), INTFLDS%STRNMS(:,ICHNK), &
      &                   INTFLDS%TAUXD(:,ICHNK), INTFLDS%TAUYD(:,ICHNK), INTFLDS%TAUOCXD(:,ICHNK), &
