@@ -163,8 +163,7 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,                        &
      &                      GBOUNC  , IPOGBO   ,CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU,    &
-     &                      LWNEMOCOUIBR
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWNEMOCOU,LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
      &                      NGOUT    ,NOUTT    ,LOUTINT  ,LSECONDORDER
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA

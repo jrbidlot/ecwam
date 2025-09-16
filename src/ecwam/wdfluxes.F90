@@ -67,8 +67,8 @@
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
-      USE YOWCOUP  , ONLY : LWFLUX   ,LWWCF, LWVFLX_SNL, LWNEMOCOUSTRN,  &
-                            LWNEMOCOUIBR, LWNEMOCOUWRS
+      USE YOWCOUP  , ONLY : LWFLUX   ,LWSPRAY, LWWCF, LWVFLX_SNL,       &
+                            LWNEMOCOUSTRN, LWNEMOCOUIBR, LWNEMOCOUWRS
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  , FLMIN,                            &
@@ -152,7 +152,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 !*    1. INITIALISATION.
 !        ---------------
 
-      LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWWCF
+      LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWWCF.OR.LWSPRAY
 ! ----------------------------------------------------------------------
 
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
@@ -283,7 +283,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &                  .FALSE.)
         ENDIF
 
-        IF (LWFLUX) THEN
+        IF (LWFLUX .OR. LWSPRAY) THEN
          CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS, EMEANWS)
 
           DO IJ=KIJS,KIJL
