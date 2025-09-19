@@ -645,8 +645,8 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
           CLECFNAME="                                             "
           CALL GET_ENVIRONMENT_VARIABLE(NAME=CL_CPENV,     VALUE=CLSMSNAME, LENGTH=ICPLEN)
           CALL GET_ENVIRONMENT_VARIABLE(NAME=CL_CPENV_ECF, VALUE=CLECFNAME, LENGTH=ICPLEN_ECF)
-          IF( ICPLEN     == 0 ) CLSMSNAME = 'NOSMS'
-          IF( ICPLEN_ECF == 0 ) CLECFNAME = 'NOECF'
+          IF ( ICPLEN     == 0 ) CLSMSNAME = 'NOSMS'
+          IF ( ICPLEN_ECF == 0 ) CLECFNAME = 'NOECF'
           IF ((ICPLEN > 0.AND.CLSMSNAME(1:5) /= 'NOSMS') .OR.           &
      &        (ICPLEN_ECF > 0.AND.CLECFNAME(1:5) /= 'NOECF') ) THEN
             CALL SYSTEM(CLSETEV)
@@ -984,7 +984,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
 !     4. END OF RUN ?
 !        -----------
       IF (CDATEE == CDTPRO) THEN
-        IF(LWCOU) THEN
+        IF (LWCOU) THEN
           ! Prevent any further output until the namelist is read again.
           LWAMANOUT = .FALSE.
           WRITE(IU06,*) '  WAVEMDL: NORMAL END OF RUN. OUTPUT IS NOW DISABLED !'
