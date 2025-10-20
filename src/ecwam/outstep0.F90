@@ -176,8 +176,8 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
       IF (NGOUT > 0 ) CALL OUTWPSP (FL1, FF_NOW)
 
 
-!*    3.0 SAVE INITIAL INTEGRATED FIELDS (if needed)
-!         ------------------------------
+!*    3.0 SAVE INITIAL INTEGRATED FIELDS AND POTENTIALLY THE SPECTRA (if needed)
+!         ----------------------------------------------------------------------
       IF ((MARSTYPE == 'cf' .OR. MARSTYPE == 'pf' .OR.                 &
      &     MARSTYPE == 'fc' .OR. MARSTYPE == '4v' .OR.                 &
      &     LANAONLY         .OR. LFRSTFLD             )                &

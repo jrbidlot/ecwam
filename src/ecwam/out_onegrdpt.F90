@@ -42,7 +42,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : JPPFLAG  ,FFLAG    ,GFLAG    ,NFLAG     ,   &
-     &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRU10     ,   &
+     &            IPFGTBL  ,NIPRMOUT ,ITOBOUT  ,IRCD     ,IRTAUW, IRU10     ,   &
      &            IRHS     ,IRTP     ,IRT1     ,IRPHIAW  ,IRPHIOC   ,   &
      &            IRTAUOC  , IRHSWS  ,IRT1WS   ,IRBATHY  ,IRMSS 
       USE YOWGRID  , ONLY : DELPHI
@@ -54,6 +54,8 @@
       USE YOWPHYS  , ONLY : XKAPPA   ,XNLEV    ,RNUM     ,ALPHAMIN
       USE YOWSTAT  , ONLY : CDATEA   ,CDTPRO
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+      USE EC_LUN   , ONLY : NULERR
+
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -62,7 +64,7 @@
 
       INTEGER(KIND=JWIM) :: IU06, IU_INTP
       INTEGER(KIND=JWIM) :: ITIME, I, J
-      INTEGER(KIND=JWIM) :: IPHS, IPCD, IPU10, IPTP, IPT1, IPPHIAW, IPPHIOC, IPTAUOC, IPMSS
+      INTEGER(KIND=JWIM) :: IPHS, IPCD, IPTAUW, IPU10, IPTP, IPT1, IPPHIAW, IPPHIOC, IPTAUOC, IPMSS
       INTEGER(KIND=JWIM) :: IPHSWS, IPT1WS, IPBATHY
 
       REAL(KIND=JWRB) :: CD, U10, HS, HSWS, USTAR2, USTAR, TSTAR, DSTAR, WAGEP, ZMSS
@@ -70,7 +72,7 @@
       REAL(KIND=JWRB) :: E_LIM, E_STAR_OBS, FP, XNUSTAR, XNU_OBS
       REAL(KIND=JWRB) :: CDSQRTINV, Z0, BETA, DFETCH, FETCHSTAR  
       REAL(KIND=JWRB) :: T10, E10, FP10, FETCH10, T_0, E_OBS 
-      REAL(KIND=JWRB) :: DEPTH, PHIAW, PHIOC, TAUOC
+      REAL(KIND=JWRB) :: DEPTH, PHIAW, PHIOC, TAUOC, TAUWN
       REAL(KIND=JWRB) :: Z0VIS
       REAL(KIND=JWRB) :: XLOGE_YV, XLOGF_YV
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -81,7 +83,7 @@
 
       LOGICAL, SAVE :: FRSTIME
       LOGICAL :: LPARAM
-      LOGICAL :: LDEPTH, LPHIAW, LPHIOC, LTAUOC 
+      LOGICAL :: LMSS, LDEPTH, LPHIAW, LPHIOC, LTAUOC, LTAUW 
 
       DATA FRSTIME/.TRUE./   
 !
@@ -102,95 +104,76 @@
          
       CALL DIFDATE(CDATEA,CDTPRO,ITIME)
 
+      LPARAM=.TRUE.
+
       IPHS=ITOBOUT(IRHS)
-      IF(IPHS.GT.0) THEN
-        LPARAM = .TRUE.
-      ELSE
-        LPARAM = .FALSE.
-      ENDIF
+      IF (IPHS <= 0) LPARAM = .FALSE.
 
       IPCD=ITOBOUT(IRCD)
-      IF(IPCD.GT.0) THEN
-        LPARAM = .TRUE.
-      ELSE
-        LPARAM = .FALSE.
-      ENDIF
+      IF (IPCD <= 0) LPARAM = .FALSE.
 
       IPU10=ITOBOUT(IRU10)
-      IF(IPU10.GT.0) THEN
-        LPARAM = .TRUE.
-      ELSE
-        LPARAM = .FALSE.
-      ENDIF
+      IF (IPU10 <= 0) LPARAM = .FALSE.
 
       IPTP=ITOBOUT(IRTP)
-      IF(IPTP.GT.0) THEN
-        LPARAM = .TRUE.
-      ELSE
-        LPARAM = .FALSE.
-      ENDIF
+      IF (IPTP <= 0) LPARAM = .FALSE.
 
       IPT1=ITOBOUT(IRT1)
-      IF(IPT1.GT.0) THEN
-        LPARAM = .TRUE.
-      ELSE
-        LPARAM = .FALSE.
-      ENDIF
+      IF (IPT1 <= 0) LPARAM = .FALSE.
 
       IPHSWS=ITOBOUT(IRHSWS)
-      IF(IPHSWS.GT.0) THEN
-        LPARAM = .TRUE.
-      ELSE
-        LPARAM = .FALSE.
-      ENDIF
+      IF (IPHSWS <= 0) LPARAM = .FALSE.
 
       IPT1WS=ITOBOUT(IRT1WS)
-      IF(IPT1WS.GT.0) THEN
-        LPARAM = .TRUE.
-      ELSE
-        LPARAM = .FALSE.
-      ENDIF
+      IF (IPT1WS <= 0) LPARAM = .FALSE.
 
       IPMSS=ITOBOUT(IRMSS)
-      IF(IPMSS.GT.0) THEN
-        LPARAM = .TRUE.
+      IF (IPMSS > 0) THEN
+        LMSS = .TRUE.
       ELSE
-        LPARAM = .FALSE.
+        LMSS = .FALSE.
       ENDIF
 
       IPBATHY=ITOBOUT(IRBATHY)
-      IF(IPBATHY.GT.0) THEN
+      IF (IPBATHY > 0) THEN
         LDEPTH = .TRUE.
       ELSE
         LDEPTH = .FALSE.
       ENDIF
 
       IPPHIAW=ITOBOUT(IRPHIAW)
-      IF(IPPHIAW.GT.0) THEN
+      IF ( IPPHIAW > 0) THEN
         LPHIAW = .TRUE.
       ELSE
         LPHIAW = .FALSE.
       ENDIF
 
       IPPHIOC=ITOBOUT(IRPHIOC)
-      IF(IPPHIOC.GT.0) THEN
+      IF (IPPHIOC > 0) THEN
         LPHIOC = .TRUE.
       ELSE
         LPHIOC = .FALSE.
       ENDIF
 
       IPTAUOC=ITOBOUT(IRTAUOC)
-      IF(IPTAUOC.GT.0) THEN
+      IF (IPTAUOC > 0) THEN
         LTAUOC = .TRUE.
       ELSE
         LTAUOC = .FALSE.
       ENDIF
 
+      IPTAUW=ITOBOUT(IRTAUW)
+      IF (IPTAUW > 0) THEN
+        LTAUW = .TRUE.
+      ELSE
+        LTAUW = .FALSE.
+      ENDIF
+
       IF (LPARAM .AND. (.NOT. LLUNSTR)) THEN
         I = MAX(1,NGX/2)
         DO J = 1,NGY
-          IF (GOUT(IPHS,I,J).NE.ZMISS) THEN
-            IF(LDEPTH) THEN
+          IF (GOUT(IPHS,I,J) /= ZMISS) THEN
+            IF (LDEPTH) THEN
               DEPTH=GOUT(IPBATHY,I,J)
             ELSE
               DEPTH=999.0_JWRB
@@ -201,7 +184,11 @@
             CD     = GOUT(IPCD,I,J)
             U10    = GOUT(IPU10,I,J) 
             HS     = GOUT(IPHS,I,J)
-            ZMSS   = GOUT(IPMSS,I,J)
+            IF (LMSS) THEN
+              ZMSS   = GOUT(IPMSS,I,J)
+            ELSE
+              ZMSS   = 0.0_JWRB 
+            ENDIF
             USTAR2 = MAX(CD*MAX(U10**2,EPSU10**2),EPSUS)
             USTAR  = SQRT(USTAR2)
 
@@ -209,7 +196,7 @@
             DSTAR = G*DEPTH/(USTAR**2)
             E     = HS**2/16.0_JWRB
             ESTAR = G**2*E/(USTAR**4)
-            FMSTAR=USTAR/(GOUT(IPT1,I,J)*G)
+            FMSTAR= USTAR/(GOUT(IPT1,I,J)*G)
 
             HSWS  = GOUT(IPHSWS,I,J) 
             Tws   = G*ITIME/USTAR
@@ -250,25 +237,32 @@
             E_LIM = BETA_K**2/16.0_JWRB
             E_OBS = E_LIM/(1.+T_0/T10)**XP
  
-            IF(LPHIAW) THEN
+            IF (LPHIAW) THEN
               PHIAW=GOUT(IPPHIAW,I,J)
             ELSE
               PHIAW=3.5_JWRB
             ENDIF
 
-            IF(LPHIOC) THEN
+            IF (LPHIOC) THEN
 !             make it positive for comparison with PHIAW
               PHIOC=-GOUT(IPPHIOC,I,J)
             ELSE
               PHIOC=3.5_JWRB
             ENDIF
 
-            IF(LTAUOC) THEN
+            IF (LTAUOC) THEN
               TAUOC=GOUT(IPTAUOC,I,J)
             ELSE
               TAUOC=1.0_JWRB
             ENDIF
 
+            IF (LTAUW) THEN
+              TAUWN=GOUT(IPTAUW,I,J)
+            ELSE
+              TAUWN=0.0_JWRB
+            ENDIF
+
+!!!! for the one grid point empirical laws for the wave DA, it is, Tws, Fws and Ews that you need  !!!!
             WRITE(IU_INTP,60) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,          &
      &                       LOG10(TSTAR),LOG10(FETCHSTAR),HS,          &
      &                       FP,LOG10(ESTAR),LOG10(E_STAR_OBS),         &
@@ -276,7 +270,7 @@
      &                       USTAR,CD,BETA,T10,FETCH10,E10,             &
      &                       TSTAR, FMSTAR, DSTAR, ESTAR,               &
      &                       PHIAW, PHIOC, TAUOC, Tws, Fws, Ews, HSWS,  &
-     &                       WAGEP, ZMSS
+     &                       WAGEP, ZMSS, TAUWN
 
             WRITE(IU06,61) NGY-J+1,DEPTH,ITIME/3600.0_JWRB,             &
      &                     TSTAR,FETCHSTAR,HS,FP,ESTAR,                 &
@@ -284,25 +278,30 @@
      &                     USTAR,CD,BETA,T10,FETCH10,E10,               &
      &                     TSTAR, FMSTAR, DSTAR, ESTAR,                 &
      &                     PHIAW, PHIOC, TAUOC, Tws, Fws, Ews, HSWS,    &
-     &                     WAGEP, ZMSS
+     &                     WAGEP, ZMSS, TAUWN
 
           ENDIF
         ENDDO
         CALL FLUSH(IU_INTP)
         CALL FLUSH(IU06)
       ELSE IF (.NOT. LLUNSTR) THEN
+        WRITE(NULERR,*) '*                                     *'
+        WRITE(NULERR,*) '*  FATAL ERROR IN SUB. OUT_ONEGRDPT   *'
+        WRITE(NULERR,*) '*                                     *'
+        WRITE(NULERR,*) '*  MISSING SOME OUTPUT VARIABLES !    *'
         WRITE(IU06,*) '***************************************'
         WRITE(IU06,*) '*                                     *'
         WRITE(IU06,*) '*  FATAL ERROR IN SUB. OUT_ONEGRDPT   *'
         WRITE(IU06,*) '*                                     *'
         WRITE(IU06,*) '*  MISSING SOME OUTPUT VARIABLES !    *'
         WRITE(IU06,*) '***************************************'
+        CALL FLUSH(IU06)
         CALL ABORT1
       ENDIF
    60 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,4E12.3,F6.1,F7.3,                &
-     &       2F12.5,2E10.3,16(1x,F15.5))
+     &       2F12.5,2E10.3,17(1x,F15.5))
    61 FORMAT(I4,F7.2,F7.2,2E10.3,2F8.3,2F10.3,2F8.5,F6.1,F7.3,          &
-     &       2F12.5,2E10.3,16(1x,F15.5))
+     &       2F12.5,2E10.3,17(1x,F15.5))
 !!
 !     YOUNG-VERHAGEN LIMITS
 ! 

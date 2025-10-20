@@ -90,11 +90,6 @@ SUBROUTINE OUTBETA (KIJS, KIJL,                   &
       REAL(KIND=JWRB), PARAMETER :: AMAX=0.02_JWRB
       REAL(KIND=JWRB), PARAMETER :: BMAX=0.01_JWRB
 
-!     !!!!! BETAHQ_REDUCE was introduced to reduce the impact of the sea state dependent
-!     !!!!! heat and moisture surface flux. It is just a dirty tuning knob !!
-
-      REAL(KIND=JWRB), PARAMETER :: BETAHQ_REDUCE=0.25_JWRB
-
       INTEGER(KIND=JWIM) :: IJ
 
       REAL(KIND=JWRB) :: GUSM2, Z0ATM
@@ -121,7 +116,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBETA',0,ZHOOK_HANDLE)
         USM(IJ) = 1.0_JWRB/MAX(USTAR(IJ), EPSUS)
         GUSM2 = G*USM(IJ)**2
         BETAM(IJ) = MAX(MIN(CHRNCK(IJ), ALPHAMAXU10(IJ)), ALPHAMIN)
-        BETAHQ(IJ) = MAX( BETAHQ_REDUCE*(BETAM(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA)), ALPHAMIN)
+        BETAHQ(IJ) = MAX( BETAM(IJ)-MAX(Z0B(IJ)*GUSM2, ALPHA), ALPHAMIN)
       ENDDO
 
       IF( PRESENT(CD) ) THEN

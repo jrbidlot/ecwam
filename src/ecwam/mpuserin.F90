@@ -47,8 +47,7 @@
      &            ALTGRTHRSH, HSALTCUT, LALTGRDOUT, LALTPAS,            &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
-     &            LWCOUAST,                                             &
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWVFLX_SNL, LWCOUAST,  &
      &            LWCOUNORMS, LLNORMIFS2WAM,LLNORMWAM2IFS,LLNORMWAMOUT, &
      &            LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
@@ -81,7 +80,7 @@
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS, NGRIB_HANDLE_IFS2
       USE YOWGRID  , ONLY : NPROMA_WAM
       USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,            &
-     &            LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
+     &            LCIWA1, LCIWA2, LCIWA3, LCISCAL, LCIRSCTWC,           &
      &            LICETH, ZALPFACB, ZALPFACX, ZALPWRS, ZIBRW_THRSH              
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN
@@ -107,9 +106,10 @@
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
-     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LNSESTART,    &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LLUNSETICE,   &
+     &            LNSESTART,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
-     &            LRELWIND ,                                            &
+     &            LRELWIND ,LADDGUST ,                                  &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD    ,TOOSHALLOW
       USE YOWTEST  , ONLY : IU06     ,ITEST    ,ITESTB
@@ -214,8 +214,9 @@
      &   LALTLRGR, HSCOEFCOR, HSCONSCOR,ALTSDTHRSH,ALTBGTHRSH,ALTGRTHRSH,HSALTCUT, &
      &   ISTREAM, NLOCGRB, IREFDATE,                                    &
      &   NCONSENSUS, NDWD, NMFR, NNCEP, NUKM,                           &
-     &   LGUST, LADEN, LRELWIND, LALTGRDOUT, LSUBGRID, LALTPAS,         &
+     &   LGUST, LADEN, LRELWIND, LADDGUST, LALTGRDOUT, LSUBGRID, LALTPAS,         &
      &   LLSOURCE,                                                      &
+     &   LLUNSETICE,                                                    &
      &   LNSESTART,                                                     &
      &   LLUNSTR, LPREPROC, LVECTOR, IVECTOR,                           &
      &   WAE_SOLVERTHR, JGS_DIFF_SOLVERTHR,                             &
@@ -230,7 +231,7 @@
      &   LLRSTGRIBPARAM,                                                &
      &   LWCOUNORMS, LLNORMIFS2WAM, LLNORMWAM2IFS, LLNORMWAMOUT,        &
      &   LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE,                         &
-     &   LICERUN, LCIWA1, LCIWA2, LCIWA3, LCISCAL,                      &
+     &   LICERUN, LCIWA1, LCIWA2, LCIWA3, LCISCAL, LCIRSCTWC,           &
      &   LICETH, ZALPFACB, ZALPFACX, ZALPWRS, ZIBRW_THRSH,              &
      &   LWVFLX_SNL,                                                    &
      &   LWNEMOCOU, NEMOFRCO,                                           &
@@ -440,6 +441,7 @@
 !     LADEN:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO AIR DENSITY
 !     LRELWIND: IF TRUE THEN RELATIVE WINDS ARE USED WITH RESPECT TO
 !               SURFACE CURRENTS.
+!     LADDGUST: ADD WIND GUST CORRECTION TO MEAN WIND
 !     LLWSWAVE: FLAG USE TO ACTIVATE USE OF WAVE PARAMETER WIND SPEED AS
 !               INPUT TO CONSTRUCT THE WIND FORCING - UNCOUPLED RUNS ONLY
 !     LLWDWAVE: FLAG USE TO ACTIVATE USE OF WAVE PARAMETER WIND DIRECTION
@@ -481,6 +483,7 @@
 !     LCIWA2  : FLAG CONTROLLING SEA ICE BOTTOM FRICTION ATTENUATION
 !     LCIWA3  : FLAG CONTROLLING SEA ICE VISCOUS FRICTION ATTENUATION
 !     LCISCAL : FLAG CONTROLLING LINEAR SCALING OF INPUT AND DISSIPATION SOURCE TERMS BY SEA ICE CONCENTRATION
+!     LCIRSCTWC: FLAG CONTROLLING RESCALING OF SEA ICE THICKNESS WITH SEA ICE COVER (i.e. volume)
 !     ZALPFACB: FACTOR TO SCALE ATTENUATION FOR ALL SEA ICE
 !     ZALPFACX: FACTOR TO SCALE ATTENUATION UP/DOWN FOR SOLID/BROKEN ICE
 !     ZALPWRS : PROPORTION OF ENERGY LOST FROM SLICE THAT GOES INTO WAVE RADIATIVE STRESS
@@ -494,6 +497,7 @@
 !               ARE PROVIDED WITH THE WIND FIELDS (FALSE BY DEFAULT). 
 !     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION 
 !                IS COMPUTED.
+!     LLUNSETICE : FLAG CONTROLLING WHETHER OR NOT UNSETICE IS CALLED
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
 !                 RESET TO NOISE LEVEL.
 !     LSMSSIG_WAM : .T. = send signals to ECFLOW (ECMWF supervisor)
@@ -751,13 +755,15 @@
 
       LICERUN = .TRUE.
 
-      LCIWA1 = .TRUE.
+      LCIWA1 = .FALSE.
 
       LCIWA2 = .FALSE.
 
-      LCIWA3 = .FALSE.    
+      LCIWA3 = .TRUE.    
 
       LCISCAL = .FALSE.      
+
+      LCIRSCTWC = .FALSE.
 
       ZALPFACB = 1.0_JWRB
       
@@ -775,9 +781,13 @@
 
       LLSOURCE = .TRUE.
 
+      LLUNSETICE = .TRUE.
+
       LNSESTART = .FALSE.
 
       LRELWIND = .TRUE.
+
+      LADDGUST = .FALSE.
 
       NDELW_LST = 0
 

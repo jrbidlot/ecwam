@@ -24,7 +24,7 @@ USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                CHNKMIN_U, TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,&
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
-     &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
+     &                ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_MIN,         &
      &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT,    &
      &                SSDSC5
 USE YOWSTAT  , ONLY : IPHYS
@@ -46,21 +46,16 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
       IF (IPHYS == 0) THEN
 !       JANSSSEN WIND INPUT PHYSICS:
         ZALP    = 0.008_JWRB
-        TAILFACTOR = 2.5_JWRB
+        TAILFACTOR = 2.4_JWRB
         ALPHAMIN = 0.0001_JWRB
         ALPHAPMAX = 0.03_JWRB
         TAUWSHELTER = 0.0_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        IF (NANG <= 24) THEN
-          ANG_GC_A = 0.40_JWRB
-          ANG_GC_B = 0.60_JWRB
-          ANG_GC_C = 3.0_JWRB
-        ELSE
-          ANG_GC_A = 0.35_JWRB
-          ANG_GC_B = 0.65_JWRB
-          ANG_GC_C = 3.0_JWRB
-        ENDIF
+        ANG_GC_MIN = 0.4_JWRB
+        ANG_GC_A = 0.33_JWRB
+        ANG_GC_B = 0.67_JWRB
+        ANG_GC_C = 3.10_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTORS IN THE GOWTH RATE RENORMALISATION 
         DELTA_THETA_RN = 0.75_JWRB
@@ -75,7 +70,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         IF(LLGCBZ0) THEN
           !!! not yet fully tested !!!
-          ALPHA   = 0.0055_JWRB
+          ALPHA   = 0.005_JWRB
           CHNKMIN_U = 28._JWRB
 
           IF(LLNORMAGAM) THEN
@@ -115,28 +110,23 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
       ELSE IF (IPHYS == 1) THEN
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
         ZALP    = 0.008_JWRB
-        TAILFACTOR = 2.5_JWRB
+        TAILFACTOR = 2.4_JWRB
         TAILFACTOR_PM = 3.0_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        IF (NANG <= 24) THEN
-          ANG_GC_A = 0.40_JWRB
-          ANG_GC_B = 0.60_JWRB
-          ANG_GC_C = 3.0_JWRB
-        ELSE
-          ANG_GC_A = 0.35_JWRB
-          ANG_GC_B = 0.65_JWRB
-          ANG_GC_C = 3.0_JWRB
-        ENDIF
+        ANG_GC_MIN = 0.4_JWRB
+        ANG_GC_A = 0.33_JWRB
+        ANG_GC_B = 0.67_JWRB
+        ANG_GC_C = 3.10_JWRB
 
 !       DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
         RN1_RN = 0.25_JWRB
 
         IF(LLGCBZ0) THEN
-          ALPHA   = 0.0055_JWRB
+          ALPHA   = 0.005_JWRB
           ALPHAMIN = 0.0001_JWRB
           CHNKMIN_U = 28._JWRB
-          ALPHAPMAX = 0.03_JWRB
+          ALPHAPMAX = 0.029_JWRB
 
           DELTA_THETA_RN = 0.75_JWRB
           DTHRN_A = 0.60_JWRB
@@ -190,9 +180,9 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         ENDIF
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
-        EGRCRV = 1065.0_JWRB
-        AGRCRV = 0.0655E+6_JWRB
-        BGRCRV =  10.906_JWRB
+        EGRCRV = 1132.0_JWRB
+        AGRCRV = 0.0537E+6_JWRB
+        BGRCRV =  13.599_JWRB
         AFCRV = 2.453E-4_JWRB
         BFCRV = -3.1236_JWRB
         ESH = 1711.0_JWRB

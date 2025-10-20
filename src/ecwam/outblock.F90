@@ -63,11 +63,12 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       USE YOWCOUT  , ONLY : NTRAIN   ,IPFGTBL  ,LSECONDORDER,           &
      &            NIPRMOUT, ITOBOUT  ,NTEWH    ,IPRMINFO
       USE YOWCOUP  , ONLY : LWNEMOCOUSTRN
-      USE YOWFRED  , ONLY : FR, TH , DFIM, DELTH, COSTH, SINTH, XKMSS_CUTOFF
+      USE YOWFRED  , ONLY : FR, TH , DFIM, DELTH, COSTH, SINTH, XKMSS_CUTOFF, &
+     &                      FR5, FRM5
       USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : ZMISS    ,DEG      ,EPSUS    ,EPSU10, G, ZPI
-      USE YOWSTAT  , ONLY : IREFRA
+      USE YOWSTAT  , ONLY : IREFRA   ,LLSOURCE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -78,7 +79,9 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 #include "cal_second_order_spec.intfb.h"
 #include "cimsstrn.intfb.h"
 #include "ctcor.intfb.h"
+#include "dominant_period.intfb.h"
 #include "femean.intfb.h"
+#include "ibrmemout.intfb.h"
 #include "intpol.intfb.h"
 #include "kurtosis.intfb.h"
 #include "meansqs.intfb.h"
@@ -86,15 +89,14 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 #include "mwp2.intfb.h"
 #include "outbeta.intfb.h"
 #include "outsetwmask.intfb.h"
-#include "dominant_period.intfb.h"
 #include "se10mean.intfb.h"
 #include "sebtmean.intfb.h"
 #include "sepwisw.intfb.h"
 #include "sthq.intfb.h"
 #include "wdirspread.intfb.h"
 #include "weflux.intfb.h"
+#include "whitecap_fraction.intfb.h"
 #include "w_maxh.intfb.h"
-#include "ibrmemout.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), DIMENSION(KIJL), INTENT(IN) :: MIJ
@@ -122,14 +124,18 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       INTEGER(KIND=JWIM) :: IJ, K, M, ITG, ITR, IH
       INTEGER(KIND=JWIM) :: IRA
       
+      REAL(KIND=JWRB), PARAMETER :: PSWHICE_THRS=0.01_JWRB  ! Significant Wave height minimum threshold used to impose default value in sea ice covered areas
+      REAL(KIND=JWRB), PARAMETER :: PSWHICE=0.01_JWRB       ! Significant Wave height default value in sea ice covered areas
+      REAL(KIND=JWRB), PARAMETER :: PMWPICE=12.5_JWRB       ! Mean wave period default value in sea ice
       REAL(KIND=JWRB) :: SIG
       REAL(KIND=JWRB) :: GOZPI 
       REAL(KIND=JWRB) :: XMODEL_CUTOFF
       REAL(KIND=JWRB) :: TEWHMIN, TEWHMAX
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: EM, FM, DP
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: SWH, EM, FM, DP
       REAL(KIND=JWRB), DIMENSION(KIJL) :: C3, C4, BF, QP, HMAX, TMAX
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ZWCF
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ETA_M, R, XNSLC, SIG_TH, EPS, XNU
       REAL(KIND=JWRB), DIMENSION(KIJL) :: FLD1, FLD2
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ESWELL ,FSWELL ,THSWELL, P1SWELL, P2SWELL, SPRDSWELL
@@ -164,6 +170,13 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       SIG = 1._JWRB
       GOZPI=G/ZPI
 
+
+      DO K=1,NANG
+        DO IJ=KIJS,KIJL
+          COSWDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
+        ENDDO
+      ENDDO
+
       IF (IREFRA == 2 .OR. IREFRA == 3) THEN
         CALL INTPOL (KIJS, KIJL, FL1, FL2ND, WAVNUM, UCUR, VCUR, IRA)
       ELSE
@@ -172,7 +185,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       IF (LSECONDORDER) CALL CAL_SECOND_ORDER_SPEC(KIJS, KIJL, FL2ND, WAVNUM, DEPTH, SIG)
 
       ! Adapting the noise level structure to be more consistent in sea ice conditions
-      IF (LICERUN .AND. .NOT. LMASKICE) THEN
+      IF (LICERUN .AND. .NOT. LMASKICE .AND. LLSOURCE) THEN
         DO IJ=KIJS,KIJL
           ZTHRS(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
         ENDDO
@@ -184,21 +197,16 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
           DO K=1,NANG
             DO IJ=KIJS,KIJL
-              IF (FL2ND(IJ,K,M) <= ZTHRS(IJ)) THEN
+              IF (FL1(IJ,K,M) <= ZTHRS(IJ) .AND. CICOVER(IJ) > 0.0_JWRB ) THEN
                 FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL2ND(IJ,K,M), ZTHRS(IJ)*ZRDUC(IJ)**2)
               ENDIF
             ENDDO
           ENDDO
         ENDDO
+
       ENDIF
 
 !     COMPUTE MEAN PARAMETERS
-
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          COSWDIF(IJ,K) = COS(TH(K)-WDWAVE(IJ))
-        ENDDO
-      ENDDO
 
       CALL FEMEAN (KIJS, KIJL, FL2ND, EM, FM)
 
@@ -221,7 +229,16 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
       IF (IPFGTBL(1) /= 0) THEN
 !       SIGNIFICANT WAVE HEIGHT CONVERSION
-        BOUT(KIJS:KIJL,ITOBOUT(1))=4._JWRB*SQRT(MAX(EM(KIJS:KIJL),0._JWRB))
+        SWH(KIJS:KIJL)=4._JWRB*SQRT(MAX(EM(KIJS:KIJL),0._JWRB))
+        IF (LICERUN .AND. .NOT. LMASKICE .AND. LLSOURCE) THEN
+!         IMPOSE A FIXED VALUE IN SEA ICE BECAUSE FOR VERY LOW SWH THE VALUES ARE MADE UP
+          DO IJ=KIJS,KIJL
+            IF (CICOVER(IJ) > 0.0_JWRB .AND. SWH(IJ) <= PSWHICE_THRS) THEN
+              SWH(IJ)=PSWHICE
+            ENDIF
+          ENDDO
+        ENDIF
+        BOUT(KIJS:KIJL,ITOBOUT(1))=SWH(KIJS:KIJL)
       ENDIF
 
       IF (IPFGTBL(2) /= 0) THEN
@@ -240,6 +257,14 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
             BOUT(IJ,ITOBOUT(3))=ZMISS
           ENDIF
         ENDDO
+        IF (LICERUN .AND. .NOT. LMASKICE .AND. LLSOURCE .AND. IPFGTBL(1) /= 0) THEN
+!         IMPOSE A FIXED VALUE IN SEA ICE BECAUSE FOR VERY LOW SWH THE VALUES ARE MADE UP
+          DO IJ=KIJS,KIJL
+            IF (CICOVER(IJ) > 0.0_JWRB .AND. SWH(IJ) <= PSWHICE_THRS) THEN
+              BOUT(IJ,ITOBOUT(3))=PMWPICE
+            ENDIF
+          ENDDO
+        ENDIF
       ENDIF
 
       IF (IPFGTBL(4) /= 0) THEN
@@ -282,7 +307,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
 !$loki remove
       IF (IPFGTBL(9) /= 0) THEN
-        CALL MEANSQS (XKMSS_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, COSWDIF, BOUT(:,ITOBOUT(9)))
+        CALL MEANSQS (XKMSS_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, WSWAVE, COSWDIF, BOUT(:,ITOBOUT(9)))
       ENDIF
 !$loki end remove
 
@@ -576,31 +601,40 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       IF (IPFGTBL(66 + 3*NTRAIN + NTEWH) /= 0) THEN
         BOUT(KIJS:KIJL,ITOBOUT(66 + 3*NTRAIN + NTEWH))=HMAX_ST(KIJS:KIJL)
       ENDIF
+
+
+!     WHITECAP FRACTION
+      IF (IPFGTBL(67 + 3*NTRAIN + NTEWH) /= 0) THEN
+
+        CALL WHITECAP_FRACTION (KIJS, KIJL, FL1, XLLWS, CINV, DEPTH, WSWAVE, CICOVER, UFRIC, COSWDIF, PHIOCD, ZWCF)
+
+        BOUT(KIJS:KIJL,ITOBOUT(67 + 3*NTRAIN + NTEWH))=ZWCF(KIJS:KIJL)
+      ENDIF
 !!
 
 
 !     COMPUTE OUTPUT EXTRA FIELDS
 !     add necessary code to compute the extra output fields
 !!!for testing
-      IF (IPFGTBL(67 + 3*NTRAIN + NTEWH) /= 0) THEN
-        CALL CTCOR (KIJS, KIJL, FL1, BOUT(:,ITOBOUT(67 + 3*NTRAIN + NTEWH)))
-      ENDIF
-
       IF (IPFGTBL(68 + 3*NTRAIN + NTEWH) /= 0) THEN
-        XMODEL_CUTOFF=(ZPI*FR(NFRE))**2/G
-        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, COSWDIF, BOUT(:,ITOBOUT(68 + 3*NTRAIN + NTEWH)))
+        CALL CTCOR (KIJS, KIJL, FL1, BOUT(:,ITOBOUT(68 + 3*NTRAIN + NTEWH)))
       ENDIF
 
       IF (IPFGTBL(69 + 3*NTRAIN + NTEWH) /= 0) THEN
-        CALL IBRMEMOUT (KIJS, KIJL, IBRMEM, CICOVER, BOUT(:,ITOBOUT(69 + 3*NTRAIN + NTEWH)))
+        XMODEL_CUTOFF=(ZPI*FR(NFRE))**2/G
+        CALL MEANSQS (XMODEL_CUTOFF, KIJS, KIJL, FL1, WAVNUM, UFRIC, WSWAVE, COSWDIF, BOUT(:,ITOBOUT(69 + 3*NTRAIN + NTEWH)))
       ENDIF
 
       IF (IPFGTBL(70 + 3*NTRAIN + NTEWH) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(70 + 3*NTRAIN + NTEWH))=TAUICX(KIJS:KIJL)
+        CALL IBRMEMOUT (KIJS, KIJL, IBRMEM, CICOVER, BOUT(:,ITOBOUT(70 + 3*NTRAIN + NTEWH)))
       ENDIF
 
       IF (IPFGTBL(71 + 3*NTRAIN + NTEWH) /= 0) THEN
-        BOUT(KIJS:KIJL,ITOBOUT(71 + 3*NTRAIN + NTEWH))=TAUICY(KIJS:KIJL)
+        BOUT(KIJS:KIJL,ITOBOUT(71 + 3*NTRAIN + NTEWH))=TAUICX(KIJS:KIJL)
+      ENDIF
+
+      IF (IPFGTBL(72 + 3*NTRAIN + NTEWH) /= 0) THEN
+        BOUT(KIJS:KIJL,ITOBOUT(72 + 3*NTRAIN + NTEWH))=TAUICY(KIJS:KIJL)
       ENDIF
 !$loki end remove
 

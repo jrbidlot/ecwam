@@ -7,9 +7,9 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SDICE  (KIJS, KIJL, FL1, FLD, SL, SLICE,     &
+      SUBROUTINE SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE,      &
      &                  WAVNUM, CGROUP,                       &
-     &                  CICV,CITH, ALPFAC)
+     &                  CICV, CITH, ALPFAC)
 ! ----------------------------------------------------------------------
 
 !**** *SDICE* - CALLING OF DIFFERENT SEA ICE ATTENUATION TERMS
@@ -24,16 +24,15 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDICE (KIJS, KIJL, FL1, FLD,SL,*
-!                       WAVNUM, CGROUP,
-!                       CICV,CITH, ALPFAC)*
+!       *CALL* *SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE,*
+!                      WAVNUM, CGROUP,
+!                      CICV, CITH, ALPFAC)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
 !          *FLD*    - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *SL*     - TOTAL SOURCE FUNCTION ARRAY
-!          *SLICE*  - TOTAL SOURCE FUNCTION ARRAY, ICE
-!          *INDEP*  - DEPTH INDEX
+!          *SLICE*  - ICE TOTAL SOURCE FUNCTION ARRAY
 !          *WAVNUM* - WAVE NUMBER
 !          *CGROUP* - GROUP SPEED
 !          *CICV*   - SEA ICE COVER
@@ -60,9 +59,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LWNEMOCOUWRS
+      USE YOWICE   , ONLY : LCIWA1   ,LCIWA2    ,LCIWA3    ,LCIWA_ANY
       USE YOWPARAM , ONLY : NANG    ,NFRE
-
-      USE YOWICE   , ONLY : LCIWA1   ,LCIWA2    ,LCIWA3
 
       USE YOMHOOK  , ONLY : LHOOK   ,DR_HOOK, JPHOOK
 
@@ -78,14 +77,13 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) ::        SLICE
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: SLICE
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICV
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CITH
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: ALPFAC
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
 
 ! ----------------------------------------------------------------------
 
@@ -100,13 +98,16 @@
 !     Attenuation of waves in ice (type 2): bottom friction
       IF (LCIWA2) THEN
         !$loki inline
-        CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV      ) 
+        CALL SDICE2 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV) 
       ENDIF
 
 !     Attenuation of waves in ice (type 3): viscous friction
       IF (LCIWA3) THEN
         !$loki inline
         CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV, CITH, ALPFAC)
+
+      IF (LWNEMOCOUWRS .AND. (.NOT. LCIWA_ANY))  THEN
+        SLICE(:,:,:) = 0.0_JWRB
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('SDICE',1,ZHOOK_HANDLE)
