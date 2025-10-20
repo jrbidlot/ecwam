@@ -169,15 +169,15 @@
                            & 'TOTAL SWELL MEAN PERIOD (-1)' )
 
 !     PARAMETER 017
-      IRALTHS = DEFINE_PARAMETER( 17, '017', 140246, 0, 0, 0, .True., .True., &
+      IRALTHS = DEFINE_PARAMETER( 17, 'awh', 140246, 0, 0, 0, .True., .True., &
                                 & 'ALTIMETER WAVE HEIGHT' )
 
 !     PARAMETER 018
-      IRALTHSC = DEFINE_PARAMETER( 18, '018', 140247, 0, 0, 0, .True., .True., &
+      IRALTHSC = DEFINE_PARAMETER( 18, 'acwh', 140247, 0, 0, 0, .True., .True., &
                                  & 'CORRECTED ALT WAVE HEIGHT' )
 
 !     PARAMETER 019
-      IRALTRC = DEFINE_PARAMETER( 19, '019', 140248, 0, 0, 0, .True., .True., &
+      IRALTRC = DEFINE_PARAMETER( 19, 'arrc', 140248, 0, 0, 0, .True., .True., &
                                 & 'ALTIMETER RANGE CORRECTION' )
 
 !     PARAMETER 020
@@ -257,78 +257,78 @@
                            & 'V-COMP SURFACE CURRENT' )
 
 !     PARAMETER 039
-      IRPHIOC = DEFINE_PARAMETER( 39, '039', 140212, 0, 0, 0, .False., .True., &
+      IRPHIOC = DEFINE_PARAMETER( 39, 'phioc', 140212, 0, 0, 0, .False., .True., &
                                 & 'NORMALISED ENERGY FLUX TO OCEAN' )
 
 !     PARAMETER 040
-      IRPHIAW = DEFINE_PARAMETER( 40, '040', 140211, 0, 0, 0, .False., .True., &
+      IRPHIAW = DEFINE_PARAMETER( 40, 'phiaw', 140211, 0, 0, 0, .False., .True., &
                                 & 'NORMALISED ENERGY FLUX TO WAVES' )
 
 !     PARAMETER 041
-      IRTAUOC = DEFINE_PARAMETER( 41, '041', 140214, 0, 0, 0, .False., .True., &
+      IRTAUOC = DEFINE_PARAMETER( 41, 'tauoc', 140214, 0, 0, 0, .False., .True., &
                                 & 'NORMALISED MOMENTUM FLUX TO OCEAN' )
 
 !     PARAMETER 042
       ITP=0 ! total number of partitions parameters
-      IFRSTPARTI = DEFINE_PARAMETER( 42, '042', 140121, 0, 0, 0, .True., .True., &
+      IFRSTPARTI = DEFINE_PARAMETER( 42, 'swh1', 140121, 0, 0, 0, .True., .True., &
                                    & 'SWELL PARTITION 1 WAVE HEIGHT' )
       ITP=ITP+1
 
 !     PARAMETER 043
-      IR = DEFINE_PARAMETER( 43, '043', 140122, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 43, 'mwd1', 140122, 0, 0, 0, .True., .True., &
                            & 'SWELL PARTITION 1 DIRECTION' )
       ITP=ITP+1
 
 !     PARAMETER 044
-      IR = DEFINE_PARAMETER( 44, '044', 140123, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 44, 'mwp1', 140123, 0, 0, 0, .True., .True., &
                            & 'SWELL PARTITION 1 MEAN PERIOD' )
       ITP=ITP+1
 
 !     PARAMETER 045
-      IR = DEFINE_PARAMETER( 45, '045', 140124, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 45, 'swh2', 140124, 0, 0, 0, .True., .True., &
                            & 'SWELL PARTITION 2 WAVE HEIGHT' )
       ITP=ITP+1
 
 !     PARAMETER 046
-      IR = DEFINE_PARAMETER( 46, '046', 140125, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 46, 'mwd2', 140125, 0, 0, 0, .True., .True., &
                            & 'SWELL PARTITION 2 DIRECTION' )
       ITP=ITP+1
 
 
 !     PARAMETER 047
-      IR = DEFINE_PARAMETER( 47, '047', 140126, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 47, 'mwp2', 140126, 0, 0, 0, .True., .True., &
                            & 'SWELL PARTITION 2 MEAN PERIOD' )
       ITP=ITP+1
 
 !     PARAMETER 048
-      IR = DEFINE_PARAMETER( 48, '048', 140127, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 48, 'swh3', 140127, 0, 0, 0, .True., .True., &
                            & 'SWELL PARTITION 3 WAVE HEIGHT' )
       ITP=ITP+1
 
 !     PARAMETER 049
-      IR = DEFINE_PARAMETER( 49, '049', 140128, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 49, 'mwd3', 140128, 0, 0, 0, .True., .True., &
                            & 'SWELL PARTITION 3 DIRECTION' )
       ITP=ITP+1
 
 !     PARAMETER 050
-      IR = DEFINE_PARAMETER( 50, '050', 140129, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 50, 'mwp3', 140129, 0, 0, 0, .True., .True., &
                            & 'SWELL PARTITION 3 MEAN PERIOD' )
       ITP=ITP+1
 
 !     PARAMETER 051
-      IR = DEFINE_PARAMETER( 51, '051', 140210, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 51, 'mswsi', 140210, 0, 0, 0, .False., .True., &
                            & 'MEAN SQUARE STRAIN IN ICE' )
 
 !     PARAMETER 052
-      IR = DEFINE_PARAMETER( 52, '052', 140120, 0, 10, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 52, 'sh10', 140120, 0, 10, 0, .True., .True., &
                            & 'WAVE HEIGHT WITH PERIOD > 10s' )
 
 !     PARAMETER 053
-      IR = DEFINE_PARAMETER( 53, '053', 140209, 0, 0, 0, .False., .False., &
+      IR = DEFINE_PARAMETER( 53, 'rhao', 140209, 0, 0, 0, .False., .False., &
                            & 'SURFACE AIR DENSITY' )
 
 !     PARAMETER 054
-      IR = DEFINE_PARAMETER( 54, '054', 140208, 0, 0, 0, .False., .False., &
+      IR = DEFINE_PARAMETER( 54, 'wstar', 140208, 0, 0, 0, .False., .False., &
                            & 'CONVECTIVE VELOCITY SCALE' )
 
 !     PARAMETER 055
@@ -336,11 +336,11 @@
                            & 'SEA ICE COVER' )
 
 !     PARAMETER 056
-      IR = DEFINE_PARAMETER( 56, '056', 174098, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 56, 'sithick', 174098, 0, 0, 0, .False., .True., &
                            & 'SEA ICE THICKNESS' )
 
 !     PARAMETER 057
-      IR = DEFINE_PARAMETER( 57, '057', 140207, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 57, 'wss', 140207, 0, 0, 0, .True., .True., &
                            & 'SPECTRAL SKWENESS' )
 
 !     PARAMETER 058
@@ -361,73 +361,73 @@
 
       IR=IR+1
 !     PARAMETER 062
-      IR = DEFINE_PARAMETER( 62, '062', 140112, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 62, 'wefxm', 140112, 0, 0, 0, .True., .True., &
                            & 'WAVE ENERGY FLUX MAGNITUDE' )
 
 !     PARAMETER 063
-      IR = DEFINE_PARAMETER( 63, '063', 140113, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 63, 'wefxd', 140113, 0, 0, 0, .True., .True., &
                            & 'WAVE ENERGY FLUX DIRECTION' )
 
 !     PARAMETER 064
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 64, '064', 140114, 0, 10, 12, .True., .True., &
+      IR = DEFINE_PARAMETER( 64, 'h1012', 140114, 0, 10, 12, .True., .True., &
                            & 'SIG. WAVE HEIGHT 10<=T<=12' )
 
 !     PARAMETER 065
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 65, '065', 140115, 0, 12, 14, .True., .True., &
+      IR = DEFINE_PARAMETER( 65, 'h1214', 140115, 0, 12, 14, .True., .True., &
                            & 'SIG. WAVE HEIGHT 12<=T<=14' )
 
 !     PARAMETER 066
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 66, '066', 140116, 0, 14, 17, .True., .True., &
+      IR = DEFINE_PARAMETER( 66, 'h1417', 140116, 0, 14, 17, .True., .True., &
                            & 'SIG. WAVE HEIGHT 14<=T<=17' )
 
 !     PARAMETER 067
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 67, '067', 140117, 0, 17, 21, .True., .True., &
+      IR = DEFINE_PARAMETER( 67, 'h1721', 140117, 0, 17, 21, .True., .True., &
                            & 'SIG. WAVE HEIGHT 17<=T<=21' )
 
 !     PARAMETER 068
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 68, '068', 140118, 0, 21, 25, .True., .True., &
+      IR = DEFINE_PARAMETER( 68, 'h2125', 140118, 0, 21, 25, .True., .True., &
                            & 'SIG. WAVE HEIGHT 21<=T<=25' )
 
 !     PARAMETER 069
       NTEWH = NTEWH + 1
-      IR = DEFINE_PARAMETER( 69, '069', 140119, 0, 25, 30, .True., .True., &
+      IR = DEFINE_PARAMETER( 69, 'h2530', 140119, 0, 25, 30, .True., .True., &
                            & 'SIG. WAVE HEIGHT 25<=T<=30' )
 
 !     PARAMETER 070
-      IR = DEFINE_PARAMETER( 70, '070', 140098, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 70, 'weta', 140098, 0, 0, 0, .True., .True., &
                            & 'WAVE INDUCED SEA LEVEL CORRECTION' )
 
 !     PARAMETER 071
-      IR = DEFINE_PARAMETER( 71, '071', 140099, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 71, 'wraf', 140099, 0, 0, 0, .True., .True., &
                            & 'SPECTRAL WIDTH INDEX' )
 
 !     PARAMETER 072
-      IR = DEFINE_PARAMETER( 72, '072', 140100, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 72, 'wnslc', 140100, 0, 0, 0, .True., .True., &
                            & 'NUMBER OF FREAK WAVES EVENT' )
 
 !     PARAMETER 073
-      IR = DEFINE_PARAMETER( 73, '073', 140101, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 73, 'utaua', 140101, 0, 0, 0, .False., .True., &
                            & 'U-COMP ATMOSPHERIC STRESS' )
 
 !     PARAMETER 074
-      IR = DEFINE_PARAMETER( 74, '074', 140102, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 74, 'vtaua', 140102, 0, 0, 0, .False., .True., &
                            & 'V-COMP ATMOSPHERIC STRESS' )
 
 !     PARAMETER 075
-      IR = DEFINE_PARAMETER( 75, '075', 140103, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 75, 'utauo', 140103, 0, 0, 0, .False., .True., &
                            & 'U-COMP STRESS INTO OCEANS' )
 
 !     PARAMETER 076
-      IR = DEFINE_PARAMETER( 76, '076', 140104, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 76, 'vtauo', 140104, 0, 0, 0, .False., .True., &
                            & 'V-COMP STRESS INTO OCEANS' )
 
 !     PARAMETER 077
-      IR = DEFINE_PARAMETER( 77, '077', 140105, 0, 0, 0, .False., .True., &
+      IR = DEFINE_PARAMETER( 77, 'wphio', 140105, 0, 0, 0, .False., .True., &
                            & 'TURB ENERGY FLUX INTO OCEANS' )
 
 !     PARAMETER 078
