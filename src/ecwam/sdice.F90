@@ -105,6 +105,7 @@
       IF (LCIWA3) THEN
         !$loki inline
         CALL SDICE3 (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICV, CITH, ALPFAC)
+      ENDIF
 
       IF (LWNEMOCOUWRS .AND. (.NOT. LCIWA_ANY))  THEN
         SLICE(:,:,:) = 0.0_JWRB
