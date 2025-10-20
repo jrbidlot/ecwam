@@ -190,6 +190,7 @@ list( APPEND ecwam_srcs
   peak.F90
   peak_ang.F90
   peak_freq.F90
+  peak_waveage.F90
   peakfri.F90
   peak_waveage.F90
   preset_wgrib_template.F90
@@ -314,6 +315,7 @@ list( APPEND ecwam_srcs
   wvalloc.F90
   wvchkmid.F90
   wvdealloc.F90
+  wvfld2ifs.F90
   wvfricvelo.F90
   wvopenbathy.F90
   wvopensubbathy.F90

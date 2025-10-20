@@ -16,6 +16,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                  NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
  &                  NEMOTAUY, NEMOTAUICX, NEMOTAUICY, &
  &                  NEMOWSWAVE, NEMOPHIF, &
+ &                  WCF, TLEMEAN, &
  &                  WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS, &
  &                  TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
  &                  TAUICX, TAUICY, &
@@ -82,8 +83,8 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,   &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
-      USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUIBR
+      USE YOWCOUP  , ONLY : LWFLUX   , LWSPRAY, LWWCF, LWVFLX_SNL ,      &
+                            LWNEMOCOU, LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE  ,LCISCAL,      &
@@ -112,6 +113,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
 #include "stokestrn.intfb.h"
+#include "whitecap_fraction.intfb.h"
 #include "wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
@@ -131,6 +133,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, USTRA, VSTRA
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: WCF, TLEMEAN
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUICX, TAUICY
@@ -185,7 +188,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       DELTM = 1.0_JWRB/DELT
       DELT5 = XIMP*DELT
 
-      LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
+      LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU.OR.LWSPRAY.OR.LWWCF
 
 
       DO IJ=KIJS,KIJL
@@ -404,7 +407,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-     !$loki inline
+      !$loki inline
       CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS, EMEANWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
@@ -417,16 +420,20 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
 !     ------------------------------------------------------------------
-      IF (LWFLUX) THEN
+      IF (LWFLUX .OR. LWSPRAY) THEN
         DO IJ=KIJS,KIJL
           IF (EMEANWS(IJ) < WSEMEAN_MIN) THEN
-            WSEMEAN(IJ) = WSEMEAN_MIN 
+            WSEMEAN(IJ) = MAX(WSEMEAN_MIN*(1.0_JWRB-CICOVER(IJ)),FLMIN)
             WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
           ELSE
             WSEMEAN(IJ) = EMEANWS(IJ)
-            WSFMEAN(IJ) = FMEANWS(IJ) 
+            WSFMEAN(IJ) = FMEANWS(IJ)
           ENDIF
+!         CHECK THAT EMEAN(IJ) >= WSEMEAN(IJ)
+          TLEMEAN(IJ) = MAX(EMEAN(IJ),WSEMEAN(IJ))
         ENDDO
+      ELSE
+        TLEMEAN(:) = EMEAN(:)
       ENDIF
 
 
@@ -453,8 +460,12 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
      &                 TAUOC, TAUICX, TAUICY,            &
      &                 PHIOCD, PHIEPS, PHIAW,            &
      &                 .TRUE.)
-      ENDIF
+        IF (LWWCF) THEN
+          !$loki inline
+          CALL WHITECAP_FRACTION (KIJS, KIJL, FL1, XLLWS, CINV, DEPTH, WSWAVE, CICOVER, UFRIC, COSWDIF, PHIOCD, WCF)
+        ENDIF
 
+      ENDIF
 
 !*    2.6 SET FL1 ON ICE POINTS TO ZERO
 !         -----------------------------

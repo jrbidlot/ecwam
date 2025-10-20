@@ -79,6 +79,8 @@
           INTFLDS%ALTWH(:, ICHNK)   = ZMISS
           INTFLDS%CALTWH(:, ICHNK)  = ZMISS
           INTFLDS%RALTCOR(:, ICHNK) = ZMISS
+          INTFLDS%WCF(:, ICHNK)  = 0.0_JWRB
+          INTFLDS%TLEMEAN(:, ICHNK)  = 0.0_JWRB
         ENDDO
       ENDIF
 
