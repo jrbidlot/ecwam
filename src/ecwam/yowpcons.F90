@@ -16,7 +16,8 @@
 !*    *PARAMETER* OF GLOBAL CONSTANTS.
 !     THE NON PARAMETRIC CONSTANTS WILL BE RESET BY CALLING INIWCST !!!!
 
-      REAL(KIND=JWRB) :: G = 9.806_JWRB
+      REAL(KIND=JWRB), PARAMETER :: G_EARTH = 9.806_JWRB   !! should not be changed as it sets certain constants
+      REAL(KIND=JWRB) :: G = G_EARTH  !! can be changed for a different environment
       REAL(KIND=JWRB) :: GM1 = 0.101978381_JWRB 
       REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB 
       REAL(KIND=JWRB) :: PI = OLDPI 
