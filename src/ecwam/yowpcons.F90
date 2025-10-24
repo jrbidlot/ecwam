@@ -19,9 +19,8 @@
       REAL(KIND=JWRB), PARAMETER :: G_EARTH = 9.806_JWRB   !! should not be changed as it sets certain constants
       REAL(KIND=JWRB) :: G = G_EARTH  !! can be changed for a different environment
       REAL(KIND=JWRB) :: GM1 = 0.101978381_JWRB 
-      REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB 
-      REAL(KIND=JWRB) :: PI = OLDPI 
       REAL(KIND=JWRB), PARAMETER :: CIRC = 40007993.95_JWRB
+      REAL(KIND=JWRB) :: PI = 3.1415927_JWRB 
       REAL(KIND=JWRB) :: ZPI = 6.2831854_JWRB
       REAL(KIND=JWRB) :: THREEZPI = 18.849555922_JWRB
       REAL(KIND=JWRB) :: ZPI4GM1 = 158.93794172_JWRB
@@ -71,9 +70,9 @@
 
 !*    VARIABLE.   TYPE.     PURPOSE.
 !     ---------   -------   --------
+!     *G_EARTH*   REAL      ACCELLERATION OF GRAVITY ON EARTH.
 !     *G*         REAL      ACCELLERATION OF GRAVITY.
 !     *GM1*       REAL      1/G.
-!     *OLDPI*     REAL      OLD VALUE USED FOR PI (PRIOR TO CY21R3). 
 !     *PI*        REAL      PI (See SUB. INIWCST).
 !     *CIRC*      REAL      EARTH CIRCUMFERENCE (METRES).
 !     *RAD*       REAL      PI / 180.
