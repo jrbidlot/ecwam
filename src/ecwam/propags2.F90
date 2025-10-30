@@ -130,62 +130,36 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
           DO M = ND3S, ND3E
             DO K = 1, NANG
 
-              !$loki loop-fusion
               DO IJ = KIJS, KIJL
-                F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
-              ENDDO
+                F3(IJ,K,M) =                                  &
+     &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ ,K  ,M) &
 
-              !$loki loop-unroll
-              DO IC=1,2
-!                IF (LLWLONN(K,M,IC)) THEN
-                  !$loki loop-fusion
-                  DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
-                  ENDDO
-!                ENDIF
-              ENDDO
+     &         + WLONN(IJ,K,M,1)   * F1(KLON(IJ,1)  ,K  ,M) &
+     &         + WLONN(IJ,K,M,2)   * F1(KLON(IJ,2)  ,K  ,M) &
 
-              !$loki loop-unroll
-              DO ICL=1,2
-                !$loki loop-unroll
-                DO IC=1,2
-!                  IF (LLWLATN(K,M,IC,ICL)) THEN
-                    !$loki loop-fusion
-                    DO IJ = KIJS, KIJL
-                      F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
-                    ENDDO
-!                  ENDIF
-                ENDDO
+     &         + WLATN(IJ,K,M,1,1) * F1(KLAT(IJ,1,1),K  ,M) &
+     &         + WLATN(IJ,K,M,1,2) * F1(KLAT(IJ,1,2),K  ,M) &
+     &         + WLATN(IJ,K,M,2,1) * F1(KLAT(IJ,2,1),K  ,M) &
+     &         + WLATN(IJ,K,M,2,2) * F1(KLAT(IJ,2,2),K  ,M) &
 
-                !$loki loop-unroll
-                DO ICR=1,4
-!                  IF (LLWCORN(K,M,ICR,ICL)) THEN
-                    !$loki loop-fusion
-                    DO IJ = KIJS, KIJL
-                      F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
-                    ENDDO
-!                  ENDIF
-                ENDDO
-              ENDDO
+     &         + WCORN(IJ,K,M,1,1) * F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
+     &         + WCORN(IJ,K,M,2,1) * F1(KCOR(IJ,KCR(K,2),1),K  ,M) &
+     &         + WCORN(IJ,K,M,3,1) * F1(KCOR(IJ,KCR(K,3),1),K  ,M) &
+     &         + WCORN(IJ,K,M,4,1) * F1(KCOR(IJ,KCR(K,4),1),K  ,M) &
+     &         + WCORN(IJ,K,M,1,2) * F1(KCOR(IJ,KCR(K,1),2),K  ,M) &
+     &         + WCORN(IJ,K,M,2,2) * F1(KCOR(IJ,KCR(K,2),2),K  ,M) &
+     &         + WCORN(IJ,K,M,3,2) * F1(KCOR(IJ,KCR(K,3),2),K  ,M) &
+     &         + WCORN(IJ,K,M,4,2) * F1(KCOR(IJ,KCR(K,4),2),K  ,M) &
 
-              !$loki loop-unroll
-              DO IC=-1,1,2
 
-!                IF (LLWKPMN(K,M,IC)) THEN
-                  !$loki loop-fusion
-                  DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
-                  ENDDO
-!                ENDIF
+     &         + WKPMN(IJ,K,M,-1)  * F1(IJ,KPM(K,-1),M)            &
+     &         + WKPMN(IJ,K,M, 1)  * F1(IJ,KPM(K, 1),M)            &
 
-!                IF (LLWMPMN(K,M,IC)) THEN
-                  !$loki loop-fusion
-                  DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M) + WMPMN(IJ,K,M,IC)* F1(IJ,K,MPM(M,IC))
-                  ENDDO
-!                ENDIF
+     &         + WMPMN(IJ,K,M,-1)  * F1(IJ,K, MPM(M,-1))           &
+     &         + WMPMN(IJ,K,M, 1)  * F1(IJ,K, MPM(M, 1))
 
               ENDDO
+
 
             ENDDO
           ENDDO
