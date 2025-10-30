@@ -137,53 +137,53 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
               !$loki loop-unroll
               DO IC=1,2
-                IF (LLWLONN(K,M,IC)) THEN
+!                IF (LLWLONN(K,M,IC)) THEN
                   !$loki loop-fusion
                   DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
                   ENDDO
-                ENDIF
+!                ENDIF
               ENDDO
 
               !$loki loop-unroll
               DO ICL=1,2
                 !$loki loop-unroll
                 DO IC=1,2
-                  IF (LLWLATN(K,M,IC,ICL)) THEN
+!                  IF (LLWLATN(K,M,IC,ICL)) THEN
                     !$loki loop-fusion
                     DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
                     ENDDO
-                  ENDIF
+!                  ENDIF
                 ENDDO
 
                 !$loki loop-unroll
                 DO ICR=1,4
-                  IF (LLWCORN(K,M,ICR,ICL)) THEN
+!                  IF (LLWCORN(K,M,ICR,ICL)) THEN
                     !$loki loop-fusion
                     DO IJ = KIJS, KIJL
                       F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
                     ENDDO
-                  ENDIF
+!                  ENDIF
                 ENDDO
               ENDDO
 
               !$loki loop-unroll
               DO IC=-1,1,2
 
-                IF (LLWKPMN(K,M,IC)) THEN
+!                IF (LLWKPMN(K,M,IC)) THEN
                   !$loki loop-fusion
                   DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
                   ENDDO
-                ENDIF
+!                ENDIF
 
-                IF (LLWMPMN(K,M,IC)) THEN
+!                IF (LLWMPMN(K,M,IC)) THEN
                   !$loki loop-fusion
                   DO IJ = KIJS, KIJL
                     F3(IJ,K,M) = F3(IJ,K,M) + WMPMN(IJ,K,M,IC)* F1(IJ,K,MPM(M,IC))
                   ENDDO
-                ENDIF
+!                ENDIF
 
               ENDDO
 
