@@ -51,6 +51,7 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S,
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCURR  , ONLY : MRVLCUR
       USE YOWFRED  , ONLY : COSTH    ,SINTH
       USE YOWSTAT  , ONLY : ICASE    ,IREFRA
       USE YOWTEST  , ONLY : IU06
@@ -124,42 +125,98 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
 
+!!!!! I am not sure I did the acc correctly !!!!!!
+
           !$acc parallel loop independent collapse(3) &
-          !$acc & present(F1,F3,SUMWN,WLONN,KLON,WLATN,KLAT,WCORN,KCOR, &
-          !$acc &         WKPMN,KPM,WMPMN,MPM)
-          DO M = ND3S, ND3E
+          !$acc & present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO, &
+          !$acc &         KCR,WKPMN,KPM,WMPMN,MPM)
+
+!         DO THE PART WHERE CUURENTS WILL NOT REVERSE THE PROPAGATION DIRECTION
+!         ---------------------------------------------------------------------
+
+          DO M = MIN(ND3S,MRVLCUR), MIN(ND3E,MRVLCUR-1)
             DO K = 1, NANG
-
               DO IJ = KIJS, KIJL
-                F3(IJ,K,M) =                                  &
-     &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ ,K  ,M) &
+                F3(IJ,K,M) =                                              &
+     &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M)   &
 
-     &         + WLONN(IJ,K,M,1)   * F1(KLON(IJ,1)  ,K  ,M) &
-     &         + WLONN(IJ,K,M,2)   * F1(KLON(IJ,2)  ,K  ,M) &
-
-     &         + WLATN(IJ,K,M,1,1) * F1(KLAT(IJ,1,1),K  ,M) &
-     &         + WLATN(IJ,K,M,1,2) * F1(KLAT(IJ,1,2),K  ,M) &
-     &         + WLATN(IJ,K,M,2,1) * F1(KLAT(IJ,2,1),K  ,M) &
-     &         + WLATN(IJ,K,M,2,2) * F1(KLAT(IJ,2,2),K  ,M) &
-
-     &         + WCORN(IJ,K,M,1,1) * F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
-     &         + WCORN(IJ,K,M,2,1) * F1(KCOR(IJ,KCR(K,2),1),K  ,M) &
-     &         + WCORN(IJ,K,M,3,1) * F1(KCOR(IJ,KCR(K,3),1),K  ,M) &
-     &         + WCORN(IJ,K,M,4,1) * F1(KCOR(IJ,KCR(K,4),1),K  ,M) &
-     &         + WCORN(IJ,K,M,1,2) * F1(KCOR(IJ,KCR(K,1),2),K  ,M) &
-     &         + WCORN(IJ,K,M,2,2) * F1(KCOR(IJ,KCR(K,2),2),K  ,M) &
-     &         + WCORN(IJ,K,M,3,2) * F1(KCOR(IJ,KCR(K,3),2),K  ,M) &
-     &         + WCORN(IJ,K,M,4,2) * F1(KCOR(IJ,KCR(K,4),2),K  ,M) &
-
-
-     &         + WKPMN(IJ,K,M,-1)  * F1(IJ,KPM(K,-1),M)            &
-     &         + WKPMN(IJ,K,M, 1)  * F1(IJ,KPM(K, 1),M)            &
-
-     &         + WMPMN(IJ,K,M,-1)  * F1(IJ,K, MPM(M,-1))           &
-     &         + WMPMN(IJ,K,M, 1)  * F1(IJ,K, MPM(M, 1))
+     &         + WLONN(IJ,K,M,JXO(K,1))   * F1(KLON(IJ,JXO(K,1))  ,K  ,M) &
+     &         + WLATN(IJ,K,M,JYO(K,1),1) * F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
+     &         + WLATN(IJ,K,M,JYO(K,1),2) * F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
+     &         + WCORN(IJ,K,M,1,1)        * F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
+     &         + WCORN(IJ,K,M,1,2)        * F1(KCOR(IJ,KCR(K,1),2),K  ,M) &
+     &         + WKPMN(IJ,K,M,-1)         * F1(IJ,KPM(K,-1),M)            &
+     &         + WKPMN(IJ,K,M, 1)         * F1(IJ,KPM(K, 1),M)            &
+     &         + WMPMN(IJ,K,M,-1)         * F1(IJ,K, MPM(M,-1))           &
+     &         + WMPMN(IJ,K,M, 1)         * F1(IJ,K, MPM(M, 1))
 
               ENDDO
+            ENDDO
+          ENDDO
 
+
+!         NOW DO THE PART WHERE CUURENTS MIGHT HAVE REVERSED THE PROPAGATION DIRECTION
+!         ----------------------------------------------------------------------------
+
+          DO M = MRVLCUR, ND3E
+            DO K = 1, NANG
+
+              !$loki loop-fusion
+              DO IJ = KIJS, KIJL
+                F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
+              ENDDO
+
+              !$loki loop-unroll
+              DO IC=1,2
+                IF (LLWLONN(K,M,IC)) THEN
+                  !$loki loop-fusion
+                  DO IJ = KIJS, KIJL
+                    F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
+                  ENDDO
+                ENDIF
+              ENDDO
+
+              !$loki loop-unroll
+              DO ICL=1,2
+                !$loki loop-unroll
+                DO IC=1,2
+                  IF (LLWLATN(K,M,IC,ICL)) THEN
+                    !$loki loop-fusion
+                    DO IJ = KIJS, KIJL
+                      F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
+                    ENDDO
+                  ENDIF
+                ENDDO
+
+                !$loki loop-unroll
+                DO ICR=1,4
+                  IF (LLWCORN(K,M,ICR,ICL)) THEN
+                    !$loki loop-fusion
+                    DO IJ = KIJS, KIJL
+                      F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
+                    ENDDO
+                  ENDIF
+                ENDDO
+              ENDDO
+
+              !$loki loop-unroll
+              DO IC=-1,1,2
+
+                IF (LLWKPMN(K,M,IC)) THEN
+                  !$loki loop-fusion
+                  DO IJ = KIJS, KIJL
+                    F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
+                  ENDDO
+                ENDIF
+
+                IF (LLWMPMN(K,M,IC)) THEN
+                  !$loki loop-fusion
+                  DO IJ = KIJS, KIJL
+                    F3(IJ,K,M) = F3(IJ,K,M) + WMPMN(IJ,K,M,IC)* F1(IJ,K,MPM(M,IC))
+                  ENDDO
+                ENDIF
+
+              ENDDO
 
             ENDDO
           ENDDO
