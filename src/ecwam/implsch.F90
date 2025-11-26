@@ -236,7 +236,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
           ZRDC(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
         ELSE
           ! Reduce it for low winds (not over sea ice for now)
-          ZRDC(IJ) = (MIN(WSWAVE(IJ),3._JWRB)**2/9._JWRB)*FLMIN
+          ZRDC(IJ) = (MIN(WSWAVE(IJ),3._JWRB)/3._JWRB)*FLMIN
         ENDIF
       ENDDO
       DO K=1,NANG
