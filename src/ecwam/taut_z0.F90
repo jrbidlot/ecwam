@@ -142,10 +142,8 @@ IF (LHOOK) CALL DR_HOOK('TAUT_Z0',0,ZHOOK_HANDLE)
       US2TOTAUW=1.0_JWRB+EPS1
 
       DO IJ = KIJS, KIJL
-!       Below WSPMIN_WAVE we assume very little waves would exist and the viscous stress should not be reduced
-!!!!!        ZNURDC =  0.04_JWRB + 0.48_JWRB*(1.0_JWRB-TANH(5.0_JWRB*(UTOP(IJ)-WSPMIN_WAVE)))
-        ZNURDC =  0.04_JWRB
-!!!!
+!       Below WSPMIN_WAVE we assume very little waves would exist and the viscous stress should not be reduced less
+        ZNURDC =  0.04_JWRB + 0.03_JWRB*(1.0_JWRB-TANH(5.0_JWRB*(UTOP(IJ)-WSPMIN_WAVE)))
         ZNURDCKAPM1(IJ) = ZNURDC*RNU/XKAPPA
       ENDDO
 
