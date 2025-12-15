@@ -145,6 +145,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.39_JWRB
+!!!!debile test
+            BETAMAX = 1.41_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
            !!! not yet fully tested !!!
