@@ -126,6 +126,8 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         IF(LLGCBZ0) THEN
           ALPHA   = 0.005_JWRB
+!!!!debile test
+          ALPHA   = 0.011_JWRB
           ALPHAMIN = 0.0001_JWRB
           CHNKMIN_U = 28._JWRB
           ALPHAPMAX = 0.029_JWRB
@@ -145,8 +147,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
           IF(LLNORMAGAM) THEN
             BETAMAX = 1.39_JWRB
-!!!!debile test
-            BETAMAX = 1.41_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
            !!! not yet fully tested !!!
