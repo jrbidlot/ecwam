@@ -232,14 +232,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         CALL WAM_ABORT(__FILENAME__,__LINE__)
       ENDIF
 
-      IF (.NOT.LWCOU .AND. LODBRALT) THEN
-        WRITE(IU06,*)'WARNING IN SUBROUTINE USERIN:'
-        WRITE(IU06,*)'        ODB IS NOT READY FOR STAND-ALONE MODEL'
-        WRITE(IU06,*)'        ODB WILL NOT BE USED!'
-        LODBRALT = .FALSE.  ! ODB is not ready for stand-alone wave model
-                            ! this needs to be changed later.
-      ENDIF
-
       IF (.NOT.LWCOU) LGRHDIFS = .FALSE.  ! by definition
       IF (.NOT.LWCOU) LWCOUAST = .FALSE.  ! by definition
 
