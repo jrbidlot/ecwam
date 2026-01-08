@@ -75,7 +75,6 @@ SUBROUTINE GETWND (BLK2LOC,                               &
 
       USE YOWCOUP  , ONLY : LWCOU
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
-      USE YOWICE   , ONLY : IPARAMCI
       USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWMPP   , ONLY : IRANK
       USE YOWPARAM , ONLY : LWDINTS
@@ -222,9 +221,9 @@ IF (LHOOK) CALL DR_HOOK('GETWND',0,ZHOOK_HANDLE)
      &                 LWCUR, ICODE_WND)
 
 
-          CALL MICEP(IPARAMCI, KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),  &
-     &               NXS, NXE, NYS, NYE, FIELDG,                                                &
-     &               FF_NOW%CICOVER(:,ICHNK), FF_NOW%CITHICK(:,ICHNK),                          &
+          CALL MICEP(KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),  &
+     &               NXS, NXE, NYS, NYE, FIELDG,                                      &
+     &               FF_NOW%CICOVER(:,ICHNK), FF_NOW%CITHICK(:,ICHNK),                &
      &               NEMO2WAM%NEMOCICOVER(:,ICHNK), NEMO2WAM%NEMOCITHICK(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO

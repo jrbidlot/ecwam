@@ -66,7 +66,7 @@ SUBROUTINE NEWWIND (CDATE, CDATEWH, LLNEWFILE,           &
       USE YOWSTAT  , ONLY : IDELWO
       USE YOWTEST  , ONLY : IU06
       USE YOWWIND  , ONLY : CDATEWL  ,CDAWIFL  ,CDATEFL  ,CDTNEXT  ,         &
-     &                      NSTORE   ,WSPMIN_RESET_TAUW  ,USTMIN_RESET_TAUW
+     &                      NSTORE   ,WSPMIN_WAVE, WSPMIN_RESET_TAUW  ,USTMIN_RESET_TAUW
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -133,7 +133,9 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
 ! adapt first estimate of wave induced stress for low winds
 ! to a fraction of the simple relation u*^2 = Cd(U10) * U10^2
 ! where this fraction varies from 0 for U10=0 to 1 for U10=WSPMIN_RESET_TAUW
-              IF (FF_NOW%WSWAVE(IJ,ICHNK) < WSPMIN_RESET_TAUW) THEN
+              IF (FF_NOW%WSWAVE(IJ,ICHNK) < WSPMIN_WAVE) THEN
+                FF_NOW%TAUW(IJ,ICHNK) = 0.0_JWRB
+              ELSEIF (FF_NOW%WSWAVE(IJ,ICHNK) < WSPMIN_RESET_TAUW) THEN
                 TLWMAX = WGHT * (ACD+BCD*FF_NOW%WSWAVE(IJ,ICHNK)) * FF_NOW%WSWAVE(IJ,ICHNK)**3
                 FF_NOW%TAUW(IJ,ICHNK) = MIN(FF_NOW%TAUW(IJ,ICHNK), TLWMAX)
               ENDIF

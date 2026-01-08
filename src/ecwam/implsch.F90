@@ -16,6 +16,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
  &                  NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX, &
  &                  NEMOTAUY, NEMOTAUICX, NEMOTAUICY, &
  &                  NEMOWSWAVE, NEMOPHIF, &
+ &                  WCF, TLEMEAN, &
  &                  WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS, &
  &                  TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, &
  &                  TAUICX, TAUICY, &
@@ -60,7 +61,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 !     -------
 
 !       THE SPECTRUM AT TIME (TN+1) IS COMPUTED AS
-!       FN+1=FN+DELT*(SN+SN+1)/2., WHERE SN IS THE TOTAL SOURCE
+!       FN+1=FN+DELT*((1-XIMP)*SN+ XIMP*SN+1)., WHERE SN IS THE TOTAL SOURCE
 !       FUNCTION AT TIME TN, SN+1=SN+(DS/DF)*DF - ONLY THE DIAGONAL
 !       TERMS OF THE FUNCTIONAL MATRIX DS/DF ARE YOWPUTED, THE
 !       NONDIAGONAL TERMS ARE NEGLIGIBLE.
@@ -82,13 +83,12 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,   &
  &                             INTGT_PARAM_FIELDS, WAVE2OCEAN
 
-      USE YOWCOUP  , ONLY : LWFLUX   , LWVFLX_SNL , LWNEMOCOU,           &
-                            LWNEMOCOUSTRN, LWNEMOCOUIBR, LWNEMOCOUWRS
+      USE YOWCOUP  , ONLY : LWFLUX   , LWSPRAY, LWWCF, LWVFLX_SNL ,      &
+                            LWNEMOCOU, LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
-      USE YOWICE   , ONLY : FLMIN    ,LICERUN   ,LMASKICE ,              &
-                            LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
- &                          ZALPFACX
+      USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE  ,LCISCAL,      &
+&                           ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK   ,XIMP
@@ -101,6 +101,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
+#include "frcutindex.intfb.h"
 #include "sbottom.intfb.h"
 #include "imphftail.intfb.h"
 #include "sdepthlim.intfb.h"
@@ -112,6 +113,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
 #include "stokestrn.intfb.h"
+#include "whitecap_fraction.intfb.h"
 #include "wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
@@ -131,6 +133,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: AIRD, WDWAVE, CICOVER, WSWAVE, WSTAR, USTRA, VSTRA
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: UFRIC, TAUW, TAUWDIR, Z0M, Z0B, CHRNCK, CITHICK
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: WCF, TLEMEAN
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: WSEMEAN, WSFMEAN, USTOKES, VSTOKES, STRNMS
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC, PHIOCD
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUICX, TAUICY
@@ -146,15 +149,16 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
       
-      REAL(KIND=JWRB) :: DELTM, DELT5, DELT
-      REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB, BETA
+      REAL(KIND=JWRB) :: DELT, DELTM, DELT5
+      REAL(KIND=JWRB) :: GTEMP1, GTEMP2, FLHAB
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: DELFL(NFRE)
       REAL(KIND=JWRB), DIMENSION(KIJL) :: RAORW
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEAN, FMEAN, HALP
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEANWS, FMEANWS, USFM
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEANWS, FMEANWS, USFM, FCUT
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ZRDC
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF, SINWDIF2
@@ -167,7 +171,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE
 
-      REAL(KIND=JWRB),    DIMENSION(KIJL) :: ALPFAC
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ALPFAC
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
@@ -184,7 +188,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       DELTM = 1.0_JWRB/DELT
       DELT5 = XIMP*DELT
 
-      LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
+      LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU.OR.LWSPRAY.OR.LWWCF
 
 
       DO IJ=KIJS,KIJL
@@ -201,16 +205,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
           SINWDIF2(IJ,K) = SIN(TH(K)-WDWAVE(IJ))**2
         ENDDO
       ENDDO
-
-      IF (LWNEMOCOUWRS .AND. (.NOT. (LCIWA1 .OR. LCIWA2 .OR. LCIWA3)))  THEN
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              SLICE(IJ,K,M) = 0.0_JWRB
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
 
 ! ----------------------------------------------------------------------
 
@@ -234,10 +228,20 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                    &
      &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
 
+
+      ! Noise level
+      DO IJ=KIJS,KIJL
+        IF (CICOVER(IJ) > 0.0_JWRB) THEN
+          ! still allow noise in full sea ice cover, but only ten percent
+          ZRDC(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
+        ELSE
+          ! Reduce it for low winds (not over sea ice for now)
+          ZRDC(IJ) = (MIN(WSWAVE(IJ),3._JWRB)/3._JWRB)*FLMIN
+        ENDIF
+      ENDDO
       DO K=1,NANG
         DO IJ=KIJS,KIJL
-          ! still allow noise in full sea ice cover, but only ten percent
-          FLM(IJ,K) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN*MAX(0.0_JWRB, COSWDIF(IJ,K))**2 
+          FLM(IJ,K) = ZRDC(IJ)*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
         ENDDO
       ENDDO
 
@@ -309,33 +313,32 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       !$loki inline
       CALL SDIWBK(KIJS, KIJL, FL1 ,FLD, SL, DEPTH, EMAXDPT, EMEAN, F1MEAN)
 
+
       IF ( LICERUN ) THEN
 
-!        Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
-         IF (LCISCAL) THEN
-           DO M = 1,NFRE
-             DO K = 1,NANG
-               DO IJ = KIJS,KIJL
-                  BETA=1._JWRB-CICOVER(IJ)
-                  SL(IJ,K,M)  = BETA*SL(IJ,K,M)  
-                  FLD(IJ,K,M) = BETA*FLD(IJ,K,M) 
-               END DO
-             END DO
-           END DO
-         ENDIF
+!       Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
+        IF (LCISCAL) THEN
+          DO M = 1,NFRE
+            DO K = 1,NANG
+              DO IJ = KIJS,KIJL
+                SL(IJ,K,M)  = (1._JWRB-CICOVER(IJ))*SL(IJ,K,M)  
+                FLD(IJ,K,M) = (1._JWRB-CICOVER(IJ))*FLD(IJ,K,M) 
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
 
-!        Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
-         IF(LWNEMOCOUIBR) THEN 
-          !$loki inline
-          CALL ICEBREAK_MODIFY_ATTENUATION (KIJS,KIJL,IBRMEM,ALPFAC)           
-         ENDIF
+!       Coupling of waves and sea ice (type 1): wave-induced sea ice break up + reduced attenuation
+        IF (LWNEMOCOUIBR) THEN 
+          CALL ICEBREAK_MODIFY_ATTENUATION (KIJS, KIJL, IBRMEM, ALPFAC)           
+        ENDIF
 
-!        Attenuation of waves in ice
-         IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
-            !$loki inline
-            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
-         ENDIF
+!       Attenuation of waves in ice
+        !$loki inline
+        CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
 
+      ELSE
+        SLICE(:,:,:) = 0.0_JWRB
       ENDIF
 
       !$loki inline
@@ -394,7 +397,52 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDDO
       ENDIF
 
+! ----------------------------------------------------------------------
+
+!*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
+!         -----------------------------------------------------
+
+      !$loki inline
+      CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                      &
+     &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
+
+!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
+      !$loki inline
+      CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS, EMEANWS)
+
+!     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
+      !$loki inline
+      CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, WSWAVE, MIJ, FCUT, RHOWGDFTH)
+
+      !$loki inline
+      CALL IMPHFTAIL(KIJS, KIJL, MIJ, FCUT, FLM, WAVNUM, XK2CG, FL1)
+
+
+!     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
+!     ------------------------------------------------------------------
+      IF (LWFLUX .OR. LWSPRAY) THEN
+        DO IJ=KIJS,KIJL
+          IF (EMEANWS(IJ) < WSEMEAN_MIN) THEN
+            WSEMEAN(IJ) = MAX(WSEMEAN_MIN*(1.0_JWRB-CICOVER(IJ)),FLMIN)
+            WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
+          ELSE
+            WSEMEAN(IJ) = EMEANWS(IJ)
+            WSFMEAN(IJ) = FMEANWS(IJ)
+          ENDIF
+!         CHECK THAT EMEAN(IJ) >= WSEMEAN(IJ)
+          TLEMEAN(IJ) = MAX(EMEAN(IJ),WSEMEAN(IJ))
+        ENDDO
+      ELSE
+        TLEMEAN(:) = EMEAN(:)
+      ENDIF
+
+
       IF (LCFLX) THEN
+!       FL1 was updated, need to recompute EMEAN and F1MEAN
+        !$loki inline
+        CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                    &
+     &              EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
+
         !$loki inline
         CALL WNFLUXES (KIJS, KIJL,                       &
      &                 MIJ, RHOWGDFTH,                   &
@@ -412,38 +460,12 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
      &                 TAUOC, TAUICX, TAUICY,            &
      &                 PHIOCD, PHIEPS, PHIAW,            &
      &                 .TRUE.)
+        IF (LWWCF) THEN
+          !$loki inline
+          CALL WHITECAP_FRACTION (KIJS, KIJL, FL1, XLLWS, CINV, DEPTH, WSWAVE, CICOVER, UFRIC, COSWDIF, PHIOCD, WCF)
+        ENDIF
+
       ENDIF
-! ----------------------------------------------------------------------
-
-!*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
-!         -----------------------------------------------------
-
-      !$loki inline
-      CALL FKMEAN(KIJS, KIJL, FL1, WAVNUM,                      &
-     &            EMEAN, FMEAN, F1MEAN, AKMEAN, XKMEAN)
-
-!     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-     !$loki inline
-      CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS, EMEANWS)
-
-      !$loki inline
-      CALL IMPHFTAIL(KIJS, KIJL, MIJ, FLM, WAVNUM, XK2CG, FL1)
-
-
-!     UPDATE WINDSEA VARIANCE AND MEAN FREQUENCY IF PASSED TO ATMOSPHERE
-!     ------------------------------------------------------------------
-      IF (LWFLUX) THEN
-        DO IJ=KIJS,KIJL
-          IF (EMEANWS(IJ) < WSEMEAN_MIN) THEN
-            WSEMEAN(IJ) = WSEMEAN_MIN 
-            WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
-          ELSE
-            WSEMEAN(IJ) = EMEANWS(IJ)
-            WSFMEAN(IJ) = FMEANWS(IJ) 
-          ENDIF
-        ENDDO
-      ENDIF
-
 
 !*    2.6 SET FL1 ON ICE POINTS TO ZERO
 !         -----------------------------

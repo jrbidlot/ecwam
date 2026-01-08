@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-REAL(KIND=JWRB) FUNCTION CHNKMIN (U10)
+REAL(KIND=JWRB) FUNCTION CHNKMIN (U10, CICOVER)
 
 ! ----------------------------------------------------------------------
 
@@ -20,12 +20,13 @@ REAL(KIND=JWRB) FUNCTION CHNKMIN (U10)
 !**   INTERFACE.
 !     ----------
 
-!       *FUNCTION* *CHNKMIN (U10)*
+!       *FUNCTION* *CHNKMIN (U10, CICOVER)*
 
 !     METHOD.
 !     -------
 
-!     CHNKMIN = ALPHAMIN + (ALPHA-ALPHAMIN)*0.5_JWRB*(1.0_JWRB-TANH(U10-A)) 
+!     CHNKMIN = (1.0_JWRB - CICOVER) * (ALPHAMIN + (ALPHA-ALPHAMIN)*0.5_JWRB*(1.0_JWRB-TANH(U10-A)))
+!              + CICOVER * ALPHA
 
 !     EXTERNALS.
 !     ----------
@@ -41,21 +42,24 @@ REAL(KIND=JWRB) FUNCTION CHNKMIN (U10)
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPHYS  , ONLY : ALPHA, ALPHAMIN, CHNKMIN_U 
+      USE YOWPHYS  , ONLY : ALPHA, ALPHAMIN, CHNKMIN_U, ALPHAMIN_NW, U10THRS_NW 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
 
 !$loki routine seq
-      REAL(KIND=JWRB), INTENT(IN) :: U10
+      REAL(KIND=JWRB), INTENT(IN) :: U10, CICOVER
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('CHNKMIN',0,ZHOOK_HANDLE)
 
-      CHNKMIN = ALPHAMIN + (ALPHA-ALPHAMIN)*0.5_JWRB*(1.0_JWRB-TANH(U10-CHNKMIN_U))
+      CHNKMIN = (1.0_JWRB - CICOVER) * (ALPHAMIN + (ALPHA-ALPHAMIN)*0.5_JWRB*(1.0_JWRB-TANH(U10-CHNKMIN_U))) &
+&              + CICOVER * ALPHA
+
+      CHNKMIN = MAX(CHNKMIN , ALPHA - (ALPHAMIN_NW - ALPHA) * (U10 - U10THRS_NW)/U10THRS_NW )
 
       IF (LHOOK) CALL DR_HOOK('CHNKMIN',1,ZHOOK_HANDLE)
 

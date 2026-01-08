@@ -150,7 +150,7 @@ PROGRAM preproc
      &                      IREFDATE ,ISTREAM  ,NLOCGRB
       USE YOWTEST  , ONLY : IU06
       USE YOWPARAM , ONLY : LLUNSTR
-      USE YOWPCONS , ONLY : OLDPI    ,CIRC     ,RAD      ,ZMISS
+      USE YOWPCONS , ONLY : CIRC     ,RAD      ,ZMISS
       USE YOWUBUF  , ONLY : NPROPAGS
       USE YOWUNIT  , ONLY : IU08
 #ifdef WAM_HAVE_UNWAM

@@ -31,6 +31,8 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
 
       USE YOWCOUP  , ONLY : LWCOU    ,LLCAPCHNK , LLGCBZ0, LLNORMAGAM
       USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPCONS , ONLY : G        ,ZPI
+      USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U 
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
@@ -41,9 +43,11 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
       IMPLICIT NONE
 
 #include "airsea.intfb.h"
+#include "dominant_period.intfb.h"
 #include "femeanws.intfb.h"
 #include "frcutindex.intfb.h"
 #include "halphap.intfb.h"
+#include "semean.intfb.h"
 #include "sinput.intfb.h"
 #include "stresso.intfb.h"
 
@@ -94,6 +98,8 @@ INTEGER(KIND=JWIM) :: NGST
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 REAL(KIND=JWRB), DIMENSION(KIJL) :: RNFAC
+REAL(KIND=JWRB), DIMENSION(KIJL) :: FCUT 
+REAL(KIND=JWRB), DIMENSION(KIJL) :: DP, EM 
 
 LOGICAL :: LLPHIWA, LLSNEG
 
@@ -130,7 +136,7 @@ IF(LUPDTUS) THEN
 
     IF (LLGCBZ0) THEN
       !$loki inline
-      CALL HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
+      CALL HALPHAP(KIJS, KIJL, WAVNUM, WSWAVE, COSWDIF, FL1, HALP)
     ELSE
       HALP(KIJS:KIJL) = 0.0_JWRB
     ENDIF
@@ -138,9 +144,16 @@ IF(LUPDTUS) THEN
   ENDIF
 
   !$loki inline
-  CALL AIRSEA (KIJS, KIJL,                                  &
-&              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC,  &
+  CALL AIRSEA (KIJS, KIJL,                                           &
+&              HALP, WSWAVE, WDWAVE, TAUW, TAUWDIR, RNFAC, CICOVER,  &
 &              UFRIC, Z0M, Z0B, CHRNCK, ICODE_WND, IUSFG) 
+
+  
+  IF(ICALL == NCALL .AND. CLDOMAIN == 's' ) THEN
+    CALL DOMINANT_PERIOD (KIJS, KIJL, FL1, DP)
+    CALL SEMEAN (FL1, KIJS, KIJL, EM, .FALSE.)
+    write (*,'(a22,1x,3(f11.6,1x))') 'nondimensional_growth ', G*DP(1)/(ZPI*UFRIC(1)), G*G*EM(1)/(UFRIC(1)**4), 2._JWRB*HALP(1)
+  ENDIF
 
 ENDIF
 
@@ -171,11 +184,11 @@ CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS)
 
 ! COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !$loki inline
-CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, MIJ, RHOWGDFTH)
+CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, WSWAVE, MIJ, FCUT, RHOWGDFTH)
 
 ! UPDATE TAUW
 !$loki inline
-CALL STRESSO (KIJS, KIJL, MIJ, RHOWGDFTH,          &
+CALL STRESSO (KIJS, KIJL, MIJ, FCUT, RHOWGDFTH,    &
 &             FL1, SL, SPOS,                       &
 &             CINV,                                &
 &             WDWAVE, UFRIC, Z0M, AIRD, RNFAC,     &
