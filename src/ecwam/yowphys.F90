@@ -94,7 +94,7 @@
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
       REAL(KIND=JWRB) :: SWELLF4  !! See *SETWAVPHYS*
-      REAL(KIND=JWRB), PARAMETER :: SWELLF5 = 0.9_JWRB ! controls the viscous swell dissipation
+      REAL(KIND=JWRB), PARAMETER :: SWELLF5 = 0.8_JWRB ! controls the viscous swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF6 = 1.0_JWRB
       REAL(KIND=JWRB) :: SWELLF7  !! See *SETWAVPHYS*
       REAL(KIND=JWRB) :: SWELLF7M1 !!!! set it to 1 if you decide to have SWELLF7=0
