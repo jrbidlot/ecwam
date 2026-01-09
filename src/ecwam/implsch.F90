@@ -108,6 +108,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sdissip.intfb.h"
 #include "sdiwbk.intfb.h"
 #include "sdice.intfb.h"
+#include "spnoiselev.intfb.h"
 #include "icebreak_modify_attenuation.intfb.h"
 #include "setice.intfb.h"
 #include "sinflx.intfb.h"
@@ -158,7 +159,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEANWS, FMEANWS, USFM, FCUT
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1MEAN, AKMEAN, XKMEAN 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PHIWA
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: ZRDC
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF, SINWDIF2
@@ -230,20 +230,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 
       ! Noise level
-      DO IJ=KIJS,KIJL
-        IF (CICOVER(IJ) > 0.0_JWRB) THEN
-          ! still allow noise in full sea ice cover, but only ten percent
-          ZRDC(IJ) = (1._JWRB - 0.9_JWRB*MIN(CICOVER(IJ),0.99_JWRB))*FLMIN
-        ELSE
-          ! Reduce it for low winds (not over sea ice for now)
-          ZRDC(IJ) = (MIN(WSWAVE(IJ),3._JWRB)/3._JWRB)*FLMIN
-        ENDIF
-      ENDDO
-      DO K=1,NANG
-        DO IJ=KIJS,KIJL
-          FLM(IJ,K) = ZRDC(IJ)*MAX(0.0_JWRB, COSWDIF(IJ,K))**2
-        ENDDO
-      ENDDO
+      CALL SPNOISELEV(KIJS, KIJL, WSWAVE, WDWAVE, CICOVER, FLM)
 
 ! ----------------------------------------------------------------------
 

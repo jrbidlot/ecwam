@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
+SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, WVPRPT, FF_NOW, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 !     J. BIDLOT    ECMWF      SEPTEMBER 1997 
 !     J. BIDLOT    ECMWF      MARCH 2010: modified to use gribapi 
@@ -24,6 +24,8 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 !     *BLK2GLO*  BLOCK TO GRID TRANSFORMATION
 !     *BLK2LOC*  POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
 !     *WVENVI*   WAVE ENVIRONMENT FIELDS
+!     *WVPRPT*   WAVE PROPERTIES FIELDS
+!     *FF_NOW*   FORCING FIELDS AT CURRENT TIME.
 !     *NBLKS*    INDEX OF THE FIRST POINT OF THE SUB GRID DOMAIN
 !     *NBLKE*    INDEX OF THE LAST POINT OF THE SUB GRID DOMAIN
 !     *IREAD*    PROCESSOR WHICH WILL ACCESS THE FILE ON DISK 
@@ -57,12 +59,13 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 ! ----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
-      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC, ENVIRONMENT, FORCING_FIELDS
+      USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC, ENVIRONMENT, FREQUENCY, FORCING_FIELDS
 
       USE YOWCOUT  , ONLY : KDEL     ,MDEL     ,LRSTPARALR
       USE YOWFRED  , ONLY : FR       ,TH       ,FR5      ,FRM5
       USE YOWGRIBHD, ONLY : PPEPS    ,PPREC
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE, CITHRSH
       USE YOWMAP   , ONLY : IRGG     ,NLONRGG
       USE YOWMESPAS, ONLY : LGRIBIN
       USE YOWMAP   , ONLY : NGY      ,NIBLO
@@ -99,15 +102,19 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
 #include "expand_string.intfb.h"
 #include "grib2wgrid.intfb.h"
 #include "grstname.intfb.h"
+#include "imphftail.intfb.h"
 #include "init_fieldg.intfb.h"
 #include "kgribsize.intfb.h"
 #include "mpdistribfl.intfb.h"
+#include "spnoiselev.intfb.h"
 #include "readfl.intfb.h"
 
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(OUT) :: FL1
       TYPE(WVGRIDGLO), INTENT(IN)                                            :: BLK2GLO
       TYPE(WVGRIDLOC), INTENT(IN)                                            :: BLK2LOC
       TYPE(ENVIRONMENT), INTENT(IN)                                          :: WVENVI
+      TYPE(FREQUENCY), INTENT(IN)                                            :: WVPRPT
+      TYPE(FORCING_FIELDS), INTENT(IN)                                       :: FF_NOW
       INTEGER(KIND=JWIM), DIMENSION(NPROC), INTENT(IN)                       :: NBLKS, NBLKE
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
 
@@ -134,11 +141,14 @@ SUBROUTINE GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
       INTEGER(KIND=JWIM) :: IPROC, ITAG, ISREQ, IRREQ, JNR, INR, IST, IEND, KSEND 
       INTEGER(KIND=JWIM) :: ISENDREQ(NPROC), IRECVREQ(NPROC), KFROM(NPROC)
       INTEGER(KIND=JWIM) :: NLONRGG_LOC(NGY)
+      INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM)  :: MIJ_LOC 
       INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB(:), INTMP(:)
       INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: RMONOP
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM) :: FCUT_LOC
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM,NANG) :: FLM_LOC 
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: EM
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: WORK
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: ZRECVBUF
@@ -634,18 +644,40 @@ IF (LHOOK) CALL DR_HOOK('GETSPEC',0,ZHOOK_HANDLE)
         IF (ALLOCATED(WORK)) DEALLOCATE(WORK)
 
         IF (LLSOURCE) THEN
-!         FILL MISSING PART (if any) AND
+!         IMPOSE SPECTRAL NOISE, FILL MISSING PART (if any),
 !         CHECK THAT INPUT SPECTRA ARE CONSISTENT WITH MODEL DEPTH
 !         RESCALE IF NOT
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IJ)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, M, K, IJ, MIJ_LOC, FCUT_LOC, FLM_LOC )
           DO ICHNK = 1, NCHNK
-            DO M = NFRE_RED+1, NFRE
-              DO K = 1, NANG
-                DO IJ = 1, NPROMA_WAM
-                  FL1(IJ, K, M, ICHNK) = FL1(IJ, K, NFRE_RED, ICHNK) * FR5(NFRE_RED)*FRM5(M) 
+
+            CALL SPNOISELEV(1, NPROMA_WAM, FF_NOW%WSWAVE(:,ICHNK), FF_NOW%WDWAVE(:,ICHNK), FF_NOW%CICOVER(:,ICHNK), FLM_LOC)
+
+            IF (LICERUN .AND. LMASKICE) THEN
+              DO M=1,NFRE
+                DO K=1,NANG
+                  DO IJ=1,NPROMA_WAM
+                    IF (FF_NOW%CICOVER(IJ,ICHNK) > CITHRSH ) THEN
+                      FL1(IJ,K,M,ICHNK) = 0.0_JWRB
+                    ELSE
+                      FL1(IJ,K,M,ICHNK) = MAX(FL1(IJ,K,M,ICHNK),FLM_LOC(IJ,K))
+                    ENDIF
+                  ENDDO
                 ENDDO
               ENDDO
-            ENDDO
+            ELSE
+              DO M=1,NFRE
+                DO K=1,NANG
+                  DO IJ=1,NPROMA_WAM
+                    FL1(IJ,K,M,ICHNK) = MAX(FL1(IJ,K,M,ICHNK),FLM_LOC(IJ,K))
+                  ENDDO
+                ENDDO
+              ENDDO
+            ENDIF
+
+            MIJ_LOC(:) = NFRE_RED
+            FCUT_LOC(:) = FR(NFRE_RED)
+
+            CALL IMPHFTAIL(1, NPROMA_WAM, MIJ_LOC, FCUT_LOC, FLM_LOC, WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%XK2CG(:,:,ICHNK), FL1(:,:,:,ICHNK))
 
             CALL SDEPTHLIM(1, NPROMA_WAM, WVENVI%EMAXDPT(:,ICHNK), FL1(:,:,:,ICHNK))
           ENDDO
