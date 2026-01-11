@@ -170,11 +170,11 @@ ELSE
 ENDIF
 
 !$loki inline
-CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, &
-&            WAVNUM, CINV, XK2CG,           &
-&            WDWAVE, WSWAVE, UFRIC, Z0M,    &
-&            COSWDIF, SINWDIF2,             &
-&            RAORW, WSTAR, RNFAC,           &
+CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1,      &
+&            WAVNUM, CINV, XK2CG,                &
+&            WDWAVE, WSWAVE, UFRIC, Z0M, CHRNCK, &
+&            COSWDIF, SINWDIF2,                  &
+&            RAORW, WSTAR, RNFAC,                &
 &            FLD, SL, SPOS, XLLWS) 
 
 

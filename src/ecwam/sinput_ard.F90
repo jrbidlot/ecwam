@@ -7,11 +7,11 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
- &                     WAVNUM, CINV, XK2CG,           &
- &                     WDWAVE, WSWAVE, UFRIC, Z0M,    &
- &                     COSWDIF, SINWDIF2,             &
- &                     RAORW, WSTAR, RNFAC,           &
+SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,      &
+ &                     WAVNUM, CINV, XK2CG,                &
+ &                     WDWAVE, WSWAVE, UFRIC, Z0M, CHRNCK, &
+ &                     COSWDIF, SINWDIF2,                  &
+ &                     RAORW, WSTAR, RNFAC,                &
  &                     FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
 
 !     *CALL* *SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, XK2CG,
-!    &                    WSWAVE, WDWAVE, UFRIC, Z0M,
+!    &                    WSWAVE, WDWAVE, UFRIC, Z0M, CHRNCK,
 !    &                    COSWDIF, SINWDIF2,
 !    &                    RAORW, WSTAR, RNFAC,
 !    &                    FLD, SL, SPOS, XLLWS)
@@ -61,6 +61,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
 !                  CLOCKWISE FROM NORTH).
 !        *UFRIC* - NEW FRICTION VELOCITY IN M/S.
 !        *Z0M* - ROUGHNESS LENGTH IN M.
+!       *CHRNCK* - CHARNOCK COEFFICIENT.
 !      *COSWDIF* - COS(TH(K)-WDWAVE(IJ))
 !     *SINWDIF2* - SIN(TH(K)-WDWAVE(IJ))**2
 !        *RAORW* - RATIO AIR DENSITY TO WATER DENSITY.
@@ -105,7 +106,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M, CHRNCK
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG), INTENT(IN) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
@@ -165,7 +166,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       IF (NGST > 1)THEN
         !$loki inline
-        CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
+        CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, CHRNCK, WSTAR, SIG_N)
       ENDIF
 
 
