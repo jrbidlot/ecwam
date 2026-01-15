@@ -198,7 +198,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               IF (FL1(IJ,K,M) <= ZTHRS(IJ) .AND. CICOVER(IJ) > 0.0_JWRB ) THEN
-                FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL2ND(IJ,K,M), ZTHRS(IJ)*ZRDUC(IJ)**2)
+                FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL1(IJ,K,M), ZTHRS(IJ)*ZRDUC(IJ)**2)
               ENDIF
             ENDDO
           ENDDO
