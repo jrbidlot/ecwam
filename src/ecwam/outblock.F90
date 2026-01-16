@@ -179,19 +179,6 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
       IF (IREFRA == 2 .OR. IREFRA == 3) THEN
         CALL INTPOL (KIJS, KIJL, FL1, FL2ND, WAVNUM, UCUR, VCUR, IRA)
-
-!!!!!debile
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              IF (CICOVER(IJ) > 0.0_JWRB ) THEN
-                FL2ND(IJ,K,M) = FL1(IJ,K,M)
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
-!!!!!!
-
       ELSE
         FL2ND(KIJS:KIJL,:,:) = FL1(KIJS:KIJL,:,:)
       ENDIF
@@ -211,7 +198,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               IF (FL1(IJ,K,M) <= ZTHRS(IJ) .AND. CICOVER(IJ) > 0.0_JWRB ) THEN
-                FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL1(IJ,K,M), ZTHRS(IJ)*ZRDUC(IJ)**2)
+                FL2ND(IJ,K,M) = MAX(ZRDUC(IJ) * FL2ND(IJ,K,M), ZTHRS(IJ)*ZRDUC(IJ)**2)
               ENDIF
             ENDDO
           ENDDO
