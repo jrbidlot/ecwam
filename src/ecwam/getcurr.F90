@@ -172,10 +172,15 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,    &
                       JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
                       IF (FIELDG%LKFR(IX,JY) <=  0.0_JWRB ) THEN
 !                       if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
+!                       In sea ice, the currents will be reduced as it not clear how wave - sea ice -current interaction works
                         WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
  &                                                   NEMO2WAM%NEMOUCUR(IJ,ICHNK))
+                        WVENVI%UCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%UCUR(IJ,ICHNK) 
+
                         WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
  &                                                 NEMO2WAM%NEMOVCUR(IJ,ICHNK))
+                        WVENVI%VCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%VCUR(IJ,ICHNK)
+
                       ELSE
 !                       no currents over lakes and land
                         WVENVI%UCUR(IJ,ICHNK) = 0.0_JWRB
@@ -248,6 +253,15 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,    &
                 WRITE (NULERR,*) ' **************************************'
                 CALL ABORT1
                 ENDIF
+
+!               In sea ice, the currents will be reduced as it not clear how wave - sea ice -current interaction works
+                DO ICHNK=1, NCHNK
+                  DO IJ = 1, KIJL4CHNK(ICHNK)
+                    WVENVI%UCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%UCUR(IJ,ICHNK) 
+                    WVENVI%VCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%VCUR(IJ,ICHNK)
+                  ENDDO
+                ENDDO
+
               ELSE
                 DO ICHNK=1, NCHNK
                   WVENVI%UCUR(:,ICHNK)=0.0_JWRB
@@ -264,14 +278,6 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,    &
 
             ENDIF
 
-!debile
-            DO ICHNK=1, NCHNK
-              DO IJ = 1, KIJL4CHNK(ICHNK)
-                WVENVI%UCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%UCUR(IJ,ICHNK) 
-                WVENVI%VCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%VCUR(IJ,ICHNK)
-              ENDDO
-            ENDDO
-!debile
 
 
 !           CHECK IF UPDATE TO THE CALCULATION OF THE REFRACTION TERMS IS NEEDED
