@@ -7,11 +7,11 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1, & 
-     &                   WAVNUM, CINV, XK2CG,           &
-     &                   WDWAVE, WSWAVE, UFRIC, Z0M,    &
-     &                   COSWDIF, SINWDIF2,             & 
-     &                   RAORW, WSTAR, RNFAC,           &
+      SUBROUTINE SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1,      &
+     &                   WAVNUM, CINV, XK2CG,                &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M, CHRNCK, &
+     &                   COSWDIF, SINWDIF2,                  &
+     &                   RAORW, WSTAR, RNFAC,                &
      &                   FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -40,6 +40,7 @@
 !                  CLOCKWISE FROM NORTH).
 !        *UFRIC* - FRICTION VELOCITY IN M/S.
 !        *Z0M*   - ROUGHNESS LENGTH IN M.
+!       *CHRNCK* - CHARNOCK COEFFICIENT.
 !      *COSWDIF* - COS(TH(K)-WDWAVE(IJ))
 !     *SINWDIF2* - SIN(TH(K)-WDWAVE(IJ))**2
 !        *RAORW* - RATIO AIR DENSITY TO WATER DENSITY.
@@ -86,7 +87,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
 
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M, CHRNCK
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJL, NANG), INTENT(IN) :: COSWDIF, SINWDIF2
 
@@ -104,18 +105,18 @@
 !$loki remove
         CALL SINPUT_JAN (NGST, LLSNEG, KIJS, KIJL, FL1,  &
      &                   WAVNUM, CINV, XK2CG,            &
-     &                   WSWAVE, UFRIC, Z0M,     &
+     &                   WSWAVE, UFRIC, Z0M, CHRNCK,     &
      &                   COSWDIF, SINWDIF2,              & 
      &                   RAORW, WSTAR, RNFAC,            &
      &                   FLD, SL, SPOS, XLLWS)
 !$loki end remove
       CASE(1) 
         !$loki inline
-        CALL SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,  &
-     &                   WAVNUM, CINV, XK2CG,            &
-     &                   WDWAVE, WSWAVE, UFRIC, Z0M,     &
-     &                   COSWDIF, SINWDIF2,              & 
-     &                   RAORW, WSTAR, RNFAC,            &
+        CALL SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,      &
+     &                   WAVNUM, CINV, XK2CG,                &
+     &                   WDWAVE, WSWAVE, UFRIC, Z0M, CHRNCK, &
+     &                   COSWDIF, SINWDIF2,                  & 
+     &                   RAORW, WSTAR, RNFAC,                &
      &                   FLD, SL, SPOS, XLLWS)
       END SELECT 
 

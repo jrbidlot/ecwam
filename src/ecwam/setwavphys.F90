@@ -52,7 +52,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
         TAUWSHELTER = 0.0_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_MIN = 0.4_JWRB
+        ANG_GC_MIN = 0.62_JWRB
         ANG_GC_A = 0.33_JWRB
         ANG_GC_B = 0.67_JWRB
         ANG_GC_C = 3.10_JWRB
@@ -70,7 +70,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
         IF(LLGCBZ0) THEN
           !!! not yet fully tested !!!
-          ALPHA   = 0.005_JWRB
+          ALPHA   = 0.0055_JWRB
           CHNKMIN_U = 28._JWRB
 
           IF(LLNORMAGAM) THEN
@@ -111,10 +111,10 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
         ZALP    = 0.008_JWRB
         TAILFACTOR = 2.4_JWRB
-        TAILFACTOR_PM = 3.0_JWRB
+        TAILFACTOR_PM = 0.0_JWRB
 
 !       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        ANG_GC_MIN = 0.4_JWRB
+        ANG_GC_MIN = 0.62_JWRB
         ANG_GC_A = 0.33_JWRB
         ANG_GC_B = 0.67_JWRB
         ANG_GC_C = 3.10_JWRB
@@ -135,14 +135,15 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
           Z0TUBMAX = 0.05_JWRB
           Z0RAT = 0.02_JWRB
           SWELLF4 = 1.15E05_JWRB
-          SWELLF7 = 4.32E05_JWRB
+!!!          SWELLF7 = 4.32E05_JWRB
+          SWELLF7 = 3.8E05_JWRB
 
           SWELLF7M1 = 1.0_JWRB/SWELLF7 
 
           SSDSC5  = 0.0_JWRB
 
           IF(LLNORMAGAM) THEN
-            BETAMAX = 1.39_JWRB
+            BETAMAX = 1.40_JWRB
             TAUWSHELTER = 0.0_JWRB
           ELSE
            !!! not yet fully tested !!!
