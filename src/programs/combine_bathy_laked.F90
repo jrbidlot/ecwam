@@ -49,7 +49,7 @@ INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL, IPR
 !$ INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
 INTEGER(KIND=JWIM), DIMENSION(NPARAM) :: IULAKE, KGRIB_HANDLE_LAKE, IPARAMID
-INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: INEWLAKE, IAVG
+INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: INEWLAKE, IAVG, INEWOCEAN
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLONRGG_LAKE
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KGRIB_BUFR
 INTEGER(KIND=JPKSIZE_T) :: KBYTES
@@ -241,8 +241,10 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
 
   ALLOCATE(INEWLAKE(MTHREADS))
   ALLOCATE(IAVG(MTHREADS))
+  ALLOCATE(INEWOCEAN(MTHREADS))
   INEWLAKE(:) = 0
   IAVG(:) = 0
+  INEWOCEAN(:) = 0
 
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, IC, IPR)
   DO JC = 1, NUMBEROFVALUES, NPROMA
@@ -255,11 +257,8 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       !  -----------------------------------------------------------------------
       IF ( VALUES_LAKE(IC,2) >= THRSLAKE ) THEN
       !! Lake point with cover above and equal to THRSLAKE, take the lake value
-        IF ( VALUES_BATHY(IC) /= ZMISS ) THEN
-!!!! for now only update lakes that were already in BATHY !!!!!!!!!!!!
-          VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
-          INEWLAKE(IPR) = INEWLAKE(IPR) + 1
-        ENDIF
+        VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
+        INEWLAKE(IPR) = INEWLAKE(IPR) + 1
       ELSEIF ( VALUES_LAKE(IC,1) <= THRSLSM .AND. VALUES_LAKE(IC,2) <= 0.01_JWRU ) THEN
       !! Not a lake point with a land sea mask below and equal THRSLSM (i.e. assumed to be ocean)
         IF ( VALUES_BATHY(IC) /= ZMISS ) THEN
@@ -272,6 +271,12 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
             VALUES_BATHY(IC) = 0.5_JWRU * ( VALUES_BATHY(IC) + MIN(VALUES_LAKE(IC,3), BATHYMAX) )
           ENDIF
           IAVG(IPR) = IAVG(IPR) + 1
+        ELSE
+          IF ( VALUES_LAKE(IC,1) <= 0.01_JWRU ) THEN
+            !! New Ocean points
+            VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
+            INEWOCEAN(IPR) = INEWOCEAN(IPR) + 1
+          ENDIF
         ENDIF
       ENDIF
     ENDDO
@@ -311,6 +316,8 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   WRITE(IU06,*) ''
   WRITE(IU06,*) '  Number of new lake points      = ', SUM(INEWLAKE(:))
   WRITE(IU06,*) '  Number of average ocean points = ', SUM(IAVG(:))
+  WRITE(IU06,*) '  Number of new ocean points = ', SUM(INEWOCEAN(:))
+
   WRITE(IU06,*) ''
 
   CALL IGRIB_GET_MESSAGE_SIZE(KGRIB_HANDLE_NEW_BATHY,KBYTES)
