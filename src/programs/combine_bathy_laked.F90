@@ -56,7 +56,7 @@ INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
 REAL(KIND=JWRU), PARAMETER :: BATHYMAX = 999.0_JWRU !! ecWAM maximum depth
 REAL(KIND=JWRU), PARAMETER :: THRSLSM = 0.5_JWRU    !! points with LSM below THRSLSM are assumed to be sea/ocean
-REAL(KIND=JWRU), PARAMETER :: THRSLAKE = 0.65_JWRU  !! points with lake cover above THRSLAKE are assumed to be resolved lake
+REAL(KIND=JWRU), PARAMETER :: THRSLAKE = 0.90_JWRU  !! points with lake cover above THRSLAKE are assumed to be resolved lake
 
 REAL(KIND=JWRU) :: DAMOWEP_LAKE, DAMOSOP_LAKE, DAMOEAP_LAKE, DAMONOP_LAKE, DXDELLA_LAKE, DXDELLO_LAKE
 REAL(KIND=JWRU), ALLOCATABLE, DIMENSION(:) :: VALUES_BATHY
