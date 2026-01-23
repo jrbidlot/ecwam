@@ -49,13 +49,14 @@ INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL, IPR
 !$ INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
 
 INTEGER(KIND=JWIM), DIMENSION(NPARAM) :: IULAKE, KGRIB_HANDLE_LAKE, IPARAMID
-INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: INEWLAKE, IAVG
+INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: INEWLAKE, IAVG, IRMVLAKE, ILAND
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLONRGG_LAKE
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KGRIB_BUFR
 INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
 REAL(KIND=JWRU), PARAMETER :: BATHYMAX = 999.0_JWRU !! ecWAM maximum depth
 REAL(KIND=JWRU), PARAMETER :: THRSLSM = 0.5_JWRU    !! points with LSM below THRSLSM are assumed to be sea/ocean
+REAL(KIND=JWRU), PARAMETER :: THRSLAND = 0.95_JWRU  !! points with LSM above THRSLAND should always be land
 REAL(KIND=JWRU), PARAMETER :: THRSLAKE = 0.90_JWRU  !! points with lake cover above THRSLAKE are assumed to be resolved lake
 
 REAL(KIND=JWRU) :: DAMOWEP_LAKE, DAMOSOP_LAKE, DAMOEAP_LAKE, DAMONOP_LAKE, DXDELLA_LAKE, DXDELLO_LAKE
@@ -241,8 +242,12 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
 
   ALLOCATE(INEWLAKE(MTHREADS))
   ALLOCATE(IAVG(MTHREADS))
+  ALLOCATE(IRMVLAKE(MTHREADS))
+  ALLOCATE(ILAND(MTHREADS))
   INEWLAKE(:) = 0
   IAVG(:) = 0
+  IRMVLAKE(:) = 0
+  ILAND(:) = 0
 
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JC, JCS, JCL, IC, IPR)
   DO JC = 1, NUMBEROFVALUES, NPROMA
@@ -254,9 +259,17 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       !! If land sea mask <= THRSLSM or lake cover > THRSLAKE then add that point to BATHY
       !  -----------------------------------------------------------------------
       IF ( VALUES_LAKE(IC,2) >= THRSLAKE ) THEN
-      !! Lake point with cover above and equal to THRSLAKE, take the lake value
+      !! Lake point with cover above and equal to THRSLAKE, take the lake va lue
         VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
         INEWLAKE(IPR) = INEWLAKE(IPR) + 1
+      ELSEIF ( VALUES_LAKE(IC,2) <= THRSLAKE .AND. VALUES_LAKE(IC,2) > 0.01_JWRU .AND. VALUES_LAKE(IC,1) > THRSLSM ) THEN
+      !! seen as a lake point (not ocean) but it is too small a lake, remove lake point
+        VALUES_BATHY(IC) = ZMISS
+        IRMVLAKE(IPR) = IRMVLAKE(IPR) + 1
+      ELSEIF ( VALUES_LAKE(IC,1) > THRSLAND .AND. VALUES_BATHY(IC) /= ZMISS  ) THEN
+      !! Assumed ocean point but with very large LSM, remove ocean point
+        VALUES_BATHY(IC) = ZMISS
+        ILAND(IPR) = ILAND(IPR) + 1
       ELSEIF ( VALUES_LAKE(IC,1) <= THRSLSM .AND. VALUES_LAKE(IC,2) <= 0.01_JWRU ) THEN
       !! Not a lake point with a land sea mask below and equal THRSLSM (i.e. assumed to be ocean)
         IF ( VALUES_BATHY(IC) /= ZMISS ) THEN
@@ -307,6 +320,8 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
   WRITE(IU06,*) ' New bathymetry file can be found in ',OUTFILENAME(1:LFILE)
   WRITE(IU06,*) ''
   WRITE(IU06,*) '  Number of new lake points      = ', SUM(INEWLAKE(:))
+  WRITE(IU06,*) '  Number of removed lake points  = ', SUM(IRMVLAKE(:))
+  WRITE(IU06,*) '  Number of removed ocean points = ', SUM(ILAND(:))
   WRITE(IU06,*) '  Number of average ocean points = ', SUM(IAVG(:))
 
   WRITE(IU06,*) ''
