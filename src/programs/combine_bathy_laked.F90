@@ -262,7 +262,7 @@ IF ( KGRIB_HANDLE_BATHY > 0 ) THEN
       !! Lake point with cover above and equal to THRSLAKE, take the lake va lue
         VALUES_BATHY(IC) = MIN(VALUES_LAKE(IC,3), BATHYMAX)
         INEWLAKE(IPR) = INEWLAKE(IPR) + 1
-      ELSEIF ( VALUES_LAKE(IC,2) < THRSLAKE .AND. VALUES_LAKE(IC,2) > 0.01_JWRU .AND. VALUES_LAKE(IC,1) > 0.01_JWRU ) THEN
+      ELSEIF ( VALUES_LAKE(IC,2) < THRSLAKE .AND. VALUES_LAKE(IC,2) > 0.01_JWRU .AND. VALUES_LAKE(IC,1) > THRSLSM ) THEN
       !! seen as a lake point (not ocean) but it is too small a lake, remove lake point
         VALUES_BATHY(IC) = ZMISS
         IRMVLAKE(IPR) = IRMVLAKE(IPR) + 1
