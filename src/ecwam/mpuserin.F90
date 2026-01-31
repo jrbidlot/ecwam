@@ -46,7 +46,7 @@
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
      &            ALTGRTHRSH, HSALTCUT, LALTGRDOUT, LALTPAS,            &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
-     &            LODBRALT ,CSATNAME
+     &            LODBRALT , LRALTPREPROC, CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
      &            LWCOUAST,                                             &
      &            LWCOUNORMS, LLNORMIFS2WAM,LLNORMWAM2IFS,LLNORMWAMOUT, &
@@ -206,7 +206,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   NGRIB_VERSION,                                                 &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT,                            &
+     &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LRALTPREPROC               &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -394,6 +394,7 @@
 !              NOT REQUIRED.  
 !     LODBRALT: IF TRUE THEN THE ALTIMETER DATA WILL BE READ AND PASSED 
 !               THROUGH OBSERVATION DATABASE (ODB)
+!     LRALTPREPROC CONTROLS WHETHER RADAR ALTIMETER OBS ARE PREPROCESSED BY RFL4WAM (true)
 !     LALTCOR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
 !              SEE GRFIELD(but this is different than the bias correction scheme)
 !              It was implemented when the ERS altimeters were used in operation.
@@ -584,6 +585,7 @@
       LRSTPARALR= .TRUE.
       LRSTINFDAT= .FALSE.
       LODBRALT  = .FALSE.
+      LRALTPREPROC = .TRUE.
       ICASE     = 1 
       ISHALLO   = 0   !! depricated 
       IPHYS     = 1
