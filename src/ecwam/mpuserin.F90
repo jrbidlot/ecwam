@@ -206,7 +206,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   NGRIB_VERSION,                                                 &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LRALTPREPROC               &
+     &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LRALTPREPROC,              &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
