@@ -68,7 +68,7 @@
 
       INTEGER(KIND=JWIM) :: IJ, M, K, MCUTB, MCUTT
 
-      REAL(KIND=JWRB) :: FCUTB, FCUTT, FBOT, FTOP, ZW
+      REAL(KIND=JWRB) :: FCUTB, FCUTB_FT, FCUTT, FBOT, FTOP, ZW
       REAL(KIND=JWRB) :: WL, WR, DF
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NFRE) :: FRLOC 
@@ -79,7 +79,8 @@
       IF (LHOOK) CALL DR_HOOK('SEBTMEAN',0,ZHOOK_HANDLE)
 
       FBOT = 1.0_JWRB/MAX(TT,EPSMIN)
-      FCUTB = MAX(FR(1),MIN(FBOT,FR(NFRE)))
+      FCUTB_FT = MIN(FBOT,FR(NFRE))
+      FCUTB = MAX(FR(1),FCUTB_FT)
       FBOT = MAX(FBOT,FR(NFRE))   !! FBOT is used if a tail contribution is needed
 
       MCUTB=1
@@ -135,7 +136,7 @@
         ENDDO
         DO K = 2, NANG
           DO IJ = KIJS, KIJL
-            F1D(IJ,N) = F1D(IJ,M)+FL1(IJ,K,M)*DELTH
+            F1D(IJ,M) = F1D(IJ,M)+FL1(IJ,K,M)*DELTH
           ENDDO
         ENDDO
       ENDDO
@@ -165,21 +166,31 @@
         ENDDO
       ENDDO
 
-!     CHECK IF A THE REQUESTED FREQUENCIES ARE ABOVE FR(NFRE)
+!     ADD SMALL CONTRIBUTION FOR A LINEAR FRONT TAIL IF NEEDED
+      IF (FCUTB_FT < FCUTB .AND. FCUTB == FR(1)) THEN
+        WL = (FR(1) - FCUTB_FT) / FR(1)
+        WR = 1.0_JWRB - WL
+        DF = 0.5_JWRB * (FR(1) - FCUTB_FT) * (1.0_JWRB + WR)
+        DO IJ = KIJS, KIJL
+          EBT(IJ) = EBT(IJ) + DF*F1D(IJ,1)
+        ENDDO
+      ENDIF
+
+!     CHECK IF A THE REQUESTED FREQUENCIES ARE ABOVE FR(NFRE) (f**-5 extension)
       IF ( FBOT < FTOP ) THEN
 
-        ZW = 0.25_JWRB * DELTH * FR5(NFRE) * ( 1.0_JWRB/FBOT**4 - 1.0_JWRB/FTOP**4 )
+        ZW = 0.25_JWRB * FR5(NFRE) * ( 1.0_JWRB/FBOT**4 - 1.0_JWRB/FTOP**4 )
         K=1
         DO IJ = KIJS, KIJL
-          TEMP(IJ) = FL1(IJ,K,NFRE)
+          F1D(IJ,NFRE) = FL1(IJ,K,NFRE)*DELTH
         ENDDO
         DO K = 2, NANG
           DO IJ = KIJS, KIJL
-            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,NFRE)
+            F1D(IJ,NFRE) = F1D(IJ,NFRE) + FL1(IJ,K,NFRE)*DELTH
           ENDDO
         ENDDO
         DO IJ = KIJS, KIJL
-          EBT(IJ) = EBT(IJ) + ZW*TEMP(IJ)
+          EBT(IJ) = EBT(IJ) + ZW*F1D(IJ,NFRE)
         ENDDO
 
       ENDIF 
