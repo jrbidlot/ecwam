@@ -50,7 +50,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR, FR5, DFIM, DELTH, FLOGSPRDM1
+      USE YOWFRED  , ONLY : FR, FR5, DELTH
       USE YOWPARAM , ONLY : NANG, NFRE
       USE YOWPCONS , ONLY : EPSMIN
 
@@ -68,35 +68,33 @@
 
       INTEGER(KIND=JWIM) :: IJ, M, K, MCUTB, MCUTT
 
-      REAL(KIND=JWRB) :: FCUTB, FCUTT, DFCUT, FBOT, FTOP, ZW
+      REAL(KIND=JWRB) :: FCUTB, FCUTT, FBOT, FTOP, ZW
+      REAL(KIND=JWRB) :: WL, WR, DF
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(NFRE) :: DFIMLOC
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: TEMP
+      REAL(KIND=JWRB), DIMENSION(NFRE) :: FRLOC 
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: F1D 
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('SEBTMEAN',0,ZHOOK_HANDLE)
 
-      DFIMLOC(:)=DFIM(:)
+      FBOT = 1.0_JWRB/MAX(TT,EPSMIN)
+      FCUTB = MAX(FR(1),MIN(FBOT,FR(NFRE)))
+      FBOT = MAX(FBOT,FR(NFRE))   !! FBOT is used if a tail contribution is needed
 
-      FBOT=1.0_JWRB/MAX(TT,EPSMIN)
-      FCUTB=MAX(FR(1),MIN(FBOT,FR(NFRE)))
-      FBOT=MAX(FBOT,FR(NFRE))
+      MCUTB=1
+      DO WHILE (FR(MCUTB) < FCUTB .AND. MCUTB < NFRE )
+        MCUTB = MCUTB+1
+      ENDDO
 
-      FTOP=1.0_JWRB/MAX(TB,EPSMIN)
-      FCUTT=MAX(FR(1),MIN(FTOP,FR(NFRE)))
-      FTOP=MAX(FTOP,FR(NFRE))
+      FTOP = 1.0_JWRB/MAX(TB,EPSMIN)
+      FCUTT = MAX(FR(1),MIN(FTOP,FR(NFRE)))
+      FTOP = MAX(FTOP,FR(NFRE))   !! FTOP is used if a tail contribution is needed
 
-      MCUTB=NINT(LOG10(FCUTB/FR(1))*FLOGSPRDM1)+1
-      MCUTB=MIN(MAX(1,MCUTB),NFRE)
-      DFCUT=0.5_JWRB*MAX(0.0_JWRB,FCUTB-0.5_JWRB*(FR(MAX(1,MCUTB-1))+FR(MCUTB)))
-      DFIMLOC(MCUTB)=MIN(DFCUT*DELTH,DFIM(MCUTB))
-      DFIMLOC(MCUTB)=DFIM(MCUTB)-DFIMLOC(MCUTB)
-
-      MCUTT=NINT(LOG10(FCUTT/FR(1))*FLOGSPRDM1)+1
-      MCUTT=MIN(MAX(1,MCUTT),NFRE)
-      DFCUT=0.5_JWRB*MAX(0.0_JWRB,FCUTT-0.5_JWRB*(FR(MAX(1,MCUTT-1))+FR(MCUTT)))
-      DFIMLOC(MCUTT)=MIN(DFCUT*DELTH,DFIM(MCUTT))
+      MCUTT=NFRE
+      DO WHILE (FR(MCUTT) > FCUTB .AND. MCUTT > 1 )
+        MCUTT = MCUTT-1
+      ENDDO
 
       IF(FCUTB == FCUTT) MCUTT=MCUTB-1
 
@@ -112,18 +110,58 @@
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTION.
 !        -----------------------------------------
 
-      DO M=MCUTB,MCUTT
+!     FREQUENCY SPECTRUM
+      IF (MCUTB > 1) THEN
+        FRLOC(MCUTB-1) = FCUTB
+        WL = (FR(MCUTB) - FCUTB) / (FR(MCUTB) - FR(MCUTB-1))
+        WR = 1.0_JWRB - WL
         K=1
-        DO IJ=KIJS,KIJL
-          TEMP(IJ) = FL1(IJ,K,M)
+        ! Linear interpolation
+        DO IJ = KIJS, KIJL
+          F1D(IJ,MCUTB-1) = ( WL*FL1(IJ,K,MCUTB-1) + WR*FL1(IJ,K,MCUTB) )*DELTH
         ENDDO
-        DO K=2,NANG
-          DO IJ=KIJS,KIJL
-            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,M)
+        DO K = 2, NANG
+          DO IJ = KIJS, KIJL
+            F1D(IJ,MCUTB-1) = F1D(IJ,MCUTB-1) + ( WL*FL1(IJ,K,MCUTB-1) + WR*FL1(IJ,K,MCUTB) )*DELTH
           ENDDO
         ENDDO
-        DO IJ=KIJS,KIJL
-          EBT(IJ) = EBT(IJ)+DFIMLOC(M)*TEMP(IJ)
+      ENDIF
+
+      DO M = MCUTB, MCUTT
+        FRLOC(M) = FR(M)
+        K=1
+        DO IJ = KIJS, KIJL
+          F1D(IJ,M) = FL1(IJ,K,M)*DELTH
+        ENDDO
+        DO K = 2, NANG
+          DO IJ = KIJS, KIJL
+            F1D(IJ,N) = F1D(IJ,M)+FL1(IJ,K,M)*DELTH
+          ENDDO
+        ENDDO
+      ENDDO
+
+      IF (MCUTT < NFRE) THEN
+        FRLOC(MCUTT+1) = FCUTT
+        WL = (FR(MCUTT+1) - FCUTT) / (FR(MCUTT+1) - FR(MCUTT))
+        WR = 1.0_JWRB - WL
+        K=1
+        ! Linear interpolation
+        DO IJ = KIJS, KIJL
+          F1D(IJ,MCUTT+1) = ( WL*FL1(IJ,K,MCUTT) + WR*FL1(IJ,K,MCUTT+1) )*DELTH
+        ENDDO
+        DO K = 2, NANG
+          DO IJ = KIJS, KIJL
+            F1D(IJ,MCUTT+1) = F1D(IJ,MCUTT+1) + ( WL*FL1(IJ,K,MCUTT) + WR*FL1(IJ,K,MCUTT+1) )*DELTH
+          ENDDO
+        ENDDO
+      ENDIF
+
+
+!     TRAPEZOIDAL INTERPOLATION of F1D between FRLOC(MCUTB) and FRLOC(MCUTT)
+      DO M = MAX(MCUTB-1,1), MIN(MCUTT,NFRE-1)
+        DF = 0.5_JWRB*(FRLOC(M+1)-FRLOC(M))
+        DO IJ = KIJS, KIJL
+          EBT(IJ) = EBT(IJ) + DF*(F1D(IJ,M+1)+F1D(IJ,M))
         ENDDO
       ENDDO
 
@@ -132,15 +170,15 @@
 
         ZW = 0.25_JWRB * DELTH * FR5(NFRE) * ( 1.0_JWRB/FBOT**4 - 1.0_JWRB/FTOP**4 )
         K=1
-        DO IJ=KIJS,KIJL
+        DO IJ = KIJS, KIJL
           TEMP(IJ) = FL1(IJ,K,NFRE)
         ENDDO
-        DO K=2,NANG
-          DO IJ=KIJS,KIJL
+        DO K = 2, NANG
+          DO IJ = KIJS, KIJL
             TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,NFRE)
           ENDDO
         ENDDO
-        DO IJ=KIJS,KIJL
+        DO IJ = KIJS, KIJL
           EBT(IJ) = EBT(IJ) + ZW*TEMP(IJ)
         ENDDO
 
