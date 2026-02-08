@@ -93,7 +93,7 @@
       FTOP = MAX(FTOP,FR(NFRE))   !! FTOP is used if a tail contribution is needed
 
       MCUTT=NFRE
-      DO WHILE (FR(MCUTT) > FCUTB .AND. MCUTT > 1 )
+      DO WHILE (FR(MCUTT) > FCUTT .AND. MCUTT > 1 )
         MCUTT = MCUTT-1
       ENDDO
 
