@@ -160,8 +160,17 @@
         WL = (FR(1) - FCUTB_FT) / FR(1)
         WR = 1.0_JWRB - WL
         DELF = 0.5_JWRB * (FR(1) - FCUTB_FT) * (1.0_JWRB + WR)
+        K=1
+        DO IJ=KIJS,KIJL
+          TEMP(IJ) = FL1(IJ,K,1)*DELTH
+        ENDDO
+        DO K=2,NANG
+          DO IJ=KIJS,KIJL
+            TEMP(IJ) = TEMP(IJ)+FL1(IJ,K,1)*DELTH
+          ENDDO
+        ENDDO
         DO IJ = KIJS, KIJL
-          EBT(IJ) = EBT(IJ) + DELF*F1D(IJ,1)
+          EBT(IJ) = EBT(IJ) + DELF*TEMP(IJ)
         ENDDO
       ENDIF
 
