@@ -89,6 +89,7 @@
       FBOT = MAX(FBOT,FR(NFRE))   !! FBOT is used if a tail contribution is needed
 
       MCUTB=1
+!!!!  MCUTB is defined such that the integration will need to be from index MAX(MCUTB-1,1)
       DO WHILE (FR(MCUTB) < FCUTB .AND. MCUTB < NFRE )
         MCUTB = MCUTB+1
       ENDDO
@@ -111,6 +112,7 @@
       FTOP = MAX(FTOP,FR(NFRE))   !! FTOP is used if a tail contribution is needed
 
       MCUTT=NFRE
+!!!!  MCUTT is defined such that the integration will need to be up to index MIN(MCUTT,NFRE)
       DO WHILE (FR(MCUTT) > FCUTT .AND. MCUTT > 1 )
         MCUTT = MCUTT-1
       ENDDO
@@ -140,7 +142,7 @@
 !*    2. INTEGRATE OVER FREQUENCIES AND DIRECTION.
 !        -----------------------------------------
 
-      DO M=MCUTB,MCUTT
+      DO M=MAX(MCUTB-1,1),MCUTT
         K=1
         DO IJ=KIJS,KIJL
           TEMP(IJ) = FL1(IJ,K,M)
