@@ -111,10 +111,10 @@
       FCUTT = MAX(FR(1),MIN(FTOP,FR(NFRE)))
       FTOP = MAX(FTOP,FR(NFRE))   !! FTOP is used if a tail contribution is needed
 
-      MCUTT=NFRE
+      MCUTT=1
 !!!!  MCUTT is defined such that the integration will need to be up to index MIN(MCUTT,NFRE)
-      DO WHILE (FR(MCUTT) > FCUTT .AND. MCUTT > 1 )
-        MCUTT = MCUTT-1
+      DO WHILE ( FCUTT > FR(MCUTT) .AND. MCUTT < NFRE )
+        MCUTT = MCUTT+1
       ENDDO
 
 

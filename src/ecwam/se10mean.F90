@@ -75,10 +75,11 @@
 
       IF (LHOOK) CALL DR_HOOK('SE10MEAN',0,ZHOOK_HANDLE)
 
-      MCUT=NFRE
-      DO WHILE (FR(MCUT) > FCUT .AND. MCUT > 1 )
-        MCUT = MCUT-1
+      MCUT=1
+      DO WHILE ( FCUT > FR(MCUT) .AND. MCUT < NFRE )
+        MCUT = MCUT+1
       ENDDO
+      
 
       DFIMLOC(:)=DFIM(:)
 
