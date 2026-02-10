@@ -87,7 +87,7 @@
       WL = (FR(MCUT)-FCUT)/DELF
       WR = 1.0_JWRB - WL
 
-      DFIMLOC(MCUT-1) = DELTH * 0.5_JWRB * ( (FR(MCUT-1)-FR(MCUT-2)) + ((FCUT-FR(MCUT-1)) * (1.0_JWRB + WL) )
+      DFIMLOC(MCUT-1) = DELTH * 0.5_JWRB * ( (FR(MCUT-1)-FR(MCUT-2)) + (FCUT-FR(MCUT-1)) * (1.0_JWRB + WL) )
       DFIMLOC(MCUT) = DELTH * 0.5_JWRB * (FCUT-FR(MCUT-1)) * WR 
 
 
