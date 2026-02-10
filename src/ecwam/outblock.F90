@@ -620,7 +620,11 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 !     add necessary code to compute the extra output fields
 !!!for testing
       IF (IPFGTBL(68 + 3*NTRAIN + NTEWH) /= 0) THEN
-        CALL CTCOR (KIJS, KIJL, FL1, BOUT(:,ITOBOUT(68 + 3*NTRAIN + NTEWH)))
+!!!!! for testing only        CALL CTCOR (KIJS, KIJL, FL1, BOUT(:,ITOBOUT(68 + 3*NTRAIN + NTEWH)))
+        TEWHMIN = 0.01_JWRB
+        TEWHMAX = 1.0_JWRB / FR(1)
+        CALL SEBTMEAN (KIJS, KIJL, FL2ND, TEWHMIN, TEWHMAX, FLD1)
+        BOUT(KIJS:KIJL,ITOBOUT(68 + 3*NTRAIN + NTEWH))=4._JWRB*SQRT(MAX(FLD1(KIJS:KIJL),0._JWRB))
       ENDIF
 
       IF (IPFGTBL(69 + 3*NTRAIN + NTEWH) /= 0) THEN
