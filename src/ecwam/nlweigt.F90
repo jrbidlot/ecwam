@@ -57,7 +57,7 @@
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
      &            FRH      ,KFRH     ,MFRSTLW  ,MLSTHG
       USE YOWPARAM , ONLY : NANG     ,NFRE
-      USE YOWPCONS , ONLY : PI       ,DEG
+      USE YOWPCONS , ONLY : PI       ,DEG      ,G        ,G_EARTH
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
@@ -67,7 +67,8 @@
 !*    *PARAMETER*  FOR DISCRETE APPROXIMATION OF NONLINEAR TRANSFER
 
       REAL(KIND=JWRB), PARAMETER :: ALAMD=0.25_JWRB
-      REAL(KIND=JWRB), PARAMETER :: CON=3000.0_JWRB
+      REAL(KIND=JWRB), PARAMETER :: CON_WAM=3000.0_JWRB
+      REAL(KIND=JWRB) :: CON
 !
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -87,6 +88,9 @@
 
       LOGICAL, PARAMETER :: LLPRINTOUT=.FALSE.
 ! ----------------------------------------------------------------------
+
+!     THE DIA COEFFICIENT SCALES AS G**-4 but originally WAM has ignored that by using a fixed CON_WAM value
+      CON = CON_WAM *(G_EARTH/G)**4
 
 !     0. ALLOCATE ARRAYS
 !        ---------------

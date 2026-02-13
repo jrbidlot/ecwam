@@ -116,8 +116,7 @@ PROGRAM CREATE_BATHY
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSCOR
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:,:) :: IOBSRLAT, IOBSRLON
 
-      REAL(KIND=JWRB), PARAMETER :: OLDPI = 3.1415927_JWRB
-      REAL(KIND=JWRB) :: PI, RAD, OLDRAD, G, X60, FR1
+      REAL(KIND=JWRB) :: PI, RAD, G, X60, FR1
       REAL(KIND=JWRB) :: XDELLA, XDELLO
       REAL(KIND=JWRB) :: AMOSOP, AMONOP, AMOWEP, AMOEAP
       REAL(KIND=JWRB) :: ALONL, ALONR, ALATB, ALATT, XLON
@@ -152,7 +151,6 @@ PROGRAM CREATE_BATHY
 
       PI=4.0_JWRB*ATAN(1.0_JWRB)
       RAD=PI/180.0_JWRB
-      OLDRAD=OLDPI/180.0_JWRB
       G=9.806_JWRB
       X60=60.0_JWRB
 
@@ -261,18 +259,9 @@ PROGRAM CREATE_BATHY
         COSPH(K)   = COS(XLAT(K)*RAD)
         IF (.NOT.LLGRID) THEN
           IF (IRGG.EQ.1) THEN
-            IF(XDELLA .EQ.  0.25_JWRB .AND.                             &
-     &         AMOWEP .EQ. -98.0_JWRB .AND. AMOSOP.EQ.9.0_JWRB .AND.    &
-     &         AMOEAP .EQ.  42.0_JWRB .AND. AMONOP.EQ.81.0_JWRB   ) THEN
-!         the old value for pi has to be taken in order to reproduce
-!         exactly the irregular grid of the operational LAW model 0.25
-              NLONRGG(K)=NINT(NX*COS((AMOSOP+REAL(K-1)*XDELLA)*OLDRAD))
-            ELSE
-!            The silly division by cos(x60*RAD) is an attempt at making sure
-!            that exactly 0.5 is used for cosine of 60 degrees.
-             NLONRGG(K)=                                                &
-     &         MAX(NINT(NX*(COS(XLAT(K)*RAD)/(2._JWRB*COS(X60*RAD)))),2)
-            ENDIF
+!           The silly division by cos(x60*RAD) is an attempt at making sure
+!           that exactly 0.5 is used for cosine of 60 degrees.
+            NLONRGG(K)=MAX(NINT(NX*(COS(XLAT(K)*RAD)/(2._JWRB*COS(X60*RAD)))),2)
             IF (MOD(NLONRGG(K),2).EQ.1) NLONRGG(K) = NLONRGG(K)+1
           ELSE
             NLONRGG(K) = NX

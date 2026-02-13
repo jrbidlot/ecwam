@@ -7,8 +7,8 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE FRCUTINDEX (KIJS, KIJL, FM, FMWS, UFRIC, CICOVER,     &
-     &                       MIJ, RHOWGDFTH)
+      SUBROUTINE FRCUTINDEX (KIJS, KIJL, FM, FMWS, UFRIC, CICOVER, WSWAVE, &
+     &                       MIJ, FCUT, RHOWGDFTH)
 
 ! ----------------------------------------------------------------------
 
@@ -24,8 +24,10 @@
 !          *FM*     - MEAN FREQUENCY
 !          *FMWS*   - MEAN FREQUENCY OF WINDSEA
 !          *UFRIC*  - FRICTION VELOCITY IN M/S
-!          *CICOVER*- CICOVER 
+!          *CICOVER*- SEA ICE COVER 
+!          *WSWAVE* - WIND SPEED
 !          *MIJ*    - LAST FREQUENCY INDEX for imposing high frequency tail
+!          *FCUT*   - THE ACTUAL FREQUENCY OF THE PROGNOSTIC PART OF SPECTRUM.
 !          *RHOWGDFTH - WATER DENSITY * G * DF * DTHETA
 !                       FOR TRAPEZOIDAL INTEGRATION BETWEEN FR(1) and FR(MIJ) 
 !                       !!!!!!!!  RHOWGDFTH=0 FOR FR > FR(MIJ)
@@ -47,12 +49,12 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
-     &                ZPIFR,                                            &
      &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
       USE YOWPARAM , ONLY : NFRE
-      USE YOWPCONS , ONLY : G        ,EPSMIN
+      USE YOWPCONS , ONLY : G        ,ZPI        ,EPSMIN   ,ROWATER
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
+      USE YOWWIND  , ONLY : WSPMIN_WAVE
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
 
@@ -62,13 +64,15 @@
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(OUT) :: MIJ(KIJL)
-      REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(IN) :: FM, FMWS, UFRIC, CICOVER
+      REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(IN) :: FM, FMWS, UFRIC, CICOVER, WSWAVE
+      REAL(KIND=JWRB),DIMENSION(KIJL), INTENT(OUT) :: FCUT
       REAL(KIND=JWRB),DIMENSION(KIJL,NFRE), INTENT(OUT) :: RHOWGDFTH 
 
 
       INTEGER(KIND=JWIM) :: IJ, M
 
-      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4
+      REAL(KIND=JWRB) :: FPMH, FPPM, FM2, FPM, FPM4, ZLOG10FR1
+      REAL(KIND=JWRB) :: ZHRWGDELTH, ZW1, ZRCUT, ZLOGFRATIOM1
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -81,27 +85,37 @@
 !*    VELOCITY. (FPM=G/(FRIC*ZPI*USTAR))
 !     ------------------------------------------------------------
 
-      FPMH = TAILFACTOR/FR(1)
-      FPPM = TAILFACTOR_PM*G/(FRIC*ZPIFR(1))
+      FPMH = TAILFACTOR
+      FPPM = TAILFACTOR_PM*G/(FRIC*ZPI)
+      ZLOG10FR1 = LOG10(FR(1))
 
       DO IJ=KIJS,KIJL
-        IF (CICOVER(IJ) <= CITHRSH_TAIL) THEN
+        IF (CICOVER(IJ) <= CITHRSH_TAIL .AND. WSWAVE(IJ) >= WSPMIN_WAVE) THEN
           FM2 = MAX(FMWS(IJ),FM(IJ))*FPMH
           FPM = FPPM/MAX(UFRIC(IJ),EPSMIN)
           FPM4 = MAX(FM2,FPM)
-          MIJ(IJ) = NINT(LOG10(FPM4)*FLOGSPRDM1)+1
-          MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+          MIJ(IJ) = INT((LOG10(FPM4)-ZLOG10FR1)*FLOGSPRDM1)+2
+          MIJ(IJ) = MIN(MAX(2,MIJ(IJ)),NFRE)
+          FCUT(IJ) = FPM4
+          FCUT(IJ) = MAX(MIN(FCUT(IJ),FR(NFRE)),FR(1))
         ELSE
           MIJ(IJ) = NFRE
+          FCUT(IJ) = FR(NFRE)
         ENDIF
       ENDDO
 
 !     SET RHOWGDFTH
+      ZHRWGDELTH=0.5_JWRB*ROWATER*G*DELTH
+      ZLOGFRATIOM1=1.0_JWRB/LOG(FRATIO)
       DO IJ=KIJS,KIJL
-        DO M=1,MIJ(IJ)
+        DO M=1,MIJ(IJ)-2
           RHOWGDFTH(IJ,M) = RHOWG_DFIM(M)
         ENDDO
-        IF (MIJ(IJ) /= NFRE) RHOWGDFTH(IJ,MIJ(IJ))=0.5_JWRB*RHOWGDFTH(IJ,MIJ(IJ))
+        ZW1 = LOG(FR(MIJ(IJ))/FCUT(IJ))*ZLOGFRATIOM1
+        ZRCUT = LOG(FCUT(IJ)/FR(MIJ(IJ)-1))
+        RHOWGDFTH(IJ,MIJ(IJ)-1)=0.5_JWRB*RHOWG_DFIM(MIJ(IJ)-1) + ZHRWGDELTH*FR(MIJ(IJ)-1)*ZRCUT*(1.0_JWRB+ZW1)
+        RHOWGDFTH(IJ,MIJ(IJ))=ZHRWGDELTH*FR(MIJ(IJ))*ZRCUT*(1.0_JWRB-ZW1)
+
         DO M=MIJ(IJ)+1,NFRE
           RHOWGDFTH(IJ,M) = 0.0_JWRB
         ENDDO

@@ -69,9 +69,17 @@
 
       IF (.NOT. INTFLDS%LALLOC) THEN
         CALL INTFLDS%ALLOC(UBOUNDS=[NPROMA_WAM, NCHNK])
-        INTFLDS%ALTWH(:,:)   = ZMISS
-        INTFLDS%CALTWH(:,:)  = ZMISS
-        INTFLDS%RALTCOR(:,:) = ZMISS
+        DO ICHNK=1,NCHNK
+          INTFLDS%PHIEPS(:, ICHNK)  = 0.0_JWRB
+          INTFLDS%PHIAW(:, ICHNK)   = 0.0_JWRB
+          INTFLDS%TAUOC(:, ICHNK)   = 0.0_JWRB
+          INTFLDS%STRNMS(:, ICHNK)  = 0.0_JWRB
+          INTFLDS%ALTWH(:, ICHNK)   = ZMISS
+          INTFLDS%CALTWH(:, ICHNK)  = ZMISS
+          INTFLDS%RALTCOR(:, ICHNK) = ZMISS
+          INTFLDS%WCF(:, ICHNK)  = 0.0_JWRB
+          INTFLDS%TLEMEAN(:, ICHNK)  = 0.0_JWRB
+        ENDDO
       ENDIF
 
 
