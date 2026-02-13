@@ -87,9 +87,9 @@
       IF (LHOOK) CALL DR_HOOK('WSIGSTAR',0,ZHOOK_HANDLE)
 
 
-!!! crazy idea to boost gustiness to compensate for lost of variability in the forecast
+!!!   Boost gustiness to compensate for lost of variability in the forecast
       IF (CDTPRO > CDATEF) THEN
-        BG_GUST = 1.2_JWRB
+        BG_GUST = 0.5_JWRB
       ELSE
         BG_GUST = 0.0_JWRB
       ENDIF
