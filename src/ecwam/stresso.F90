@@ -217,12 +217,12 @@
         TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
 
-      IF (.NOT. LLGCBZ0) THEN
+!!!!      IF (.NOT. LLGCBZ0) THEN
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
         DO IJ=KIJS,KIJL
           TAUW(IJ) = MIN(TAUW(IJ),UFRIC(IJ)**2*TAUTOUS2)
         ENDDO
-      ENDIF
+!!!!      ENDIF
 
       IF ( LLPHIWA ) THEN
         DO IJ=KIJS,KIJL
