@@ -78,6 +78,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 #include "cal_second_order_spec.intfb.h"
 #include "cimsstrn.intfb.h"
 #include "ctcor.intfb.h"
+#include "dmeansqs.intfb.h"
 #include "femean.intfb.h"
 #include "intpol.intfb.h"
 #include "kurtosis.intfb.h"
