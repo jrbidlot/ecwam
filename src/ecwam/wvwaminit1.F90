@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE WVWAMINIT1(LDWCOUIFS, LDWCOU2W, LDWCOURNW, LDWCOUHMF, LDWFLUX, LDWWCF, LFDBOPIFS)
+      SUBROUTINE WVWAMINIT1(LDWCOUIFS, LDWCOU2W, LDWCOURNW, LDWCOUHMF, LDWFLUX, LDWWCF, LDWMSS, LFDBOPIFS)
 
 ! ----------------------------------------------------------------------
 
@@ -15,7 +15,7 @@
 
 ! ----------------------------------------------------------------------
 
-      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUHMF, LWFLUX, LWWCF
+      USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUHMF, LWFLUX, LWWCF, LWMSS
       USE YOWCOUT  , ONLY : LFDB
       USE YOWMESPAS, ONLY : LFDBIOOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,NPREVIOUS,    NNEXT
@@ -28,7 +28,7 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
-      LOGICAL, INTENT(IN) :: LDWCOUIFS, LDWCOU2W, LDWCOURNW, LDWCOUHMF, LDWFLUX, LDWWCF, LFDBOPIFS
+      LOGICAL, INTENT(IN) :: LDWCOUIFS, LDWCOU2W, LDWCOURNW, LDWCOUHMF, LDWFLUX, LDWWCF, LDWMSS, LFDBOPIFS
 
 ! ----------------------------------------------------------------------
  
@@ -43,6 +43,7 @@
         LWCOUHMF=LDWCOUHMF
         LWFLUX=LDWFLUX
         LWWCF=LDWWCF
+        LWMSS=LDWMSS
         LFDB=LFDBOPIFS
         LFDBIOOUT=LFDBOPIFS
       ENDIF

@@ -29,8 +29,8 @@
 !              *KIJL*       - INDEX OF LAST GRIDPOINT.
 !              *F*          - SPECTRUM.
 !              *WAVNUM*     - WAVE NUMBER (M-1), FUNCTION OF FREQUENCY.
-!              *MSSXX*      - MEAN SQUARE SLOPE ALONG MODEL X-AXIS, C(TH)^2 (OUTPUT).
-!              *MSSYY*      - MEAN SQUARE SLOPE ALONG MODEL Y-AXIS, S(TH)^2 (OUTPUT).
+!              *MSSXX*      - MEAN SQUARE SLOPE ALONG MODEL X-AXIS, S(TH)^2 (OUTPUT).
+!              *MSSYY*      - MEAN SQUARE SLOPE ALONG MODEL Y-AXIS, C(TH)^2 (OUTPUT).
 !              *MSSXY*      - CROSS TERM MEAN SQUARE SLOPE, C(TH)*S(TH) (OUTPUT).
 
 !     METHOD.
@@ -109,11 +109,11 @@
       ENDIF
 
 !     X-COMPONENT
-      WANG(:) = COS(TH(:))*COS(TH(:))
+      WANG(:) = SIN(TH(:))*SIN(TH(:))
       CALL MEANSQS_LF(NFRE_EFF, KIJS, KIJL, F, WAVNUM, MSSXX(KIJS:KIJL), WANG)
 
 !     Y-COMPONENT
-      WANG(:) = SIN(TH(:))*SIN(TH(:))
+      WANG(:) = COS(TH(:))*COS(TH(:))
       CALL MEANSQS_LF(NFRE_EFF, KIJS, KIJL, F, WAVNUM, MSSYY(KIJS:KIJL), WANG)
 
 !     CROSS TERM
