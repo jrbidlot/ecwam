@@ -101,6 +101,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 
       IMPLICIT NONE
 
+#include "dmeansqs.intfb.h"
 #include "femeanws.intfb.h"
 #include "fkmean.intfb.h"
 #include "sbottom.intfb.h"
@@ -110,6 +111,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
 #include "sdiwbk.intfb.h"
 #include "sdice.intfb.h"
 #include "icebreak_modify_attenuation.intfb.h"
+#include "meansqs.intfb.h"
 #include "setice.intfb.h"
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
@@ -177,8 +179,6 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
 
-      LOGICAL :: LMSS
-
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
@@ -192,7 +192,6 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
       DELT5 = XIMP*DELT
 
       LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU.OR.LWWCF
-      LMSS=.TRUE.
 
 
       DO IJ=KIJS,KIJL
