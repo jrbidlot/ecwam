@@ -31,17 +31,13 @@
 !     *FILENAME* FILENAME (INCLUDING PATH) OF INPUT FILE
 !     *IUNIT*    FILE UNIT (ONLY ACTIVE IF PBIO OUTPUT)
 !     *LOUNIT*  LOGICAL, TRUE IF FREE UNIT HAS TO BE FOUND
-!     *LCUNIT* LOGICAL, TRUE IF UNIT HAs TO BE CLOSED 
+!     *LCUNIT* LOGICAL, TRUE IF UNIT HAs TO BE CLOSED
 !     *LRSTPARAL* LOGICAL, TRUE THEN READ IN PARALLEL
 
 
 !     METHOD.
 !     -------
 !     READS ARRAY FL FROM FILE (FORTRAN READ)
-
-!     IF PBIO IS USED, THEN PBREAD IS CALLED TO READ (MSUP-MINF+1) 
-!     FREQUENCY CONTRIBUTION TO FL.
-
 
 !     EXTERNALS.
 !     ----------
@@ -82,6 +78,7 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
+      LOGICAL :: LSTREAM
 
       LOGICAL :: LLEXIST
 
@@ -91,6 +88,8 @@
 
       LFILE=0
       IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
+
+      LSTREAM = .TRUE.  !! See also *WRITEFL*  It is a much more efficient way than sequential access
 
       IF (LOUNIT) THEN
         LLEXIST=.FALSE.
@@ -112,15 +111,12 @@
           WRITE (*,*) '*************************************'
           CALL ABORT1
         ENDIF
-        IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'r', 'u',0,'READWRITE')
+        IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'r', 'u',0,'READWRITE', LSTREAM=LSTREAM)
       ENDIF
 
       IF (LLUNSTR .AND. .NOT.LRSTPARAL) THEN
 #ifdef WAM_HAVE_UNWAM
-        READ(IUNIT) (((FL_G(IJ,J2,J3),                                  &
-     &                  IJ=IJINF,IJSUP),                                &
-     &                  J2=KINF,KSUP),                                  &
-     &                  J3=MINF,MSUP)
+        READ(IUNIT) FL_G(IJINF:IJSUP,KINF:KSUP,MINF:MSUP)
 
         CALL UNBLKRORD(-1,IJINF,IJSUP,KINF,KSUP,MINF,MSUP,              &
      &                 FL(IJINF:IJSUP,KINF:KSUP,MINF:MSUP),             &
@@ -128,19 +124,15 @@
 #else
       CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
 #endif
+
       ELSEIF (LRSTPARAL .OR. LL1D .OR. NPROC == 1) THEN
-        READ(IUNIT) (((FL(IJ,J2,J3),                                    &
-     &                  IJ=IJINF,IJSUP),                                &
-     &                  J2=KINF,KSUP),                                  &
-     &                  J3=MINF,MSUP)
+        READ(IUNIT) FL(IJINF:IJSUP,KINF:KSUP,MINF:MSUP)
+
       ELSE
 !       WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
 !       BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
 
-        READ(IUNIT) (((FL_G(IJ,J2,J3),                                  &
-     &                  IJ=IJINF,IJSUP),                                &
-     &                  J2=KINF,KSUP),                                  &
-     &                  J3=MINF,MSUP)
+        READ(IUNIT) FL_G(IJINF:IJSUP,KINF:KSUP,MINF:MSUP)
 
 !       RE-ORDER
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(J3, J2, IJ)
@@ -152,7 +144,6 @@
           ENDDO
         ENDDO
 !$OMP   END PARALLEL DO
-
 
       ENDIF
       IF (LCUNIT) CLOSE(IUNIT)

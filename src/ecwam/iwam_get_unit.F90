@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL, CDACTION)
+INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL, CDACTION, LSTREAM)
 
 !     FIND A FREE UNIT TO ACCESS A FILE (CDNAME) AND OPEN IT.
 
@@ -26,7 +26,10 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
       CHARACTER(LEN=1), INTENT(IN) :: CDACCESS, CDFORM
       INTEGER(KIND=JWIM), INTENT(IN) :: KRECL
 
-!!      INTEGER(KIND=JWIM) :: IWAM_GET_UNIT
+      LOGICAL, OPTIONAL, INTENT(IN) :: LSTREAM  ! if true, it treats the file as a continuous sequence of bytes and
+                                                ! eliminates the hidden header/footer record markers that typical
+                                                ! Fortran binary files create
+
 
       INTEGER(KIND=JWIM) :: MINUNIT, MAXUNIT, ILEN, JUME
 
@@ -63,8 +66,11 @@ INTEGER(KIND=JWIM) FUNCTION IWAM_GET_UNIT (KUSO, CDNAME, CDACCESS, CDFORM, KRECL
       IF (.NOT. LLOPENED) THEN
         IF ( CDACCESS == 'D' .OR. CDACCESS == 'd') CLACCESS="DIRECT"
         IF ( CDFORM   == 'U' .OR. CDFORM   == 'u') CLFORM="UNFORMATTED"
-        IF ( CDACCESS == 'A' .OR. CDACCESS == 'a') CLPOSITION="APPEND" 
- 
+        IF ( CDACCESS == 'A' .OR. CDACCESS == 'a') CLPOSITION="APPEND"
+        IF (PRESENT(LSTREAM)) THEN
+          IF ( LSTREAM ) CLACCESS="STREAM"
+        ENDIF
+
         DO JUME=MINUNIT,MAXUNIT,1
           INQUIRE ( UNIT=JUME, OPENED=LLUSED)
           IF ( .NOT. LLUSED) EXIT
