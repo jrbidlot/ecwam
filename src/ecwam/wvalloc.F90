@@ -81,6 +81,10 @@
           INTFLDS%RALTCOR(:, ICHNK) = ZMISS
           INTFLDS%WCF(:, ICHNK)  = 0.0_JWRB
           INTFLDS%TLEMEAN(:, ICHNK)  = 0.0_JWRB
+          INTFLDS%MSS(:, ICHNK)  = 0.0_JWRB
+          INTFLDS%MSSXX(:, ICHNK)  = 0.0_JWRB
+          INTFLDS%MSSYY(:, ICHNK)  = 0.0_JWRB
+          INTFLDS%MSSXY(:, ICHNK)  = 0.0_JWRB
         ENDDO
       ENDIF
 

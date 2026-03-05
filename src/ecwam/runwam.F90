@@ -95,6 +95,7 @@
 
       USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOURNW , LWCOUAST    ,    &
      &                      LWCOUHMF, LWFLUX, LWWCF, LWNEMOCOU     ,    &
+     &                      LWMSS                                  ,    &
      &                      NEMOINIDATE, NEMOINITIME               ,    &
      &                      NEMOITINI,   NEMOITEND                 ,    &
      &                      NEMOTSTEP,   NEMOFRCO                  ,    &
@@ -220,6 +221,7 @@
       LWCOUHMF=.FALSE.
       LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
       LWWCF=.FALSE.
+      LWMSS=.FALSE.
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LFDBIFS=.FALSE.
       LLINIT_WVFLDG=.FALSE.
@@ -235,7 +237,7 @@
 
       CALL WVWAMINIT (LWCOU,IU06,LLRNL,NGAUSSW,NLON,NLAT,RSOUTW,RNORTW)
 
-      CALL WVWAMINIT1 (LWCOU, LWCOU2W, LWCOURNW, LWCOUHMF, LWFLUX, LWWCF, LFDBIFS)
+      CALL WVWAMINIT1 (LWCOU, LWCOU2W, LWCOURNW, LWCOUHMF, LWFLUX, LWWCF, LWMSS, LFDBIFS)
 
       CALL WAM_GSTATS_SETUP()
 
