@@ -214,7 +214,7 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
                 IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
                 JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
 !              if lake cover = 0, we assume open ocean point, then get it directly from NEMO
-!!!!!!!!!!!! this not be true once we run NEMO over large lakes !!!!!!!!!
+!!!!!!!!!!!! this will not be true once we run NEMO over large lakes !!!!!!!!!
                 IF (FIELDG%LKFR(IX,JY) <= 0.0_JWRB ) THEN
                   WVENVI%IBRMEM(IJ,ICHNK) = NEMO2WAM%NEMOCIIBR(IJ,ICHNK)
                 ELSE

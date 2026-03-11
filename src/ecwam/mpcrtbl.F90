@@ -447,8 +447,24 @@
                            & 'SPACE TIME MAXIMUM WAVE HEIGHT' )
 
 !     PARAMETER 082
-      IR = DEFINE_PARAMETER( 82, 'wcfr', 140146, 0, 0, 0, .True., .True., &
+      IR = DEFINE_PARAMETER( 82, 'sibm', 262025, 0, 0, 0, .False., .True., &
+                           & 'SEA ICE BREAK UP MEMORY' )
+
+!     PARAMETER 083
+      IR = DEFINE_PARAMETER( 83, 'xwrs', 140149, 0, 0, 0, .False., .True., &
+                           & 'U-COMP WAVE RADIATIVE STRESS TO SEA ICE' )
+
+!     PARAMETER 084
+      IR = DEFINE_PARAMETER( 84, 'ywrs', 140150, 0, 0, 0, .False., .True., &
+                           & 'V-COMP WAVE RADIATIVE STRESS TO SEA ICE' )
+
+!     PARAMETER 085
+      IR = DEFINE_PARAMETER( 85, 'wcfr', 140146, 0, 0, 0, .True., .True., &
                            & 'WHITECAP FRACTION' )
+
+!     PARAMETER 086
+      IR = DEFINE_PARAMETER( 86, 'ctc', 140148, 0, 0, 0, .True., .True., &
+                           & 'CREST-TROUGH CORRELATION' )
 
 !     add new definition here:
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

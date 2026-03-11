@@ -242,6 +242,18 @@ parameters:
         sthmax:
                 index: 81
                 description: Space time maximum wave height
-        wcfr:
+        sibm:
                 index: 82
+                description: Sea ice break up memory
+        xwrs:
+                index: 83
+                description: U-component wave radiative stress to sea ice
+        ywrs:
+                index: 84
+                description: V-component wave radiative stress to sea ice
+        wcfr:
+                index: 85
+                description: Whitecap fraction 
+        ctc:
+                index: 86
                 description: Whitecap fraction 
