@@ -219,7 +219,7 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      IF (LICERUN .AND. LWAMRSETCI) THEN
+      IF (LICERUN) THEN
         DO IJ=KIJS,KIJL
           IF(CICOVER(IJ) > ZCITHRS) THEN
             OOVAL(IJ)=EXP(-MIN((CICOVER(IJ)*CITHRSH_INV)**4,ZMAXEXP))
@@ -231,14 +231,21 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
             CD_ICE = OOVAL(IJ)*CD_WAVE + (1.0_JWRB-OOVAL(IJ))*CD_BULK
             USTAR(IJ) = MAX(SQRT(CD_ICE)*U10P,EPSUS)
 
-            ! EM_OC and F1_OC with fully developed model ENERGY 
-            ! The significant wave height derived from EM_OC will be used
-            ! by NEMO as a scaling factor as if it was open ocean
-            EFD = MIN(EFD_FAC*USTAR(IJ)**4, EFD_MAX)
-            EM_OC(IJ) = MAX(OOVAL(IJ)*EM(IJ)+(1.0_JWRB-OOVAL(IJ))*EFD, EFD_MIN)
-            FFD = FFD_FAC/USTAR(IJ)
-            F1_OC(IJ) = OOVAL(IJ)*F1(IJ) + (1.0_JWRB-OOVAL(IJ))*FFD
-            F1_OC(IJ) = MIN(MAX(F1_OC(IJ), FR(2)),FR(NFRE))
+            IF (LWAMRSETCI) THEN
+!             RESETTING EM_OC AND F1_OC OVER SEA ICE
+!             THIS IS ONLY MEANINGFUL IF NO WAVE SEA-ICE INTERACTION 
+              ! EM_OC and F1_OC with fully developed model ENERGY 
+              ! The significant wave height derived from EM_OC will be used
+              ! by NEMO as a scaling factor as if it was open ocean
+              EFD = MIN(EFD_FAC*USTAR(IJ)**4, EFD_MAX)
+              EM_OC(IJ) = MAX(OOVAL(IJ)*EM(IJ)+(1.0_JWRB-OOVAL(IJ))*EFD, EFD_MIN)
+              FFD = FFD_FAC/USTAR(IJ)
+              F1_OC(IJ) = OOVAL(IJ)*F1(IJ) + (1.0_JWRB-OOVAL(IJ))*FFD
+              F1_OC(IJ) = MIN(MAX(F1_OC(IJ), FR(2)),FR(NFRE))
+            ELSE
+              EM_OC(IJ) = EM(IJ)
+              F1_OC(IJ) = F1(IJ)
+            ENDIF
           ELSE
             OOVAL(IJ) = 1.0_JWRB
             USTAR(IJ) = UFRIC(IJ)

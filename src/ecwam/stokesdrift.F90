@@ -55,7 +55,7 @@
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,    &
      &                      DFIM_SIM ,FRATIO   ,COSTH    ,SINTH
-      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH_TAIL
+      USE YOWICE   , ONLY : LICERUN  ,CITHRSH_TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
 
       USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -124,7 +124,7 @@
 
 !***  1.3 Sea Ice exception
 !     ---------------------
-      IF (LICERUN .AND. LWAMRSETCI) THEN
+      IF (LICERUN) THEN
         DO IJ=KIJS,KIJL
           IF (CICOVER(IJ) > CITHRSH_TAIL) THEN
             USTOKES(IJ) = 0.016_JWRB*WSWAVE(IJ)*SIN(WDWAVE(IJ))*(1.0_JWRB - CICOVER(IJ))

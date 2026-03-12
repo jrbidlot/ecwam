@@ -57,7 +57,7 @@
       USE YOWPCONS , ONLY : G        ,PI       ,ZPI
       USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,TH       ,    &
      &                      DFIM_SIM ,FRATIO   ,COSTH    ,SINTH
-      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH_TAIL
+      USE YOWICE   , ONLY : LICERUN  ,CITHRSH_TAIL
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_ODD
       USE YOWSHAL  , ONLY : BATHYMAX
 
@@ -143,7 +143,7 @@
 
 !***  1.3 Sea Ice exception
 !     ---------------------
-      IF (LICERUN .AND. LWAMRSETCI) THEN
+      IF (LICERUN) THEN
         ZDPTFAC = EXP(-2.0_JWRB*(ZPI*0.1_JWRB)**2*ZD/G)
         DO IJ=KIJS,KIJL
           IF (CICOVER(IJ) > CITHRSH_TAIL) THEN
