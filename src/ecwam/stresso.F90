@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE STRESSO (KIJS, KIJL, MIJ, FCUT, RHOWGDFTH,   &
+      SUBROUTINE STRESSO (ICALL, NCALL, KIJS, KIJL, MIJ, FCUT, RHOWGDFTH,   &
      &                    FL1, SL, SPOS,                      &
      &                    CINV,                               &
      &                    WDWAVE, UFRIC, Z0M, AIRD, RNFAC,    &
@@ -94,6 +94,8 @@
       IMPLICIT NONE
 #include "tau_phi_hf.intfb.h"
 
+      INTEGER(KIND=JWIM), INTENT(IN) :: ICALL  !! CALL NUMBER.
+      INTEGER(KIND=JWIM), INTENT(IN) :: NCALL  !! TOTAL NUMBER OF CALLS.
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       INTEGER(KIND=JWIM), INTENT(IN) :: MIJ(KIJL)
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: FCUT
@@ -217,12 +219,12 @@
         TAUWDIR(IJ) = ATAN2(XSTRESS(IJ),YSTRESS(IJ))
       ENDDO
 
-!!!!      IF (.NOT. LLGCBZ0) THEN
+      IF (.NOT. LLGCBZ0 .OR. ICALL  == NCALL) THEN
         TAUTOUS2 = 1.0_JWRB/(1.0_JWRB+EPS1)
         DO IJ=KIJS,KIJL
           TAUW(IJ) = MIN(TAUW(IJ),UFRIC(IJ)**2*TAUTOUS2)
         ENDDO
-!!!!      ENDIF
+      ENDIF
 
       IF ( LLPHIWA ) THEN
         DO IJ=KIJS,KIJL

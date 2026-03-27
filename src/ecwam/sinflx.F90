@@ -188,7 +188,7 @@ CALL FRCUTINDEX(KIJS, KIJL, FMEAN, FMEANWS, UFRIC, CICOVER, WSWAVE, MIJ, FCUT, R
 
 ! UPDATE TAUW
 !$loki inline
-CALL STRESSO (KIJS, KIJL, MIJ, FCUT, RHOWGDFTH,    &
+CALL STRESSO (ICALL, NCALL, KIJS, KIJL, MIJ, FCUT, RHOWGDFTH,    &
 &             FL1, SL, SPOS,                       &
 &             CINV,                                &
 &             WDWAVE, UFRIC, Z0M, AIRD, RNFAC,     &
