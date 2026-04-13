@@ -154,6 +154,8 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
                 NEMO2WAM%NEMOCIIBR(KIJL4CHNK(ICHNK)+1:NPROMA_WAM,ICHNK)    = NEMO2WAM%NEMOCIIBR(1, ICHNK)
               ENDIF
             ENDIF
+!           copy breakup memory to wave environment array on every coupling exchange
+            IF (LWNEMOCOUIBR) WVENVI%IBRMEM(:,ICHNK) = NEMO2WAM%NEMOCIIBR(:,ICHNK)
           ENDDO
 !$OMP     END PARALLEL DO
 
