@@ -154,8 +154,6 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
                 NEMO2WAM%NEMOCIIBR(KIJL4CHNK(ICHNK)+1:NPROMA_WAM,ICHNK)    = NEMO2WAM%NEMOCIIBR(1, ICHNK)
               ENDIF
             ENDIF
-!           copy breakup memory to wave environment array on every coupling exchange
-            IF (LWNEMOCOUIBR) WVENVI%IBRMEM(:,ICHNK) = NEMO2WAM%NEMOCIIBR(:,ICHNK)
           ENDDO
 !$OMP     END PARALLEL DO
 
@@ -221,19 +219,6 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
                 ENDIF
               ENDDO
             ENDIF
-
-            IF (LWNEMOCOUIBR) THEN
-              DO IJ = 1, NPROMA_WAM
-                IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-                JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-!              if lake cover = 0, we assume open ocean point, then get currents directly from NEMO
-                IF (FIELDG%LKFR(IX,JY) <= 0.0_JWRB ) THEN
-                  WVENVI%IBRMEM(IJ,ICHNK) = NEMO2WAM%NEMOCIIBR(IJ,ICHNK)
-                ELSE
-                  WVENVI%IBRMEM(IJ,ICHNK) = NEMO2WAM%NEMOCIIBR(IJ,ICHNK)
-                ENDIF
-              ENDDO
-            ENDIF
           ENDDO
 !$OMP   END PARALLEL DO
 
@@ -247,7 +232,6 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
              WVENVI%UCUR(:,ICHNK)=NEMO2WAM%NEMOUCUR(:,ICHNK)
              WVENVI%VCUR(:,ICHNK)=NEMO2WAM%NEMOVCUR(:,ICHNK)
             ENDIF
-            IF (LWNEMOCOUIBR) WVENVI%IBRMEM(:,ICHNK)=NEMO2WAM%NEMOCIIBR(:,ICHNK)
           ENDDO
 !$OMP     END PARALLEL DO
 

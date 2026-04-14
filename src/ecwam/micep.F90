@@ -9,7 +9,8 @@
 
 SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
  &                NXS, NXE, NYS, NYE, FIELDG,              &
- &                CICVR, CITH, NEMOCICOVER, NEMOCITHICK)
+ &                CICVR, CITH, NEMOCICOVER, NEMOCITHICK,    &
+ &                IBRMEM, NEMOCIIBR)
 
 !-------------------------------------------------------------------
 
@@ -37,7 +38,8 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 !     ---------
 !             *CALL MICEP* *(IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,
 !                            NXS, NXE, NYS, NYE, FIELDG,
-!                            CICVR, CITH, NEMOCICOVER, NEMOCITHICK)
+!                            CICVR, CITH, NEMOCICOVER, NEMOCITHICK,
+!                            IBRMEM, NEMOCIIBR)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
@@ -53,6 +55,8 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 !      *CITH*      SEA ICE THICKNESS.
 !      *NEMOCICOVER NEMO SEA ICE COVER (if used)
 !      *NEMOCITHICK NEMO SEA ICE THICKNESS (if used)
+!      *IBRMEM     ICE BREAKUP MEMORY (output, updated from NEMO if LWNEMOCOUIBR)
+!      *NEMOCIIBR  NEMO ICE BREAKUP FIELD (if used)
 
 
 
@@ -76,7 +80,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
       USE YOWPARAM , ONLY : SWAMPCITH
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06
-      USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT
+      USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUIBR
       USE YOWNEMOFLDS, ONLY : LNEMOICEREST
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
@@ -91,6 +95,8 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
       REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: CICVR, CITH
       REAL(KIND=JWRO), DIMENSION (KIJS:KIJL), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: IBRMEM
+      REAL(KIND=JWRO), DIMENSION (KIJS:KIJL), INTENT(IN) :: NEMOCIIBR
 
 
       INTEGER(KIND=JWIM) :: IJ, IX, IY
@@ -251,6 +257,27 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
           ENDIF
         ENDDO
 
+      ENDIF
+
+!     3. TRANSFER NEMO ICE BREAKUP MEMORY TO IBRMEM.
+!        ---------------------------------------------
+
+      IF (LWNEMOCOUIBR) THEN
+        IF (LWCOU) THEN
+          DO IJ=KIJS,KIJL
+            IX = IFROMIJ(IJ)
+            IY = JFROMIJ(IJ)
+            IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB) THEN
+!             if lake cover = 0, we assume open ocean point, then get ice breakup directly from NEMO
+              IBRMEM(IJ) = NEMOCIIBR(IJ)
+            ENDIF
+!           over lakes, IBRMEM keeps its existing (initialised) value
+          ENDDO
+        ELSE
+          DO IJ=KIJS,KIJL
+            IBRMEM(IJ) = NEMOCIIBR(IJ)
+          ENDDO
+        ENDIF
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('MICEP',1,ZHOOK_HANDLE)
