@@ -9,7 +9,7 @@
 
 SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
  &                NXS, NXE, NYS, NYE, FIELDG,              &
- &                CICVR, CITH, NEMOCICOVER, NEMOCITHICK,    &
+ &                CICVR, CITH, NEMOCICOVER, NEMOCITHICK,   &
  &                IBRMEM, NEMOCIIBR)
 
 !-------------------------------------------------------------------
@@ -55,8 +55,8 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 !      *CITH*      SEA ICE THICKNESS.
 !      *NEMOCICOVER NEMO SEA ICE COVER (if used)
 !      *NEMOCITHICK NEMO SEA ICE THICKNESS (if used)
-!      *IBRMEM     ICE BREAKUP MEMORY (output, updated from NEMO if LWNEMOCOUIBR)
-!      *NEMOCIIBR  NEMO ICE BREAKUP FIELD (if used)
+!      *IBRMEM*    ICE BREAKUP MEMORY (output, updated from NEMO if LWNEMOCOUIBR)
+!      *NEMOCIIBR* NEMO ICE BREAKUP FIELD (if used)
 
 
 
@@ -269,15 +269,18 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
             IY = JFROMIJ(IJ)
             IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB) THEN
 !             if lake cover = 0, we assume open ocean point, then get ice breakup directly from NEMO
+!!!!!!!!!!!! this will not be true once we run NEMO over large lakes !!!!!!!!!
               IBRMEM(IJ) = NEMOCIIBR(IJ)
             ENDIF
-!           over lakes, IBRMEM keeps its existing (initialised) value
+              IBRMEM(IJ) = 1.0_JWRB
           ENDDO
         ELSE
           DO IJ=KIJS,KIJL
             IBRMEM(IJ) = NEMOCIIBR(IJ)
           ENDDO
         ENDIF
+      ELSE
+        IBRMEM(:) = 1.0_JWRB
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('MICEP',1,ZHOOK_HANDLE)
