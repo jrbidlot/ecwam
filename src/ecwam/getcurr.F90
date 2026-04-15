@@ -81,6 +81,7 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,    &
 #include "abort1.intfb.h"
 #include "current2wam.intfb.h"
 #include "incdate.intfb.h"
+#include "mcurp.intfb.h"
 #include "wamcur.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
@@ -161,32 +162,20 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,    &
                   LLNEWINPUT=.TRUE.
 
                   CALL GSTATS(1444,0)
-!$OMP             PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
+!$OMP             PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL)
                   DO ICHNK = 1, NCHNK
 
                     OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
                     OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
 
-                    DO IJ = 1, NPROMA_WAM
-                      IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-                      JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-                      IF (FIELDG%LKFR(IX,JY) <=  0.0_JWRB ) THEN
-!                       if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-!                       In sea ice, the currents will be reduced as it not clear how wave - sea ice -current interaction works
-                        WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
- &                                                   NEMO2WAM%NEMOUCUR(IJ,ICHNK))
-                        WVENVI%UCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%UCUR(IJ,ICHNK) 
+                    KIJS=1
+                    KIJL=NPROMA_WAM
 
-                        WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
- &                                                 NEMO2WAM%NEMOVCUR(IJ,ICHNK))
-                        WVENVI%VCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%VCUR(IJ,ICHNK)
+                    CALL MCURP(KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),                  &
+     &                         NXS, NXE, NYS, NYE, FIELDG,                                                      &
+     &                         FF_NOW%CICOVER(:,ICHNK), NEMO2WAM%NEMOUCUR(:,ICHNK), NEMO2WAM%NEMOVCUR(:,ICHNK), &
+     &                         WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK))
 
-                      ELSE
-!                       no currents over lakes and land
-                        WVENVI%UCUR(IJ,ICHNK) = 0.0_JWRB
-                        WVENVI%VCUR(IJ,ICHNK) = 0.0_JWRB
-                      ENDIF
-                    ENDDO
                   ENDDO
 !$OMP             END PARALLEL DO
                   CALL GSTATS(1444,1)

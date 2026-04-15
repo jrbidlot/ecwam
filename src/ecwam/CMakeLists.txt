@@ -137,6 +137,7 @@ list( APPEND ecwam_srcs
   mfr.F90
   mfredir.F90
   mgrid.F90
+  mcurp.F90
   micep.F90
   mintf.F90
   mnintw.F90
