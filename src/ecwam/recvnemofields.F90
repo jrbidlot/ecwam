@@ -74,6 +74,7 @@ SUBROUTINE RECVNEMOFIELDS(BLK2LOC, WVENVI, NEMO2WAM,  &
 
 #include "abort1.intfb.h"
 #include "outmdldcp.intfb.h"
+#include "mcurp.intfb.h"
 #include "micep.intfb.h"
 
       TYPE(WVGRIDLOC), INTENT(IN) :: BLK2LOC
@@ -103,11 +104,11 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
       IF (LREST) THEN
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)
         DO ICHNK = 1, NCHNK
-          NEMO2WAM%NEMOCICOVER(:,ICHNK)=FF_NOW%CICOVER(:,ICHNK)
-          NEMO2WAM%NEMOCITHICK(:,ICHNK)=FF_NOW%CITHICK(:,ICHNK)
-          NEMO2WAM%NEMOUCUR(:,ICHNK)=WVENVI%UCUR(:,ICHNK)
-          NEMO2WAM%NEMOVCUR(:,ICHNK)=WVENVI%VCUR(:,ICHNK)
-          IF (LWNEMOCOUIBR) NEMO2WAM%NEMOCIIBR(:,ICHNK)=WVENVI%IBRMEM(:,ICHNK)
+          NEMO2WAM%NEMOCICOVER(:,ICHNK) = FF_NOW%CICOVER(:,ICHNK)
+          NEMO2WAM%NEMOCITHICK(:,ICHNK) = FF_NOW%CITHICK(:,ICHNK)
+          NEMO2WAM%NEMOUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
+          NEMO2WAM%NEMOVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
+          IF (LWNEMOCOUIBR) NEMO2WAM%NEMOCIIBR(:,ICHNK) = WVENVI%IBRMEM(:,ICHNK)
         ENDDO
 !$OMP   END PARALLEL DO
 
@@ -169,7 +170,7 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
 
       ENDIF
 
-!     UPDATE CICOVER, CITHICK UCUR AND VCUR AT !!! INITIAL TIME ONLY !!!!
+!     UPDATE CICOVER, CITHICK, IBRMEM, UCUR AND VCUR AT !!! INITIAL TIME ONLY !!!!
       IF (LINIT) THEN
 
         WRITE(IU06,*)' RECVNEMOFIELDS: INITIALISE OCEAN FIELDS'
@@ -179,66 +180,17 @@ IF (LHOOK) CALL DR_HOOK('RECVNEMOFIELDS',0,ZHOOK_HANDLE)
           KIJS=1
           KIJL=NPROMA_WAM
 
-          CALL MICEP(KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),  &
-     &               NXS, NXE, NYS, NYE, FIELDG,                                      &
-     &               FF_NOW%CICOVER(:,ICHNK), FF_NOW%CITHICK(:,ICHNK),                &
-     &               NEMO2WAM%NEMOCICOVER(:,ICHNK), NEMO2WAM%NEMOCITHICK(:,ICHNK))
+          CALL MICEP(KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),                            &
+     &               NXS, NXE, NYS, NYE, FIELDG,                                                                &
+     &               NEMO2WAM%NEMOCICOVER(:,ICHNK), NEMO2WAM%NEMOCITHICK(:,ICHNK), NEMO2WAM%NEMOCIIBR(:,ICHNK), &
+     &               FF_NOW%CICOVER(:,ICHNK), FF_NOW%CITHICK(:,ICHNK), WVENVI%IBRMEM(:,ICHNK))
+
+          CALL MCURP(KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),                  &
+     &               NXS, NXE, NYS, NYE, FIELDG,                                                      &
+     &               FF_NOW%CICOVER(:,ICHNK), NEMO2WAM%NEMOUCUR(:,ICHNK), NEMO2WAM%NEMOVCUR(:,ICHNK), &
+     &               WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK))
         ENDDO
 !$OMP   END PARALLEL DO
-
-
-        IF (LWCOU) THEN
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
-          DO ICHNK = 1, NCHNK
-
-            IF (LWNEMOCOUCUR) THEN
-              DO IJ = 1, NPROMA_WAM
-                IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-                JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-!              if lake cover = 0, we assume open ocean point, then get currents directly from NEMO
-!!!!!!!!!!!! this not be true once we run NEMO over large lakes !!!!!!!!!
-                IF (FIELDG%LKFR(IX,JY) <= 0.0_JWRB ) THEN
-                  WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
- &                                             NEMO2WAM%NEMOUCUR(IJ,ICHNK))
-                  WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
- &                                             NEMO2WAM%NEMOVCUR(IJ,ICHNK))
-                ELSE
-                  WVENVI%UCUR(IJ,ICHNK)=0.0_JWRB
-                  WVENVI%VCUR(IJ,ICHNK)=0.0_JWRB
-                ENDIF
-              ENDDO
-            ENDIF
-
-            IF (LWNEMOCOUIBR) THEN
-              DO IJ = 1, NPROMA_WAM
-                IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-                JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-!              if lake cover = 0, we assume open ocean point, then get it directly from NEMO
-!!!!!!!!!!!! this will not be true once we run NEMO over large lakes !!!!!!!!!
-                IF (FIELDG%LKFR(IX,JY) <= 0.0_JWRB ) THEN
-                  WVENVI%IBRMEM(IJ,ICHNK) = NEMO2WAM%NEMOCIIBR(IJ,ICHNK)
-                ELSE
-                  WVENVI%IBRMEM(IJ,ICHNK) = 1.0_JWRB
-                ENDIF
-              ENDDO
-            ENDIF
-
-          ENDDO
-!$OMP   END PARALLEL DO
-
-        ELSE
-
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)
-          DO ICHNK = 1, NCHNK
-            IF (LWNEMOCOUCUR) THEN
-             WVENVI%UCUR(:,ICHNK)=NEMO2WAM%NEMOUCUR(:,ICHNK)
-             WVENVI%VCUR(:,ICHNK)=NEMO2WAM%NEMOVCUR(:,ICHNK)
-            ENDIF
-            IF (LWNEMOCOUIBR) WVENVI%IBRMEM(:,ICHNK)=NEMO2WAM%NEMOCIIBR(:,ICHNK)
-          ENDDO
-!$OMP     END PARALLEL DO
-
-        ENDIF
 
       ENDIF
 
