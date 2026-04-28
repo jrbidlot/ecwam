@@ -51,6 +51,7 @@
      &            LFDB     ,                                            &
      &            IPFGTBL  ,NWRTOUTWAM, COUTNAME, NIPRMOUT,ITOBOUT  ,   &
      &            NTRAIN   ,LLPARTITION,NIPRMINFO,IPRMINFO          ,   &
+     &            NTSTK    ,DPTHSTK   ,                                 &
      &            IRWDIR, IRCD ,IRTAUW, IRU10  , IRALTHS ,IRALTHSC ,IRALTRC ,   &
      &            IRHS     ,IRTP     ,IRT1       ,IRPHIAW  ,IRPHIOC ,   &
      &            IRTAUOC   , IRHSWS   ,IRT1WS   ,IRBATHY  ,IRMSS   ,   &
@@ -78,6 +79,9 @@
 #include "mpabort.intfb.h"
 
       INTEGER(KIND=JWIM) :: IR, IFLAG, IT, IC, ITG, ITP, ITT, IZLEV
+      INTEGER(KIND=JWIM) :: ISTK, IPARAMID, IDPTHCM
+      CHARACTER(LEN=6)  :: CDEPTH
+      CHARACTER(LEN=32) :: CLONGNAME
 
 !     1. CREATE TABLE MAPPING OUTPUT INTEGRATED PARAMETER WITH PE RANK
 !        -------------------------------------------------------------
@@ -465,6 +469,28 @@
 !     PARAMETER 086
       IR = DEFINE_PARAMETER( 86, 'ctc', 140148, 0, 0, 0, .True., .True., &
                            & 'CREST-TROUGH CORRELATION' )
+
+!     PARAMETERS 087 to 087+2*NSTK 
+!     Define the depth for the Stokes drift at depth output
+      DPTHSTK(1) = 0.25_JWRB 
+      DO ISTK = 2, NTSTK
+        DPTHSTK(ISTK) = 2.0_JWRB * DPTHSTK(ISTK-1)
+      ENDDO
+
+      DO ISTK = 1, NTSTK
+        WRITE(CDEPTH,'(F6.2)') DPTHSTK(ISTK)
+!       IDPTHCM: using depth in cm as reference for the data is a hack.....
+        IDPTHCM=NINT(100*DPTHSTK(ISTK))
+!       Use experimental parameters from table 212
+        IPARAMID = 212*1000+99+2*ISTK-1
+        CLONGNAME = 'U-COMP STOKES DRIFT AT DEPTH '//CDEPTH//' m'
+        IR = DEFINE_PARAMETER( 86+ISTK, 'ust_', IPARAMID, IDPTHCM, 0, 0, .True., .True., CLONGNAME) 
+
+        IPARAMID = 212*1000+99+2*ISTK
+        CLONGNAME = 'V-COMP STOKES DRIFT AT DEPTH '//CDEPTH//' m'
+        IR = DEFINE_PARAMETER( 86+2*ISTK, 'vst_', IPARAMID, IDPTHCM, 0, 0, .True., .True., CLONGNAME) 
+      ENDDO
+
 
 !     add new definition here:
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

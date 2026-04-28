@@ -99,6 +99,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBS',0,ZHOOK_HANDLE)
         CALL OUTBLOCK(1, NPROMA_WAM, MIJ(:,ICHNK),                        &
      &                FL1(:,:,:,ICHNK), XLLWS(:,:,:,ICHNK),               &
      &                WVPRPT%WAVNUM(:,:,ICHNK), WVPRPT%CINV(:,:,ICHNK), WVPRPT%CGROUP(:,:,ICHNK), &
+     &                WVPRPT%STOKFAC(:,:,ICHNK), &
      &                WVENVI%DEPTH(:,ICHNK), WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK), &
      &                WVENVI%IODP(:,ICHNK),WVENVI%IBRMEM(:,ICHNK),                               &
      &                INTFLDS%ALTWH(:,ICHNK), INTFLDS%CALTWH(:,ICHNK), INTFLDS%RALTCOR(:,ICHNK), &
