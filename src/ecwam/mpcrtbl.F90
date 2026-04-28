@@ -473,7 +473,7 @@
       IPS=86
 !     PARAMETERS IPS+1 to IPS+1+2*NSTK 
 !     Define the depth for the Stokes drift at depth output
-      DPTHSTK(1) = 0.25_JWRB 
+      DPTHSTK(1) = 0.0625_JWRB 
       DO ISTK = 2, NTSTK
         DPTHSTK(ISTK) = 2.0_JWRB * DPTHSTK(ISTK-1)
       ENDDO
@@ -488,7 +488,7 @@
         IR = DEFINE_PARAMETER( IPS+2*ISTK-1, 'ust_', IPARAMID, IDPTHCM, 0, 0, .True., .True., CLONGNAME) 
 
         IPARAMID = 212*1000+99+2*ISTK
-        CLONGNAME = 'V-COMP STOKES DRIFT AT  '//CDEPTH//' m'
+        CLONGNAME = 'V-COMP STOKES DRIFT AT '//CDEPTH//' m'
         IR = DEFINE_PARAMETER( IPS+2*ISTK, 'vst_', IPARAMID, IDPTHCM, 0, 0, .True., .True., CLONGNAME) 
       ENDDO
 
