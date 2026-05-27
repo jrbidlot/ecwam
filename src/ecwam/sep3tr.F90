@@ -211,14 +211,20 @@
             IF (FL(IJ,K,M) > FLLOWEST) THEN
               ITHL   = 1 + MOD(NANG+K-2,NANG)
               ITHH   = 1 + MOD(K,NANG)
+!              IF ( FL(IJ,ITHL,M   ) > 0.0_JWRB .AND.                 &
+!     &             FL(IJ,ITHH,M   ) > 0.0_JWRB .AND.                 &
+!     &             FL(IJ,K   ,IFL ) > 0.0_JWRB .AND.                 &
+!     &             FL(IJ,K   ,IFH ) > 0.0_JWRB .AND.                 &
+!     &             FL(IJ,ITHL,IFL ) > 0.0_JWRB .AND.                 &
+!     &             FL(IJ,ITHL,IFH ) > 0.0_JWRB .AND.                 &
+!     &             FL(IJ,ITHH,IFL ) > 0.0_JWRB .AND.                 &
+!     &             FL(IJ,ITHH,IFH ) > 0.0_JWRB ) THEN
+
               IF ( FL(IJ,ITHL,M   ) > 0.0_JWRB .AND.                 &
      &             FL(IJ,ITHH,M   ) > 0.0_JWRB .AND.                 &
      &             FL(IJ,K   ,IFL ) > 0.0_JWRB .AND.                 &
-     &             FL(IJ,K   ,IFH ) > 0.0_JWRB .AND.                 &
      &             FL(IJ,ITHL,IFL ) > 0.0_JWRB .AND.                 &
-     &             FL(IJ,ITHL,IFH ) > 0.0_JWRB .AND.                 &
-     &             FL(IJ,ITHH,IFL ) > 0.0_JWRB .AND.                 &
-     &             FL(IJ,ITHH,IFH ) > 0.0_JWRB ) THEN
+     &             FL(IJ,ITHH,IFL ) > 0.0_JWRB ) THEN
 
 
                 IF ( FL(IJ,K,M) >= FL(IJ,K   ,IFL ) .AND.             &
