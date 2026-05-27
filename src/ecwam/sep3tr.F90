@@ -220,12 +220,6 @@
 !     &             FL(IJ,ITHH,IFL ) > 0.0_JWRB .AND.                 &
 !     &             FL(IJ,ITHH,IFH ) > 0.0_JWRB ) THEN
 
-              IF ( FL(IJ,ITHL,M   ) > 0.0_JWRB .AND.                 &
-     &             FL(IJ,ITHH,M   ) > 0.0_JWRB .AND.                 &
-     &             FL(IJ,K   ,IFL ) > 0.0_JWRB .AND.                 &
-     &             FL(IJ,ITHL,IFL ) > 0.0_JWRB .AND.                 &
-     &             FL(IJ,ITHH,IFL ) > 0.0_JWRB ) THEN
-
 
                 IF ( FL(IJ,K,M) >= FL(IJ,K   ,IFL ) .AND.             &
      &               FL(IJ,K,M) >= FL(IJ,K   ,IFH ) .AND.             &
@@ -240,7 +234,7 @@
                     NFRP(IJ,NPEAK(IJ)) = M
                     NTHP(IJ,NPEAK(IJ)) = K
                 ENDIF
-              ENDIF
+!!!!              ENDIF
             ENDIF
 
           ENDDO
