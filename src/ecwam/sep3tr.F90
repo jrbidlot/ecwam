@@ -332,7 +332,7 @@
 !*    6. PRESERVE TOTAL ENERGY
 !        ---------------------
 
-!     6.1 Distribute extra energy proportionally to swell trains
+!     6.1 Distribute extra energy proportionally to swell trains if more systems than NTRAIN
 
       DO IJ=KIJS,KIJL
         SUMETRAIN(IJ)=MAX(EMTRAIN(IJ,1),EPSMIN)
@@ -344,7 +344,11 @@
       ENDDO
 
       DO IJ=KIJS,KIJL
-        ENEX(IJ)=MAX((ETT(IJ)-SUMETRAIN(IJ)),0.0_JWRB)/SUMETRAIN(IJ)
+        IF (NPEAK(IJ) > NTRAIN ) THEN
+          ENEX(IJ)=MAX((ETT(IJ)-SUMETRAIN(IJ)),0.0_JWRB)/SUMETRAIN(IJ)
+        ELSE
+          ENEX(IJ)=0.0_JWRB
+        ENDIF
       ENDDO
 
       DO ISORT=1,NTRAIN
