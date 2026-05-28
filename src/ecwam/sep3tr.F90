@@ -154,7 +154,10 @@
             IF (FLSW(IJ,K,M) <= 0.0_JWRB) THEN
               FL(IJ,K,M) = 0.0_JWRB
             ELSE
-              FL(IJ,K,M) = 0.10_JWRB*(FLSW(IJ,KM,M)+FLSW(IJ,KP,M)) + 0.80_JWRB*FLSW(IJ,K,M) 
+!!!!              FL(IJ,K,M) = 0.10_JWRB*(FLSW(IJ,KM,M)+FLSW(IJ,KP,M)) + 0.80_JWRB*FLSW(IJ,K,M) 
+!!!debile remove the smoothing
+              FL(IJ,K,M) = FLSW(IJ,K,M) 
+
               ENMAX(IJ)=MAX(ENMAX(IJ),FL(IJ,K,M))
             ENDIF
           ENDDO
