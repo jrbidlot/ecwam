@@ -78,7 +78,9 @@
 
       IMPLICIT NONE
 #include "fndprt.intfb.h"
+#include "femean.intfb.h"
 #include "semean.intfb.h"
+#include "sthq.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -119,9 +121,11 @@
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ETT
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ENMAX, FLNOISE
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: SPRD
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: EUNASNG,  FUNASNG, THUNASNG
       REAL(KIND=JWRB), DIMENSION(KIJL,0:NPMAX) :: DIR, PER, ENE
       REAL(KIND=JWRB), DIMENSION(KIJL,NTRAIN) :: TEMPDIR, TEMPPER, TEMPENE
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FL, FLLOW
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SUNASGN
 
       LOGICAL :: LLEPSMIN
       LOGICAL :: LLADDPART
@@ -154,10 +158,7 @@
             IF (FLSW(IJ,K,M) <= 0.0_JWRB) THEN
               FL(IJ,K,M) = 0.0_JWRB
             ELSE
-!!!!              FL(IJ,K,M) = 0.10_JWRB*(FLSW(IJ,KM,M)+FLSW(IJ,KP,M)) + 0.80_JWRB*FLSW(IJ,K,M) 
-!!!debile remove the smoothing
-              FL(IJ,K,M) = FLSW(IJ,K,M) 
-
+              FL(IJ,K,M) = 0.10_JWRB*(FLSW(IJ,KM,M)+FLSW(IJ,KP,M)) + 0.80_JWRB*FLSW(IJ,K,M) 
               ENMAX(IJ)=MAX(ENMAX(IJ),FL(IJ,K,M))
             ENDIF
           ENDDO
@@ -214,14 +215,14 @@
             IF (FL(IJ,K,M) > FLLOWEST) THEN
               ITHL   = 1 + MOD(NANG+K-2,NANG)
               ITHH   = 1 + MOD(K,NANG)
-!              IF ( FL(IJ,ITHL,M   ) > 0.0_JWRB .AND.                 &
-!     &             FL(IJ,ITHH,M   ) > 0.0_JWRB .AND.                 &
-!     &             FL(IJ,K   ,IFL ) > 0.0_JWRB .AND.                 &
-!     &             FL(IJ,K   ,IFH ) > 0.0_JWRB .AND.                 &
-!     &             FL(IJ,ITHL,IFL ) > 0.0_JWRB .AND.                 &
-!     &             FL(IJ,ITHL,IFH ) > 0.0_JWRB .AND.                 &
-!     &             FL(IJ,ITHH,IFL ) > 0.0_JWRB .AND.                 &
-!     &             FL(IJ,ITHH,IFH ) > 0.0_JWRB ) THEN
+              IF ( FL(IJ,ITHL,M   ) > 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHH,M   ) > 0.0_JWRB .AND.                 &
+     &             FL(IJ,K   ,IFL ) > 0.0_JWRB .AND.                 &
+     &             FL(IJ,K   ,IFH ) > 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHL,IFL ) > 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHL,IFH ) > 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHH,IFL ) > 0.0_JWRB .AND.                 &
+     &             FL(IJ,ITHH,IFH ) > 0.0_JWRB ) THEN
 
 
                 IF ( FL(IJ,K,M) >= FL(IJ,K   ,IFL ) .AND.             &
@@ -237,7 +238,7 @@
                     NFRP(IJ,NPEAK(IJ)) = M
                     NTHP(IJ,NPEAK(IJ)) = K
                 ENDIF
-!!!!              ENDIF
+              ENDIF
             ENDIF
 
           ENDDO
@@ -255,7 +256,7 @@
       CALL FNDPRT(KIJS, KIJL, NPMAX,                  &
      &            NPEAK, MIJ, NTHP, NFRP,             &
      &            FLLOW, LLCOSDIFF, FLNOISE,          &
-     &            FL, SWM,                            &
+     &            FL, SWM, SUNASGN,                   &
      &            ENE, DIR, PER)
 
       ! UPDATE SWELL SPECTRUM ??????
@@ -271,6 +272,20 @@
       LLEPSMIN=.FALSE.
       CALL SEMEAN (FLSW, KIJS, KIJL, ETT, LLEPSMIN)
 
+
+!     PARTITION OF THE UNASSIGNED SWELL SPECTRA
+      CALL FEMEAN(KIJS, KIJL, SUNASGN, EUNASNG,  FUNASNG)
+      CALL STHQ(KIJS, KIJL, SUNASGN, THUNASNG)
+!     IF LESS THAN NTRAIN PARTITIONS, CREATE A NEW PARTITION WITH THE UNASSIGNED SWELL SPECTRUM
+      DO IJ=KIJS,KIJL
+        IF (NPEAK(IJ) < NTRAIN .AND. EUNASNG(IJ) > 0.0_JWRB  ) THEN
+          NPEAK(IJ) = NPEAK(IJ)+1
+          ENE(IJ,NPEAK(IJ)) = EUNASNG(IJ)
+          DIR(IJ,NPEAK(IJ)) = THUNASNG(IJ)
+          PER(IJ,NPEAK(IJ)) = 1.0_JWRB/FUNASNG(IJ)
+        ENDIF 
+      ENDDO
+
 !     REMOVE PARTITION WITH Hs < HSMIN 
 !     MEAN PERIOD > 1/FR(MIJ)
       DO IJ=KIJS,KIJL
@@ -279,9 +294,9 @@
           HSMIN=HSMIN_INTER+HSMIN_SLOPE*PER(IJ,IP)
           THRS=0.0625_JWRB*HSMIN**2
           IF (ENE(IJ,IP) < THRS .OR. PER(IJ,IP) < FRINVMIJ(IJ)) THEN
-            ENE(IJ,IP)=0.
-            DIR(IJ,IP)=0.
-            PER(IJ,IP)=0.
+            ENE(IJ,IP)=0.0_JWRB
+            DIR(IJ,IP)=0.0_JWRB
+            PER(IJ,IP)=0.0_JWRB`
             NPK(IJ)=NPK(IJ)-1
           ENDIF
         ENDDO
@@ -290,6 +305,7 @@
 !     IF NO SWELL PARTITION BUT TOTAL SWELL EXIST THEN
 !     ASSIGN FIRST PARTITION TO TOTAL SWELL
 !     IF IT HAS SWELL CHARACTERSITICS
+!     ALSO IF LESS THAN NTRAIN PARTITION, CREATE A NEW PARTITION WITH THE UNASSIGNED SWELL SPECTRUM
       DO IJ=KIJS,KIJL
         IF (NPK(IJ) <= 0 .AND. ESWELL(IJ) > 0.0_JWRB) THEN
           IF (FSWELL(IJ) < FSEA(IJ)) THEN
