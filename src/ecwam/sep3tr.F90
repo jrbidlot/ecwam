@@ -296,7 +296,7 @@
           IF (ENE(IJ,IP) < THRS .OR. PER(IJ,IP) < FRINVMIJ(IJ)) THEN
             ENE(IJ,IP)=0.0_JWRB
             DIR(IJ,IP)=0.0_JWRB
-            PER(IJ,IP)=0.0_JWRB`
+            PER(IJ,IP)=0.0_JWRB
             NPK(IJ)=NPK(IJ)-1
           ENDIF
         ENDDO
