@@ -287,7 +287,7 @@
       ENDDO
 
       DO IJ=KIJS,KIJL
-         IF( SUNASGN(IJ) > SUMETRAIN(IJ) ) THEN
+         IF( EUNASNG(IJ) > SUMETRAIN(IJ) ) THEN
            NPKNA(IJ)=NTRAIN
          ELSE
            NPKNA(IJ)=NTRAIN-1
