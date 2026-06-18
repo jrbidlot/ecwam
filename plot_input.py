@@ -24,7 +24,8 @@ fig, ax = plt.subplots()
 ax.plot(x, y, color="red", linestyle="-", label=filename)
 ax.legend()
 fig.autofmt_xdate()
-ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
+ax.xaxis.set_major_locator(mdates.HourLocator(byhour=0))
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
 
 # Save as PostScript
 fig.savefig(filename + ".ps")
