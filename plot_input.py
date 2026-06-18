@@ -9,4 +9,6 @@ y = data[:, 1]
 
 plt.plot(x, y, color="red", linestyle="-", label=filename)
 plt.legend()
+plt.savefig(filename + ".gif")
+plt.savefig(filename + ".ps")
 plt.show()
