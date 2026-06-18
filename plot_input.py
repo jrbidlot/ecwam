@@ -1,9 +1,7 @@
-import io
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from PIL import Image
 
 filename = "input"
 data = np.loadtxt(filename)
@@ -18,8 +16,5 @@ ax.legend()
 # Save as PostScript
 fig.savefig(filename + ".ps")
 
-# Save as GIF via PIL
-buf = io.BytesIO()
-fig.savefig(buf, format="png")
-buf.seek(0)
-Image.open(buf).save(filename + ".gif")
+# Save as PNG
+fig.savefig(filename + ".png")
