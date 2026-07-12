@@ -7,16 +7,17 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
+SUBROUTINE MICEP (KIJS, KIJL, IFROMIJ, JFROMIJ,            &
  &                NXS, NXE, NYS, NYE, FIELDG,              &
- &                CICVR, CITH, NEMOCICOVER, NEMOCITHICK)
+ &                NEMOCICOVER, NEMOCITHICK, NEMOCIIBR,     &
+ &                CICVR, CITH, IBRMEM) 
 
 !-------------------------------------------------------------------
 
-!**** *MICEP* - CLEAN UP SEA FRACTION FOR ALL SEA POINTS.
+!**** *MICEP* - CLEAN UP SEA ICE FRACTION AND THICKNESS FOR ALL SEA POINTS.
 !               DETERNINE THE SEA ICE THICKNESS IF NOT SUPPLIED
-!               AND CHECk THE CONSISTENCY BETWEEN SEA ICE COVER AND
-!               THICKNESS. IMPOSE MINIMUM THICKNESS.
+!               AND CHECK THE CONSISTENCY BETWEEN SEA ICE COVER AND
+!               THICKNESS. POSSIBLY IMPOSE MINIMUM THICKNESS.
 
 !     R. PORTZ     MPI HAMBURG   OCTOBER 1992
 !     J. BIDLOT    ECMWF         JUNE 1996    MESSAGE PASSING
@@ -35,13 +36,13 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 
 !**   INTERFACE
 !     ---------
-!             *CALL MICEP* *(IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,
+!             *CALL MICEP* *(KIJS, KIJL, IFROMIJ, JFROMIJ,
 !                            NXS, NXE, NYS, NYE, FIELDG,
-!                            CICVR, CITH, NEMOCICOVER, NEMOCITHICK)
+!                            NEMOCICOVER, NEMOCITHICK, NEMOCIIBR,
+!                            CICVR, CITH, IBRMEM) 
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
-!      *IPARAM*    INTEGER   GRIB PARAMETER OF FIELDG*CICOVER
 !      *KIJS*      INDEX OF FIRST GRIDPOINT
 !      *KIJL*      INDEX OF LAST GRIDPOINT
 !      *IFROMIJ*   POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
@@ -49,10 +50,12 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 !      *NXS:NXE*   FIRST DIMENSION OF FIELDG
 !      *NYS:NYE*   SECOND DIMENSION OF FIELDG
 !      *FIELDG*    INPUT FORCING FIELDS ON THE WAVE MODEL GRID
-!      *CICVR*     SEA ICE COVER.
-!      *CITH*      SEA ICE THICKNESS.
 !      *NEMOCICOVER NEMO SEA ICE COVER (if used)
 !      *NEMOCITHICK NEMO SEA ICE THICKNESS (if used)
+!      *NEMOCIIBR* NEMO ICE BREAKUP FIELD (if used)
+!      *CICVR*     SEA ICE COVER.
+!      *CITH*      SEA ICE THICKNESS.
+!      *IBRMEM*    ICE BREAKUP MEMORY (output, updated from NEMO if LWNEMOCOUIBR)
 
 
 
@@ -69,14 +72,14 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU, JWRO
       USE YOWDRVTYPE  , ONLY : FORCING_FIELDS
 
+      USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT, LWNEMOCOUIBR
       USE YOWICE   , ONLY : CITHRSH  ,LICERUN ,LMASKICE   ,LICETH     , &
-     &               HICMIN, LCIWA1
+     &               HICMIN, LCIWA1  ,LCIRSCTWC, PTHC1   ,PTHC2
       USE YOWMAP   , ONLY : NGX      ,NGY     ,CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : SWAMPCITH
       USE YOWPCONS , ONLY : ZMISS
       USE YOWTEST  , ONLY : IU06
-      USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUCIC, LWNEMOCOUCIT
       USE YOWNEMOFLDS, ONLY : LNEMOICEREST
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
@@ -85,21 +88,19 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IPARAM, KIJS, KIJL
-      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ  ,JFROMIJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
+      INTEGER(KIND=JWIM), DIMENSION(KIJS:KIJL), INTENT(IN) :: IFROMIJ, JFROMIJ
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
-      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: CICVR, CITH
-      REAL(KIND=JWRO), DIMENSION (KIJS:KIJL), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK
+      REAL(KIND=JWRO), DIMENSION (KIJS:KIJL), INTENT(IN) :: NEMOCICOVER, NEMOCITHICK, NEMOCIIBR
+      REAL(KIND=JWRB), DIMENSION (KIJS:KIJL), INTENT(INOUT) :: CICVR, CITH, IBRMEM
 
 
       INTEGER(KIND=JWIM) :: IJ, IX, IY
       INTEGER(KIND=JWIM) :: NICE
 
-!     CONSTANTS FOR PARAMETRISATION OF SEA ICE THICKNESS:
-      REAL(KIND=JWRB), PARAMETER :: C1=0.2_JWRB
-      REAL(KIND=JWRB), PARAMETER :: C2=0.4_JWRB
-
+      REAL(KIND=JWRB), PARAMETER :: PNOCICOVER=0.01_JWRB  ! SEA ICE COVER MINIMUM TO HAVE VALID SEA ICE INFORMATION
+      REAL(KIND=JWRB) :: ZCIMAXTHRS
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -119,20 +120,23 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
             IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB ) THEN
-!            if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO 
+!             if lake cover = 0, we assume open ocean point, then get sea ice directly from NEMO 
+!!!!!!!!!!!! this will not be true once we run NEMO over large lakes !!!!!!!!!
               CICVR(IJ) = NEMOCICOVER(IJ)
+              ZCIMAXTHRS = 1.0_JWRB
             ELSE
-!            get ice information from atmopsheric model
-              IF (FIELDG%CICOVER(IX,IY) == ZMISS .OR.                   &
-     &            FIELDG%CICOVER(IX,IY) < 0.01_JWRB .OR.                &
-     &            FIELDG%CICOVER(IX,IY) > 1.01_JWRB ) THEN
-                CICVR(IJ) = 0.0_JWRB
-              ELSEIF (FIELDG%CICOVER(IX,IY) > 0.95_JWRB) THEN
-                CICVR(IJ) = 1.0_JWRB
-              ELSE
-                CICVR(IJ) = FIELDG%CICOVER(IX,IY)
-              ENDIF
+!             get ice information from atmopsheric model for lake points
+              CICVR(IJ) = FIELDG%CICOVER(IX,IY)
+              ZCIMAXTHRS = 0.95_JWRB
             ENDIF
+
+!           Clean-up sea ice cover
+            IF (CICVR(IJ) == ZMISS .OR. CICVR(IJ) < PNOCICOVER .OR. CICVR(IJ) > 1.01_JWRB ) THEN
+              CICVR(IJ) = 0.0_JWRB
+            ELSEIF (CICVR(IJ) > ZCIMAXTHRS) THEN
+              CICVR(IJ) = 1.0_JWRB
+            ENDIF
+
           ENDDO
         ELSE
           DO IJ=KIJS,KIJL
@@ -141,28 +145,16 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
             CICVR(IJ) = NEMOCICOVER(IJ)
           ENDDO
         ENDIF
-      ELSEIF (IPARAM == 31) THEN
+      ELSE
         DO IJ=KIJS,KIJL
           IX = IFROMIJ(IJ)
           IY = JFROMIJ(IJ)
           IF (FIELDG%CICOVER(IX,IY) == ZMISS .OR.                       &
-     &        FIELDG%CICOVER(IX,IY) < 0.01_JWRB .OR.                    &
+     &        FIELDG%CICOVER(IX,IY) < PNOCICOVER .OR.                   &
      &        FIELDG%CICOVER(IX,IY) > 1.01_JWRB ) THEN
             CICVR(IJ) = 0.0_JWRB
-          ELSEIF (FIELDG%CICOVER(IX,IY) .GT. 0.95_JWRB) THEN
-            CICVR(IJ) = 1.0_JWRB
           ELSE
             CICVR(IJ) = FIELDG%CICOVER(IX,IY)
-          ENDIF
-        ENDDO
-      ELSEIF (IPARAM == 139) THEN
-        DO IJ=KIJS,KIJL
-          IX = IFROMIJ(IJ)
-          IY = JFROMIJ(IJ)
-          IF (FIELDG%CICOVER(IX,IY) < 271.5_JWRB) THEN
-            CICVR(IJ) = 1.0_JWRB
-          ELSE
-            CICVR(IJ) = 0.0_JWRB
           ENDIF
         ENDDO
       ENDIF 
@@ -185,7 +177,7 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
 !       SEA ICE THICKNESS IS PARAMETERISED:
         DO IJ=KIJS,KIJL
           IF (CICVR(IJ) > 0.0_JWRB) THEN
-            CITH(IJ)=MAX(C1+C2*CICVR(IJ),0.0_JWRB)
+            CITH(IJ)=MAX(PTHC1+PTHC2*CICVR(IJ),0.0_JWRB)
           ELSE
             CITH(IJ)=0.0_JWRB
           ENDIF
@@ -197,60 +189,104 @@ SUBROUTINE MICEP (IPARAM, KIJS, KIJL, IFROMIJ, JFROMIJ,    &
             IX = IFROMIJ(IJ)
             IY = JFROMIJ(IJ)
             IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB ) THEN
-!             if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
-              IF (LNEMOICEREST) THEN
+!           if lake cover = 0, we assume open ocean point, then get sea ice thickness directly from NEMO 
+!!!!!!!!!!!! this will not be true once we run NEMO over large lakes !!!!!!!!!
+              IF (LNEMOICEREST .OR. .NOT. LCIRSCTWC) THEN
                 CITH(IJ)=NEMOCITHICK(IJ)
               ELSE
+!!!!    define a representative sea ice thickness that accounts for sea ice coverage
                 CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
               ENDIF
             ELSE
-!           We should get ice thickness information from atmopsheric model
+!           We should get ice thickness information from atmosphere model
 !           but it is not yet coded. For now, parameterise it from the cover...
               IF (CICVR(IJ) > 0.0_JWRB) THEN
-                CITH(IJ)=MAX(C1+C2*CICVR(IJ),0.0_JWRB)
+                CITH(IJ)=MAX(PTHC1+PTHC2*CICVR(IJ),0.0_JWRB)
               ELSE
-               CITH(IJ)=0.0_JWRB
+                CITH(IJ)=0.0_JWRB
               ENDIF
             ENDIF
           ENDDO
 
         ELSE
-          IF (LNEMOICEREST) THEN
+          IF (LNEMOICEREST .OR. .NOT. LCIRSCTWC) THEN
             DO IJ=KIJS,KIJL
-               CITH(IJ)=NEMOCITHICK(IJ)
+              CITH(IJ)=NEMOCITHICK(IJ)
             ENDDO
           ELSE
+!!!!    define a representative sea ice thickness that accounts for sea ice coverage
             DO IJ=KIJS,KIJL
-               CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
+              CITH(IJ)=CICVR(IJ)*NEMOCITHICK(IJ)
             ENDDO
           ENDIF
         ENDIF
 
-!       CONSISTENCY CHECK:
-!       no ice if thickness < 0.5*HICMIN
+!!!     Consistency check with respect to sea ice cover
         DO IJ=KIJS,KIJL
-          IF (CICVR(IJ) > 0.0_JWRB .AND. CITH(IJ) < 0.5_JWRB*HICMIN) THEN
-            CICVR(IJ)=0.0_JWRB
-            CITH(IJ)=0.0_JWRB
-          ENDIF
+          IF (CICVR(IJ) < PNOCICOVER) CITH(IJ)=0.0_JWRB
         ENDDO
+
+
+        IF (LCIWA1) THEN
+  !       Consistency check needed for the LCIWA1 parameterization:
+  !       no ice if thickness < 0.5*HICMIN
+          DO IJ=KIJS,KIJL
+            IF (CICVR(IJ) > 0.0_JWRB .AND. CITH(IJ) < 0.5_JWRB*HICMIN) THEN
+              CICVR(IJ)=0.0_JWRB
+              CITH(IJ)=0.0_JWRB
+            ENDIF
+          ENDDO
+        ENDIF
 
       ELSE
 
-!!!!   define a representative sea ice thickness that account for sea ice coverage
+        IF (LCIRSCTWC) THEN
+!!!!    define a representative sea ice thickness that accounts for sea ice coverage
+          DO IJ=KIJS,KIJL
+            CITH(IJ)=CICVR(IJ)*CITH(IJ)
+          ENDDO
+        ENDIF
+
+!!!     Consistency check with respect to sea ice cover
         DO IJ=KIJS,KIJL
-          CITH(IJ)=CICVR(IJ)*CITH(IJ)
+          IF (CICVR(IJ) < PNOCICOVER) CITH(IJ)=0.0_JWRB
         ENDDO
 
-!       CONSISTENCY CHECK:
-!       no ice if thickness < 0.5*HICMIN
-        DO IJ=KIJS,KIJL
-          IF (CICVR(IJ) > 0.0_JWRB .AND. CITH(IJ) < 0.5_JWRB*HICMIN) THEN
-            CICVR(IJ)=0.0_JWRB
-            CITH(IJ)=0.0_JWRB
-          ENDIF
-        ENDDO
+        IF (LCIWA1) THEN
+!         CONSISTENCY CHECK:
+!         no ice if thickness < 0.5*HICMIN
+          DO IJ=KIJS,KIJL
+            IF (CICVR(IJ) > 0.0_JWRB .AND. CITH(IJ) < 0.5_JWRB*HICMIN) THEN
+              CICVR(IJ)=0.0_JWRB
+              CITH(IJ)=0.0_JWRB
+            ENDIF
+          ENDDO
+        ENDIF
 
+      ENDIF
+
+!     3. TRANSFER NEMO ICE BREAKUP MEMORY TO IBRMEM.
+!        ---------------------------------------------
+
+      IF (LWNEMOCOUIBR) THEN
+        IF (LWCOU) THEN
+          DO IJ=KIJS,KIJL
+            IX = IFROMIJ(IJ)
+            IY = JFROMIJ(IJ)
+            IF (FIELDG%LKFR(IX,IY) <= 0.0_JWRB) THEN
+!             if lake cover = 0, we assume open ocean point, then get ice breakup directly from NEMO
+!!!!!!!!!!!! this will not be true once we run NEMO over large lakes !!!!!!!!!
+              IBRMEM(IJ) = NEMOCIIBR(IJ)
+            ENDIF
+              IBRMEM(IJ) = 1.0_JWRB
+          ENDDO
+        ELSE
+          DO IJ=KIJS,KIJL
+            IBRMEM(IJ) = NEMOCIIBR(IJ)
+          ENDDO
+        ENDIF
+      ELSE
+        IBRMEM(:) = 1.0_JWRB
       ENDIF
 
       IF (LHOOK) CALL DR_HOOK('MICEP',1,ZHOOK_HANDLE)

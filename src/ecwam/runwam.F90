@@ -94,8 +94,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUP  , ONLY : LWCOU, LWCOU2W, LWCOURNW , LWCOUAST    ,    &
-     &                      LWCOUHMF, LWFLUX, LWNEMOCOU            ,    &
-     &                      NEMOINIDATE, NEMOINITIME               ,    &
+     &                      LWCOUHMF, LWFLUX, LWSPRAY, LWWCF,           &
+     &                      LWNEMOCOU     ,NEMOINIDATE, NEMOINITIME,    &
      &                      NEMOITINI,   NEMOITEND                 ,    &
      &                      NEMOTSTEP,   NEMOFRCO                  ,    &
      &                      NEMONSTEP,   NEMOCSTEP, NEMOWSTEP
@@ -219,6 +219,8 @@
       LWCOUAST=.FALSE.
       LWCOUHMF=.FALSE.
       LWFLUX=.FALSE. ! will be reset to true if ocean fluxes are output.
+      LWSPRAY=.FALSE.
+      LWWCF=.FALSE.
       LWCUR=.FALSE. ! only used in coupled runs with atmospheric model
       LFDBIFS=.FALSE.
       LLINIT_WVFLDG=.FALSE.
@@ -234,7 +236,7 @@
 
       CALL WVWAMINIT (LWCOU,IU06,LLRNL,NGAUSSW,NLON,NLAT,RSOUTW,RNORTW)
 
-      CALL WVWAMINIT1 (LWCOU, LWCOU2W, LWCOURNW, LWCOUHMF, LWFLUX, LFDBIFS)
+      CALL WVWAMINIT1 (LWCOU, LWCOU2W, LWCOURNW, LWCOUHMF, LWFLUX, LWSPRAY, LWWCF, LFDBIFS)
 
       CALL WAM_GSTATS_SETUP()
 
