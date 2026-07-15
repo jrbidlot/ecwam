@@ -47,7 +47,6 @@
       LOGICAL :: LCIWA3
       LOGICAL :: LCIWA_ANY
       LOGICAL :: LCISCAL
-      LOGICAL :: LCIRSCTWC
 
 !--------------------------------------------------------------------
 
@@ -95,6 +94,5 @@
 !     LCIWA3       LOGICAL   SET TO TRUE IF SEA ICE VISCOUS FRICTION ATTENUATION IS USED.
 !     LCIWA_ANY    LOGICAL   TRUE IF ANY OF THE LCIWA's IS TRUE 
 !     LCISCAL      LOGICAL   SET TO TRUE TO SCALE INPUT AND DISSIPATION SOURCE TERMS BY SEA ICE CONCENTRATION
-!     LCIRSCTWC    LOGICAL   IF TRUE, RESCALE SEA ICE THICKNESS WITH COVER
 !--------------------------------------------------------------------
       END MODULE YOWICE
