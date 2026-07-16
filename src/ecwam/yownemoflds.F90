@@ -18,6 +18,7 @@
       TYPE(WAVE2OCEAN) :: WAM2NEMO
       TYPE(OCEAN2WAVE) :: NEMO2WAM
 
+      LOGICAL :: LNEMOCITHICK
 
 !--------------------------------------------------------------------
 
