@@ -101,6 +101,19 @@
 
       READ(IUNIT) CDTPRO, CDATEWO, CDAWIFL, CDATEFL, LRSTPARAL_IN, LL1D_IN, IJINF_IN, IJSUP_IN
 
+      IF ( LRSTPARAL ) THEN
+        IF ( LL1D_IN .NEQV. LL1D ) THEN
+          WRITE (NULERR,*) '******************************************************'
+          WRITE (NULERR,*) '*                                                    *'
+          WRITE (NULERR,*) '*  ERROR IN READSTRESS :                             *'
+          WRITE (NULERR,*) '*  RESTART FILE CREATED WITH MODEL DECOMPOSITION : ', LL1D_IN
+          WRITE (NULERR,*) '*  BUT THE CURRENT MODEL DECOMPOSITION IS ', LL1D
+          WRITE (NULERR,*) '*  CHANGE LL1D IN THE INPUT NAMELIST TO BE ', LL1D_IN
+          WRITE (NULERR,*) '*                                                    *'
+          WRITE (NULERR,*) '******************************************************'
+          CALL ABORT1
+        ENDIF
+      ENDIF
       IF ( IJINF_IN /= IJINF .OR. IJSUP_IN /= IJSUP ) THEN
         WRITE (NULERR,*) '******************************************************'
         WRITE (NULERR,*) '*                                                    *'
@@ -110,13 +123,6 @@
         WRITE (NULERR,*) '*  IJINF_IN , IJINF : ', IJINF_IN , IJINF
         WRITE (NULERR,*) '*  IJSUP_IN , IJSUP : ', IJSUP_IN , IJSUP
         WRITE (NULERR,*) '*  LRSTPARAL_IN, LRSTPARAL : ', LRSTPARAL_IN, LRSTPARAL
-        IF ( LRSTPARAL ) THEN
-          IF ( LL1D_IN .NEQV. LL1D ) THEN
-            WRITE (NULERR,*) '*  RESTART FILE CREATED WITH MODEL DECOMPOSITION : ', LL1D_IN
-            WRITE (NULERR,*) '*  BUT THE CURRENT MODEL DECOMPOSITION IS ', LL1D
-            WRITE (NULERR,*) '*  CHANGE LL1D IN THE INPUT NAMELIST TO BE ', LL1D_IN
-          ENDIF
-        ENDIF
         WRITE (NULERR,*) '*                                                    *'
         WRITE (NULERR,*) '******************************************************'
         CALL ABORT1
