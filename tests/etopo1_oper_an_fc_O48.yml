@@ -2,6 +2,7 @@ grid:        O48
 cldomain:     g
 directions:  12
 frequencies: 25
+frequencies_phys: 33
 fr1:         4.177248E-02 
 ifre1:       1
 bathymetry:  ETOPO1
@@ -28,8 +29,6 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 32
-lgribin: F
-lgribout: F
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
@@ -40,7 +39,11 @@ forcings:
         timestep:  06:00
       - begin:     ${forecast.begin}
         end:       ${forecast.end}
-        timestep:  01:00 
+        timestep:  01:00
+
+input:
+    from: preset 
+    format: binary 
 
 output:
     fields:
@@ -118,7 +121,7 @@ output:
           - timestep: 01:00
 
     restart:
-        format: binary # (default : binary) or grib
+        format: binary
         at:
           - time: ${analysis.end}
 
@@ -130,33 +133,33 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 3.830924202241996e-01 
+      average: 3.828369846198414e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD88496120D56DC']
+      hashes: ['0x3FD88066B2290DE9']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 1.059076530679594e+00
+      average: 1.058864941395506e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0F1FA3B73AE11']
+      hashes: ['0x3FF0F11C5D62CB62']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 1.223563306057211e+00
+      average: 1.223740010565703e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF393B71E019F2A']
+      hashes: ['0x3FF3947067C2FB75']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.4326539111291028E-02
+      minimum: 4.326744273250027e-03 
       relative_tolerance: 1.e-14
-      hashes: ['0x3F71B8B47FCE4627']
+      hashes: ['0x3F71B8EB926DA040']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 6.511460010823870e+00 
+      maximum: 6.510952502384819e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x401A0BBC2C4ECD23']
+      hashes: ['0x401A0B3721FE3569']
 
   single_precision:
 

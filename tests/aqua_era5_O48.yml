@@ -2,6 +2,7 @@ grid:        O48
 cldomain:     g
 directions:  12
 frequencies: 25
+frequencies_phys: 33
 fr1:         4.177248E-02
 ifre1:       1
 bathymetry:  aqua
@@ -23,8 +24,7 @@ begin:     2022-01-01 00:00:00
 end:       2022-01-01 06:00:00
 
 nproma: 24
-lgribin: F
-lgribout: F
+
 
 forcings:
     file:  data/forcings/era5_2022010100_36h_O48.grib
@@ -32,6 +32,10 @@ forcings:
       - begin:     ${begin}
         end:       ${end}
         timestep:  01:00
+
+input:
+    from: preset 
+    format: binary 
 
 output:
     fields:
@@ -48,7 +52,7 @@ output:
           - timestep: 01:00
 
     restart:
-        format: binary # (default : binary) or grib
+        format: binary
         at:
           - time: ${end}
 
@@ -60,33 +64,33 @@ validation:
     # initial time
     - name: swh
       time: 2022-01-01 00:00:00
-      average: 3.759515218870229e-01 
+      average: 3.757011309143647e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD80F96F8D8B75D']
+      hashes: ['0x3FD80B7CC1963BFC']
 
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
-      average: 4.618561980882285e-01
+      average: 4.594959333480445e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FDD8F0D4C8F9B0F']
+      hashes: ['0x3FDD6861A197FD7E']
 
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
-      average: 7.045946694407140e-01
+      average: 7.015651557296426e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FE68C0A1EC5E1AB']
+      hashes: ['0x3FE67338C4FBE71D']
     - name: swh
       time: 2022-01-01 06:00:00
-      minimum: 2.176688382325517e-01 
+      minimum: 2.172189516045184e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FCBDC928EC89785']
+      hashes: ['0x3FCBCDD4A29B3D76']
     - name: swh
       time: 2022-01-01 06:00:00
-      maximum: 4.283898323513900e+00 
+      maximum: 4.283494243071386e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x401122B63DFB8695']
+      hashes: ['0x4011224C509A622E']
 
   single_precision:
 

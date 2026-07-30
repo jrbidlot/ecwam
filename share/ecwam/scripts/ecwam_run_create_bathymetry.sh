@@ -128,11 +128,14 @@ ${amowep}
 ${amoeap}
 ${iper}
 ${irgg}
+EOF
+fi
+
+cat >> for_md5 <<EOF
 ${fr1}
 ${wamnfre}
 ${ifre1}
 EOF
-fi
 
 cat reference_levels >> for_md5
 md5=$(cat for_md5 | md5sum | awk '{print $1}')
@@ -209,7 +212,7 @@ ${iper}
 ${irgg}
 #REFERENCE INITIAL FREQUENCY (FR1):
 ${fr1}
-#TOTAL NUMBER OF FREQUENCIES (NFRE) AND INDEX OF FR1 (IFRE1)
+#TOTAL NUMBER OF FREQUENCIES (NFRE_RED) AND INDEX OF FR1 (IFRE1)
 ${wamnfre} ${ifre1} 
 #DO YOU WANT TO CREATE OUTPUT FILES TO PLOT WITH METVIEW AS GEOPOINTS
 F

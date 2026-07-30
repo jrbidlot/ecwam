@@ -2,6 +2,7 @@ grid:        O320
 cldomain:     g
 directions:  24
 frequencies: 29
+frequencies_phys: 36
 fr1:         4.177248E-02 
 ifre1:       3
 bathymetry:  ETOPO1
@@ -28,8 +29,6 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 64
-lgribin: T
-lgribout: T
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O320.grib
@@ -41,6 +40,10 @@ forcings:
       - begin:     ${forecast.begin}
         end:       ${forecast.end}
         timestep:  01:00
+
+input:
+    from: preset 
+    format: grib 
 
 currents:
     file:  data/forcings/daily_average_surface_currents_ORAS6_20221231_20230102_O320.grib
@@ -122,7 +125,7 @@ output:
           - timestep: 01:00
 
     restart:
-        format: binary # (default : binary) or grib
+        format: grib
         at:
           - time: ${analysis.end}
 
@@ -134,23 +137,23 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 3.740910048130137e-01 
+      average: 3.739831684083921e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD7F11B65D9943B']
+      hashes: ['0x3FD7EF5719646261']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 1.052354948638135e+00 
+      average: 1.052087275193418e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0D6722482F3EB']
+      hashes: ['0x3FF0D5597777E54F']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 1.214298695088632e+00 
+      average: 1.214144382502895e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF36DC477EFB2C9']
+      hashes: ['0x3FF36D22A8F78D85']
     - name: swh
       time: 2023-01-01 06:00:00
       minimum: 0.4390841548729450E-02
@@ -158,9 +161,9 @@ validation:
       hashes: ['0x3F71FC218DA8CCD8']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 6.929218100210148e+00 
+      maximum: 6.929218097262090e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x401BB784F31D03EE']
+      hashes: ['0x401BB784F2EA5E3C']
 
   single_precision:
 

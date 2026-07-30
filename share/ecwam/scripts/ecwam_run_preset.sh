@@ -147,6 +147,7 @@ begoffo=$(read_config forcings.at[1].begin --format="%Y%m%d%H%M%S" --default=${e
 ##############
 cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
+wamnfre_phys=$(read_config frequencies_phys)
 wamnfre=$(read_config frequencies)
 fr1=$(read_config fr1 --default=4.177248E-02)
 ifre1=$(read_config ifre1 --default=1)
@@ -164,7 +165,12 @@ else
   licerun=F
 fi
 llunstr=F
-lgribout=$(read_config lgribout --default=F)
+if [ $(read_config output.restart.format --default=binary) = binary ] ; then
+  lgribout=F
+else
+  lgribout=T
+fi
+
 
 nproma=$(read_config nproma --default=24)
 
@@ -227,7 +233,7 @@ cat > PREINFO <<EOF
  YCLASS    = "rd"
  YEXPVER   = "wave"
  NANG      = ${wamnang}
- NFRE      = 36
+ NFRE      = ${wamnfre_phys}
  NFRE_RED  = ${wamnfre}
  FR1       = ${fr1}
  IFRE1     = ${ifre1}

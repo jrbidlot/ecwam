@@ -2,6 +2,7 @@ grid:        O96
 cldomain:     g
 directions:  24 
 frequencies: 25
+frequencies_phys: 33
 fr1:         4.177248E-02 
 ifre1:       1
 bathymetry:  ETOPO1
@@ -31,8 +32,6 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 32
-lgribin: T
-lgribout: T
 
 forcings:
     # For testing the internal interpolation scheme in ecWAM, we do not match the wind forcing resolution with the model grid resolution
@@ -45,6 +44,10 @@ forcings:
       - begin:     ${forecast.begin}
         end:       ${forecast.end}
         timestep:  01:00 
+
+input:
+    from: preset 
+    format: grib 
 
 output:
     fields:
@@ -122,7 +125,7 @@ output:
           - timestep: 01:00
 
     restart:
-        format: binary # (default : binary) or grib
+        format: grib 
         at:
           - time: ${analysis.end}
 
@@ -134,33 +137,33 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 4.039332563619328e-01
+      average: 4.038466528422345e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD9DA0ADF75D79E']
+      hashes: ['0x3FD9D89FA1A39D15']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 9.740975537893722e-01 
+      average: 9.733740067184132e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FEF2BCEA2147251']
+      hashes: ['0x3FEF25E13EB439E9']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 1.116009510311353e+00 
+      average: 1.115776155911430e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF1DB2CC9CCFEEA']
+      hashes: ['0x3FF1DA381934BD30']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 4.326592382617202e-03  
+      minimum: 4.326797546262367e-03
       relative_tolerance: 1.e-14
-      hashes: ['0x3F71B8C2CC955ADC']
+      hashes: ['0x3F71B8F9DF525EC6']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 6.288749015943960e+00 
+      maximum: 6.289724019236551e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x401927ADD270ED0C']
+      hashes: ['0x401928AD69CDF257']
 
   single_precision:
 

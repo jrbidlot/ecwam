@@ -31,13 +31,29 @@ begoffo=$(read_config forcing.at[1].begin --format="%Y%m%d%H%M%S" --default=${en
 
 find_preproc_files
 
-lgribin=$(read_config lgribin --default=F)
-lgribout=$(read_config lgribout --default=F)
-# Note that lnocdin=T is only meaningful for grib restart (lgribin=T) (rather than pure binary)
-# for which the model drag coefficient and the corresponding 10m wind speed are not available 
-# For cycling the runs, one will need to extract the relevant parameters from the grib output MPP*
-# and place them in the relevant CDWAVEIN* and UWAVEIN* files 
-lnocdin=T
+if [ $(read_config input.format --default=binary) = binary ] ; then
+  lgribin=F
+else
+  lgribin=T
+fi
+
+input_from=$(read_config input.from --default=preset)
+
+if [ $input_from = preset ] ; then
+  # Note that lnocdin=T is only meaningful for grib restart (lgribin=T) (rather than pure binary)
+  # for which the model drag coefficient and the corresponding 10m wind speed are not available 
+  # For cycling the runs, one will need to extract the relevant parameters from the grib output MPP*
+  # and place them in the relevant CDWAVEIN* and UWAVEIN* files 
+  lnocdin=T
+else
+  lnocdin=F
+fi
+
+if [ $(read_config output.restart.format --default=binary) = binary ] ; then
+  lgribout=F
+else
+  lgribout=T
+fi
 
 
 if [[ ${lgribin} = T ]]; then
@@ -95,6 +111,7 @@ done
 ##############
 cldomain=$(read_config cldomain --default=g)
 wamnang=$(read_config directions)
+wamnfre_phys=$(read_config frequencies_phys)
 wamnfre=$(read_config frequencies)
 fr1=$(read_config fr1 --default=4.177248E-02)
 ifre1=$(read_config ifre1 --default=1)
@@ -268,7 +285,7 @@ cat > wam_namelist << EOF
   NPROMA_WAM            = ${nproma},
   LL1D                  = F,
   NANG                  = ${wamnang},
-  NFRE                  = 36,
+  NFRE                  = ${wamnfre_phys},
   NFRE_RED              = ${wamnfre},
   FR1                   = ${fr1},
   IFRE1                 = ${ifre1},

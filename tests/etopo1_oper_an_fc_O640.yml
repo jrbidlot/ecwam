@@ -2,6 +2,7 @@ grid:        O640
 cldomain:     g
 directions:  36
 frequencies: 29
+frequencies_phys: 36
 fr1:         4.177248E-02 
 ifre1:       3
 bathymetry:  ETOPO1
@@ -31,8 +32,6 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 24
-lgribin: F
-lgribout: F
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O640.grib
@@ -44,6 +43,10 @@ forcings:
       - begin:     ${forecast.begin}
         end:       ${forecast.end}
         timestep:  01:00
+
+input:
+    from: preset 
+    format: binary 
 
 currents:
     file:  data/forcings/daily_average_surface_currents_ORAS6_20221231_20230102_O640.grib
@@ -64,7 +67,7 @@ output:
           - timestep: 01:00
 
     restart:
-        format: binary # (default : binary) or grib
+        format: binary
         at:
           - time: ${analysis.end}
 
@@ -76,23 +79,23 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 3.875267447586148e-01 
+      average: 3.874273769845209e-01 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD8CD3CF9C411DC']
+      hashes: ['0x3FD8CB9C326E4F24']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 1.054427510278385e+00 
+      average: 1.054257258558611e+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0DEEF618A5FB6']
+      hashes: ['0x3FF0DE3CDBF14713']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 1.213609084519249e+00 
+      average: 1.213513777928195e+00 
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF36AF15C023804']
+      hashes: ['0x3FF36A8D6C5726EC']
     - name: swh
       time: 2023-01-01 06:00:00
       minimum: 0.4387775653038153E-02

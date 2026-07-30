@@ -37,6 +37,7 @@ function ecwam_configure {
   #     llgrib_bathy_out: T if model input bathymetry in grib
   #     llgrib_obstrt_out: T if subgrid obstruction coefficients in grib 
   #     llobstrout: T if subgrid obstruction coefficients produced
+  #     llgribout: T The subgrid information will be in grib otherwise pure binary
   #                                                                      #
   #     Usage   : ecwam_configure $wamresol $wamnfre $wambathy           #
   #     -----                                                            #
@@ -81,8 +82,10 @@ function ecwam_configure {
     else
       deptha=3.0
     fi
-  else
+  elif [[ $wambathy = "ETOPO2" ]] ; then
     deptha=5.0
+  else
+    deptha=1.0
   fi
 
   # set up different configuration
@@ -209,8 +212,6 @@ function ecwam_configure {
     ##!!
     cldomain=m
     ##!!
-    llgrib_bathy_out=T
-    llgrib_obstrt_out=T
     llobstrout=F
   elif [[ $wamresol = onegrdpt ]] ; then
   # one grid point setup

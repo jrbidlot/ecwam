@@ -54,8 +54,11 @@ function cleanup() {
 
 #.############################################################################
 #.
-#. run_preproc generates unformatted input files (bathymetry, grid and tables)
-#. for use by run_preset and run_wamodel 
+#. run_preproc generates input files to be used by run_preset and run_wamodel: 
+#.     wam_grid_tables  NB: the file used to contain pre-computed tables but now it is only the bathymetry 
+#.     wam_subgrid_*  coefficents for subgrib parameterisation (one file per value of ipropgas (the option for the advection scheme)
+#.     For most options, these files are now encoded in grib. Older options might still used the old pure binary form.
+#.     Look for llgrib_bathy_out and llgrib_obstrt_out
 #.
 #. THE INPUT BATHYMETRY FILES :
 #. bathymetry_global_1.0
@@ -63,7 +66,7 @@ function cleanup() {
 #. ETOPO2: etopo2_2006apr.dat.gz
 #. supplied here
 #. ETOPO1: ETOPO1_Ice_g_int.xyz.gz
-#. you will need to get it from NOAA web site:
+#. Originally obtained from 
 #. https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO1/data/ice_surface/grid_registered/xyz/
 #.
 #. !!! THEY MUST BE COPIED TO DIRECTORY SPECIFIED BY DATA= (see below) !!!
@@ -74,6 +77,7 @@ function cleanup() {
 ##############
 
 wamresol=$(read_config grid)
+wamnfre_phys=$(read_config frequencies_phys)
 wamnfre=$(read_config frequencies)
 wambathy=$(read_config bathymetry)
 
@@ -91,6 +95,7 @@ source ${SCRIPTS_DIR}/ecwam_configure.sh
 ecwam_configure $wamresol $wamnfre $wambathy
 
 if [[ $wambathy == "aqua" ]]; then
+  # Simplified configuration with no land, only water (aqua)
   laqua=true
 else
   laqua=false
@@ -108,17 +113,17 @@ fi
 cat > procin <<EOF
 &NALINE
   CLINE=     " PREPROC INPUT "
-  NFRE=      36,
+  NFRE=      ${wamnfre_phys},
   NFRE_RED=  ${wamnfre},
   FR1=       ${fr1},
   IFRE1=     ${ifre1},
   IRGG=      ${irgg},
-  DXDELLA=    ${xdella},
-  DXDELLO=    ${xdella},
-  DAMOSOP=    ${amosop},
-  DAMONOP=    ${amonop},
-  DAMOWEP=    ${amowep},
-  DAMOEAP=    ${amoeap},
+  DXDELLA=   ${xdella},
+  DXDELLO=   ${xdella},
+  DAMOSOP=   ${amosop},
+  DAMONOP=   ${amonop},
+  DAMOWEP=   ${amowep},
+  DAMOEAP=   ${amoeap},
   LAQUA=     ${laqua},
   LLOBSTRCT= ${llobstrct},
   LLUNSTR =  ${llunstr},
