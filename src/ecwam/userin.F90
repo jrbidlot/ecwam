@@ -1827,7 +1827,21 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             LERROR = .TRUE.
           ENDIF
         ENDDO
+
+      ELSEIF ( NASS <= 0 .AND. IASSI == 1 .AND. MOD(IDELALT,IDELPRO) /= 0 .AND. .NOT.LRESTARTED) THEN
+        WRITE(IU06,*) '*******************************************'
+        WRITE(IU06,*) '*                                         *'
+        WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+        WRITE(IU06,*) '*    ==========================           *'
+        WRITE(IU06,*) '* THE ASSIMILATION TIMSTEP AND PROPAGATION*'
+        WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO.    *'
+        WRITE(IU06,*) '* ASSIMILATION TIMSTEP  IDELALT = ', IDELALT
+        WRITE(IU06,*) '* PROPAGATION TIME STEP IDELPRO = ', IDELPRO
+        WRITE(IU06,*) '*                                         *'
+        WRITE(IU06,*) '*******************************************'
+        LERROR = .TRUE.
       ENDIF
+
 
 ! ----------------------------------------------------------------------
 

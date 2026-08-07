@@ -165,6 +165,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      GBOUNC  , IPOGBO   ,CBCPREF
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWNEMOCOU,LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
+     &                      NASS     ,                                  &
      &                      NGOUT    ,NOUTT    ,LOUTINT  ,LSECONDORDER
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
@@ -198,11 +199,11 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
-     &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
+     &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  , IDELALT ,    &
      &            IREFRA   ,LNSESTART, LLSOURCE, LLUNSETICE,            &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
-     &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
+     &            IASSI    ,IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &                      FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06
@@ -924,7 +925,11 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !*    7. NUMBER OF PROPAGATION TIME STEPS PER CALL.
 !        ------------------------------------------
 
-      NADV = IDELWI/IDELPRO
+      IF (.NOT.LWCOU .AND. IASSI == 1 .AND. NASS <= 0 ) THEN
+        NADV = IDELALT/IDELPRO
+      ELSE
+        NADV = IDELWI/IDELPRO
+      ENDIF
       NADV = MAX(NADV,1)
       IF (LANAONLY) THEN
         NADV = 0
