@@ -173,6 +173,17 @@
         WL = (FR(1) - FCUTB_FT) / FR(1)
         WR = 1.0_JWRB - WL
         DF = 0.5_JWRB * (FR(1) - FCUTB_FT) * (1.0_JWRB + WR)
+        IF (MCUTT == 0) THEN
+          K=1
+          DO IJ = KIJS, KIJL
+            F1D(IJ,1) = FL1(IJ,K,1)*DELTH
+          ENDDO
+          DO K = 2, NANG
+            DO IJ = KIJS, KIJL
+              F1D(IJ,1) = F1D(IJ,1) + FL1(IJ,K,1)*DELTH
+            ENDDO
+          ENDDO
+        ENDIF
         DO IJ = KIJS, KIJL
           EBT(IJ) = EBT(IJ) + DF*F1D(IJ,1)
         ENDDO
