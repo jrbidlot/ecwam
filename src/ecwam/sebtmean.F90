@@ -143,7 +143,7 @@
         ENDDO
       ENDDO
 
-      IF (MCUTT < NFRE) THEN
+      IF (MCUTT < NFRE .AND. MCUTT > 0) THEN
         FRLOC(MCUTT+1) = FCUTT
         WL = (FR(MCUTT+1) - FCUTT) / (FR(MCUTT+1) - FR(MCUTT))
         WR = 1.0_JWRB - WL

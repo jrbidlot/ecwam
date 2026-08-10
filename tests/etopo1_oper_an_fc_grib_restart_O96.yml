@@ -1,6 +1,6 @@
-grid:        O48
+grid:        O96
 cldomain:     g
-directions:  12
+directions:  24 
 frequencies: 25
 fr1:         4.177248E-02 
 ifre1:       1
@@ -8,11 +8,14 @@ bathymetry:  ETOPO1
 lsubgrid:    T
 
 advection:
-    irefra: 0
-    timestep: 900
+    irefra: 2
+    timestep: 1200
+    fast_waves:
+        timestep: 600
+        max_frequency: 3
 physics:
     iphys: 1
-    timestep: 900
+    timestep: 1200 
     llgcbz0: T
     llnormagam: T
     lmaskice: F
@@ -28,10 +31,11 @@ begin: ${analysis.begin}
 end:   ${forecast.end}
 
 nproma: 32
-lgribin: F
-lgribout: F
+lgribin: T
+lgribout: T
 
 forcings:
+    # For testing the internal interpolation scheme in ecWAM, we do not match the wind forcing resolution with the model grid resolution
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
 
     at:
@@ -130,63 +134,63 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.3830924202241997E+00
+      average: 0.4039332563619328E+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FD88496120D56DD']
+      hashes: ['0x3FD9DA0ADF75D79E']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1059076530679594E+01
+      average: 0.9740975537893726E+00
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF0F1FA3B73AE11']
+      hashes: ['0x3FEF2BCEA2147254']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1223563306057211E+01
+      average: 0.1116009510311353E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x3FF393B71E019F2A']
+      hashes: ['0x3FF1DB2CC9CCFEEB']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.4326539111291028E-02
+      minimum: 0.4326592382617202E-02
       relative_tolerance: 1.e-14
-      hashes: ['0x3F71B8B47FCE4627']
+      hashes: ['0x3F71B8C2CC955ADB']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6511460010823871E+01
+      maximum: 0.6288749015943962E+01
       relative_tolerance: 1.e-14
-      hashes: ['0x401A0BBC2C4ECD24']
+      hashes: ['0x401927ADD270ED0E']
 
   single_precision:
 
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.3830676078796387E+00
+      average: 0.4039341509342194E+00
       relative_tolerance: 1.e-6
-      hashes: ['0x3FD8842E00000000']
+      hashes: ['0x3FD9DA0EA0000000']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.1059009313583374E+01
+      average: 0.9741032123565674E+00
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF0F1B3C0000000']
+      hashes: ['0x3FEF2BDA80000000']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1223548769950867E+01
+      average: 0.1116015315055847E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF393A7E0000000']
+      hashes: ['0x3FF1DB32E0000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.4326540511101484E-02
+      minimum: 0.4326593130826950E-02
       relative_tolerance: 1.e-6
-      hashes: ['0x3F71B8B4E0000000']
+      hashes: ['0x3F71B8C300000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6511457443237305E+01
+      maximum: 0.6288751125335693E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x401A0BBB80000000']
+      hashes: ['0x401927AE60000000']
