@@ -93,7 +93,7 @@
       kfail = 0
 
       IF (PRESENT(llascii) ) THEN
-        llform = .TRUE.
+        llform = llascii 
       ELSE
         llform = .FALSE.
       ENDIF
