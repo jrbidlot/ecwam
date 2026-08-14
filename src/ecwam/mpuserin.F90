@@ -46,7 +46,8 @@
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
      &            ALTGRTHRSH, HSALTCUT, LALTGRDOUT, LALTPAS,            &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
-     &            LODBRALT , LECWAMDA, LRALTPREPROC, CSATNAME
+     &            LODBRALT , LECWAMDA, LRALTPREPROC, LRALTASCII,        &
+     &            LRALTAVERAGE, CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
      &            LWCOUAST,                                             &
      &            LWCOUNORMS, LLNORMIFS2WAM,LLNORMWAM2IFS,LLNORMWAMOUT, &
@@ -207,6 +208,7 @@
      &   NGRIB_VERSION,                                                 &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
      &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LECWAMDA, LRALTPREPROC,    &
+     &   LRALTASCII, LRALTAVERAGE,                                      &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -397,6 +399,8 @@
 !               THROUGH OBSERVATION DATABASE (ODB)
 !     LECWAMDA CONTROLS ECMWF SPECIFC OPTIONS IN THE WAVE DATA ANALYIS SYSTEM
 !     LRALTPREPROC CONTROLS WHETHER RADAR ALTIMETER OBS ARE PREPROCESSED BY RFL4WAM (true)
+!     LRALTASCII CONTROLS WHETHER RADAR ALTIMETER OBS INPUT IS IN ASCII TEXT RATHER THAN BINARY WHEN NOT USING ODB
+!     LRALTAVERAGE CONTROLS WHETHER RADAR ALTIMETER OBS INPUT HAS BEEN AVERAGED ALONG TRACK OR NOT 
 !     LALTCOR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
 !              SEE GRFIELD(but this is different than the bias correction scheme)
 !              It was implemented when the ERS altimeters were used in operation.
@@ -608,6 +612,8 @@
       LODBRALT  = .FALSE.
       LECWAMDA = .TRUE.
       LRALTPREPROC = .TRUE.
+      LRALTASCII = .FALSE.
+      LRALTAVERAGE = .TRUE. 
       ICASE     = 1 
       ISHALLO   = 0   !! depricated 
       IPHYS     = 1

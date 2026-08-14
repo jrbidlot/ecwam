@@ -1,4 +1,5 @@
-      SUBROUTINE GRDATA(NWH, IDATAWL, LAVERAGE, NDIMIJALT, IOUTINPUT, IOBSERRSATID, OBSERR)
+      SUBROUTINE GRDATA(NWH, IDATAWL, LAVERAGE, NDIMIJALT,          &
+&                       IOUTINPUT, IOBSERRSATID, OBSERR, LLRAWASCII)
 
 !--------------------------------------------------------------------
 
@@ -24,6 +25,7 @@
 !        *IOUTINPUT*  OUTPUT WHAT IS READ BY *READSAT* IN ASCII TEXT (for debugging)
 !        *IOBSERRSATID* LIST OF BUFR SATELLITE ID and
 !        *OBSERR*       LIST OF THE ASSOCIATED ERROR FOR SIGNIFICANT WAVE HEIGHT IN m
+!        *LLRAWASCII*   IF TRUE THAN THE ALTIMETER INPUT ARE IN ASCII FORMAT (SEE *READSAT*)
 
 !     METHOD.
 !     -------
@@ -119,6 +121,7 @@
       INTEGER(KIND=JWIM), DIMENSION(:), INTENT(IN), OPTIONAL :: IOBSERRSATID
       REAL(KIND=JWRB), DIMENSION(:), INTENT(IN), OPTIONAL :: OBSERR
       INTEGER(KIND=JWIM), INTENT(IN), OPTIONAL :: IOUTINPUT
+      LOGICAL, INTENT(IN), OPTIONAL :: LLRAWASCII
 
       INTEGER(KIND=JWIM), PARAMETER :: MAXSATBC=25
       INTEGER(KIND=JWIM) :: NOBSER, IES
@@ -189,6 +192,7 @@
       LOGICAL :: LLBCTEXIST, LLDOBC, LNEW
       LOGICAL :: LBLKLIST_SWH
       LOGICAL :: LLNEW
+      LOGICAL :: LLRAWA
 
 !*     VARIABLE     TYPE     PURPOSE.
 !      --------     ----     --------
@@ -217,6 +221,12 @@
         IOUTINP = IOUTINPUT
       ELSE
         IOUTINP = -1 
+      ENDIF
+
+      IF (PRESENT(LLRAWASCII) ) THEN
+        LLRAWA = .TRUE.
+      ELSE
+        LLRAWA = .FALSE.
       ENDIF
 
       CBEGINDT = CDTPRO
@@ -255,9 +265,21 @@
       WRITE(IU06,*) ' '
 
       IF (LAVERAGE) THEN
-        YOFID='AFA'
-      ELSE 
-        YOFID='QCP'
+        IF (LLRAWA) THEN 
+!         Ascii input
+          YOFID='ARA'
+        ELSE
+!         Binary input
+          YOFID='AFA'
+        ENDIF
+      ELSE
+        IF (LLRAWA) THEN
+!         Ascii input
+          YOFID='ARQ'
+        ELSE
+!         Binary input
+          YOFID='QCP'
+        ENDIF
       ENDIF
 ! ----------------------------------------------------------------------
 
@@ -279,17 +301,17 @@
 
       LLOOP = .TRUE.
       DO WHILE(LLOOP)
-        CALL READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,                &
+        CALL READSAT (IU06, IUME, LLRAWA, CDTPRO, IDENTI, ISENSOR,        &
      &                CDATE, RLAT, RLON, IDES_HS, SWH,                    &
      &                IDES_WS, WS, LEOFD, YOFID)
 
         IF ( .NOT. LEOFD) THEN
 
           IF ( IOUTINP > 0 ) THEN
-!           FOR DEBUGGING WRITE OUT WHAT WAS READ
-            WRITE(IOUTINP,1111) IDENTI, ISENSOR, CDATE, RLAT, RLON, IDES_HS, SWH, IDES_WS, WS
+!           FOR DEBUGGING WRITE OUT WHAT WAS READ IN READSAT
+            WRITE(IOUTINP,1111) CDATE, IDENTI, ISENSOR, RLAT, RLON, IDES_WS, WS, IDES_HS, SWH
           ENDIF
-1111      FORMAT(2(i5,1x),a14,2(1x,f7.2),2(1x,i5,1x,f7.3))
+1111      FORMAT(A14,2(1X,I5),2(1X,F7.2),2(1X,I5,1X,F7.3))
 
 !         WHICH SATELLITE IS IT
           DO ISAT=1,NUMALT
@@ -561,7 +583,7 @@
 !        ------------------------------------------------
 
  3000 CONTINUE
-      CALL READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,                &
+      CALL READSAT (IU06, IUME, LLRAWA, CDTPRO, IDENTI, ISENSOR,        &
      &              CDATE, RLAT, RLON, IDES_HS, SWH,                    &
      &              IDES_WS, WS, LEOFD, YOFID)
 

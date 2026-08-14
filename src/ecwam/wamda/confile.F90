@@ -1,6 +1,6 @@
 !=======================================================================
 
-      SUBROUTINE CONFILE (kuso, kunit, cdate, yafileid, kfail, losuvi)
+      SUBROUTINE CONFILE (kuso, kunit, cdate, yafileid, kfail, losuvi, llascii)
 
 !-----------------------------------------------------------------------
 
@@ -10,7 +10,7 @@
 
 !     PURPOSE.
 !     --------
-!     Opens data file unformatted for the use of a program.
+!     Opens data file for the use of a program.
 !     handling of files following the naming convention
 !     XXXYYYYMMDDHHMM
 !     where XXX is the yafileid
@@ -19,10 +19,11 @@
 !           DD  is the day
 !           HH  is the hour
 !           MM  is the minute
+!     If llascii provided and true than the file will be formatted, otherwise unformatted
 
 !**   INTERFACE.
 !     ----------
-!        CALL  confile (kuso, kunit, cdate, yafileid, kfail)
+!        CALL  confile (kuso, kunit, cdate, yafileid, kfail, losuvi, llascii )
 
 !        *kuso*       INTEGER       FORTRAN UNIT FOR THE PRINTER OUTPUT.
 !        *kunit*      INTEGER       FORTRAN UNIT FOR THE REQUESTED FILE.
@@ -33,6 +34,8 @@
 !        *kfail*      INTEGER       = 0 NO ERROR.
 !                                   > 0 ERROR.
 !        *losuvi*     LOGICAL       IF TRUE THAN MESSAGES SENT TO KUSO
+!        Optional:
+!        *llascii*    LOGICAL       ASCII FORMATTED FILE IF TRUE ELSE UNFORMATTED
 
 !     EXTERNALS.
 !     ----------
@@ -67,15 +70,18 @@
       CHARACTER(LEN=14) :: cdate
 
       LOGICAL, INTENT(IN) :: losuvi
+      LOGICAL, INTENT(IN), OPTIONAL :: llascii
 
 
       INTEGER(KIND=JWIM) :: knum
       CHARACTER(LEN=  7) :: csubna
+      CHARACTER(LEN= 11) :: cform
       CHARACTER(LEN= 12) :: cdate_short
       CHARACTER(LEN= 15) :: yoname
       CHARACTER(LEN=130) :: younitnam
 
       LOGICAL :: ex, od
+      LOGICAL :: llform
 
       DATA csubna /"confile"/
 
@@ -85,6 +91,12 @@
 !  ---------------------
 
       kfail = 0
+
+      IF (PRESENT(llascii) ) THEN
+        llform = .TRUE.
+      ELSE
+        llform = .FALSE.
+      ENDIF
 
 !----------------------------------------------------------------------
 
@@ -130,7 +142,12 @@
         kfail = 1
         RETURN
       ELSE
-        OPEN (FILE=yoname, UNIT=kunit, FORM='unformatted', ERR=8400)
+        IF ( llform ) THEN
+          cform='formatted'
+        ELSE
+          cform='unformatted'
+        ENDIF
+        OPEN (FILE=yoname, UNIT=kunit, FORM=cform, ERR=8400)
         IF (losuvi) THEN
           WRITE(kuso,*) ' FILE ',yoname,                                &
      &                  ' IS NOW OPENED ON UNIT ', kunit

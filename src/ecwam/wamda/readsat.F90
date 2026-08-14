@@ -1,4 +1,4 @@
-      SUBROUTINE READSAT (IU06, IUME, CDTPRO, IDENTI, ISENSOR,          &
+      SUBROUTINE READSAT (IU06, IUME, LLRAWA, CDTPRO, IDENTI, ISENSOR,  &
      &                    CDATE, RLAT, RLON, IDES_HS, SWH,              &
      &                    IDES_WS, WS, LLEOFD, YOFID)
 
@@ -19,6 +19,7 @@
 
 !          *IU06*     - PRINTER UNIT.
 !          *IUME*     - INPUT UNIT FOR MEASUREMENTS.
+!          *LLRAWA*   - IF TRUE THAN THE ALTIMEETER INPUT ARE IN ASCII FORMAT
 !          *CDTPRO*   - MODEL TIME (YYYYMMDDHHMM).
 !          *IDENTI*   - SATELLITE IDENTIFIER.
 !          *ISENSOR*  - SENSOR IDENTIFIER.
@@ -84,6 +85,7 @@
       CHARACTER(LEN=14), INTENT(IN) :: CDTPRO
       CHARACTER(LEN=14), INTENT(INOUT) :: CDATE
 
+      LOGICAL, INTENT(IN) :: LLRAWA
       LOGICAL, INTENT(INOUT) :: LLEOFD
 
 
@@ -95,7 +97,6 @@
       CHARACTER(LEN=14), PARAMETER :: ZERO='              '
 
       LOGICAL :: LLTEST
-      LOGICAL :: LLONG=.TRUE.
       LOGICAL :: LNEWSAT
 
       DATA CDTGE1 /ZERO/
@@ -106,7 +107,7 @@
 !*    1. INITIALIZE.
 !        -----------
 
-      IF (CDTGE1.EQ.ZERO) THEN
+      IF (CDTGE1 == ZERO) THEN
         CDTGE1 = CDTPRO
         LLEOFD = .TRUE.
       ENDIF
@@ -118,8 +119,8 @@
 
       IF (LLEOFD) THEN
         LLTEST=.TRUE.
-        CALL CONFILE (IU06, IUME, CDTGE1, YOFID, IFAIL, LLTEST)
-        IF(IFAIL.NE.0) THEN
+        CALL CONFILE (IU06, IUME, CDTGE1, YOFID, IFAIL, LLTEST, LLASCII=LLRAWA)
+        IF (IFAIL /= 0) THEN
           WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
           WRITE(IU06,*) ' +                                       +'
           WRITE(IU06,*) ' +      WARNING ERROR IN --READSAT--     +'
@@ -139,8 +140,11 @@
           RETURN
         ENDIF
         LLEOFD = .FALSE.
-        READ (IUME,END=4000) LNEWSAT
-        READ (IUME,END=4000) CTIME
+        IF ( .NOT. LLRAWA) THEN
+!!        We have assumed that the ascii format will only contain the data
+          READ (IUME,END=4000) LNEWSAT
+          READ (IUME,END=4000) CTIME
+        ENDIF
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -148,17 +152,22 @@
 !*    3. READ THE MEASUREMENT.
 !        ---------------------
 
-3000  CONTINUE
-      READ(IUME,END=4000,IOSTAT=IRS) LNEWSAT
-      IF(LNEWSAT) THEN
-        READ(IUME,END=4000,IOSTAT=IRS) CTIME
-        GO TO 3000
-      ENDIF 
-      READ(IUME,END=4000,IOSTAT=IRS) CDATE,                             &
-     &                               IDENTI, ISENSOR,                   &
-     &                               RLAT, RLON,                        &
-     &                               IDES_WS, WS,                       &
-     &                               IDES_HS, SWH
+      IF (LLRAWA) THEN
+!       ASCII INPUT (TAILOR TO YOUR NEED. IT CURRENLT MIRRORS WHAT IS DONE IN BINARY INPUT)
+        READ(IUME,1111,END=4000,IOSTAT=IRS) CDATE, IDENTI, ISENSOR, RLAT, RLON, IDES_WS, WS, IDES_HS, SWH
+1111    FORMAT(A14,2(1X,I5),2(1X,F7.2),2(1X,I5,1X,F7.3))
+
+      ELSE
+!       BINARY INPUT AS USED AT ECMWF
+3000    CONTINUE
+        READ(IUME,END=4000,IOSTAT=IRS) LNEWSAT
+        IF(LNEWSAT) THEN
+          READ(IUME,END=4000,IOSTAT=IRS) CTIME
+          GO TO 3000
+        ENDIF 
+        READ(IUME,END=4000,IOSTAT=IRS) CDATE, IDENTI, ISENSOR, RLAT, RLON, IDES_WS, WS, IDES_HS, SWH
+      ENDIF
+
       IF (IRS /= 0 ) THEN
         WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++'
         WRITE(IU06,*) ' +                               +'
@@ -167,6 +176,7 @@
         WRITE(IU06,*) ' +                               +'
         WRITE(IU06,*) ' +  INPUT DATA FORMAT UNKNOWN    +'
         WRITE(IU06,*) ' +  IRS = ',IRS 
+        WRITE(IU06,*) ' +  LLRAWA = ', LLRAWA 
         WRITE(IU06,*) ' +  PROGRAM WILL ABORT           +'
         WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++'
         CALL ABORT1
