@@ -109,7 +109,7 @@
       IMPLICIT NONE
 
 #include "difdate.intfb.h"
-#include "incdate.intfb.h"
+#include "gwdwbounds.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "readsat.intfb.h"
 
@@ -133,7 +133,7 @@
       INTEGER(KIND=JWIM) :: IOUTINP 
       INTEGER(KIND=JWIM) :: NBL, IOBL , IBL
       INTEGER(KIND=JWIM) :: NN, NUWH, IOBS
-      INTEGER(KIND=JWIM) :: IOBCT, NSATBC, MAXNBCINC 
+      INTEGER(KIND=JWIM) :: IOBCT, NSATBC, MAXNBCINC
       INTEGER(KIND=JWIM) :: IBCT, IBCS, MAXBCT
       INTEGER(KIND=JWIM) :: ISAT, KSAT, IDUM, NBCINC
       INTEGER(KIND=JWIM) :: IBLKLIST_SWH
@@ -141,16 +141,16 @@
       INTEGER(KIND=JWIM) :: NRGG
       INTEGER(KIND=JWIM) :: ISHIFT
       INTEGER(KIND=JWIM) :: IE, IE2
-      INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: JBUFRSAT 
+      INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: JBUFRSAT
       INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: ICUNQ, NCUNQ
       INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: ICOUNT, ICOUNTT, ICOUNTD
-      INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: ICOUNTB, ICOUNTQCF, ICOUNTBL, IJOLD
+      INTEGER(KIND=JWIM), DIMENSION(NUMALT) :: ICOUNTB, ICOUNTA, ICOUNTQCF, ICOUNTBL, IJOLD
       INTEGER(KIND=JWIM), DIMENSION(MAXSATBC) :: ISATBC, NBCT
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: STATID, SENSOR, PARAM
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: NBCINCMAX
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: I_J_TOIJ
-      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IFLAG 
-      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: ICOUNT2IJ 
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IFLAG
+      INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: ICOUNT2IJ
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: NUMBWH, NR
 
       REAL(KIND=JWRB) :: HSMIN
@@ -229,20 +229,17 @@
         LLRAWA = .FALSE.
       ENDIF
 
-      CBEGINDT = CDTPRO
-      IF (IDATAWL <= 10800) THEN
-        CALL INCDATE (CBEGINDT,-IDATAWL)
-      ELSE 
-        CALL INCDATE (CBEGINDT,-IDATAWL/2)
-      ENDIF
-      CENDDT = CBEGINDT
-      CALL INCDATE (CENDDT,IDATAWL)
+
+      ! Define the start and end of time window
+      CALL GWDWBOUNDS(IDATAWL, CDTPRO, CBEGINDT, CENDDT)
 
       HSMIN=0.05_JWRB
       WSMIN=0.01_JWRB
 
+      WRITE(IU06,*) ''
       WRITE(IU06,*) ' GRDATA : SELECTING ALTIMETER MEASUREMENTS '
       WRITE(IU06,*) '          PERIOD FROM ', CBEGINDT,' TO ', CENDDT
+      WRITE(IU06,*) ''
 
 !     FIX THE MINIMUM NUMBER OF OBSERVATIONS PER GRID BOX REQUIRED
 !     IN ORDER TO ACCEPT THE DATA AT THE GRIB POINTS
@@ -260,12 +257,12 @@
       ELSE
         NNMIN=2
       ENDIF
-      WRITE(IU06,*) '          GRIDDED DATA WILL BE KEPT WHEN THE NUMBER OF'
-      WRITE(IU06,*) '          OBSERVATIONS PER GRID BOX IS LARGER THAN ',NNMIN-1
+      WRITE(IU06,*) '   GRIDDED DATA WILL BE KEPT WHEN THE NUMBER OF'
+      WRITE(IU06,*) '   OBSERVATIONS PER GRID BOX IS LARGER THAN ',NNMIN-1
       WRITE(IU06,*) ' '
 
       IF (LAVERAGE) THEN
-        IF (LLRAWA) THEN 
+        IF (LLRAWA) THEN
 !         Ascii input
           YOFID='ARA'
         ELSE
@@ -296,7 +293,7 @@
       ENDDO
 
       ICOUNTD(:) = 0
-      JBUFRSAT(:) = 0 
+      JBUFRSAT(:) = 0
       LEOFD=.FALSE.
 
       LLOOP = .TRUE.
@@ -347,7 +344,7 @@
 
       IF (.NOT. LLUNSTR) THEN
         ALLOCATE(I_J_TOIJ(NGX,NGY))
-        I_J_TOIJ(:,:) = 0 
+        I_J_TOIJ(:,:) = 0
 
         DO IJ = 1, NIBLO
           I = BLK2GLO%IXLG(IJ)
@@ -389,7 +386,7 @@
       ICOUNTQCF(:) = 0
       ICOUNTBL(:) = 0
       IJOLD(:) = 0
-      JBUFRSAT(:) = 0 
+      JBUFRSAT(:) = 0
       CDATEO(:) = CBEGINDT
 
       IF (.NOT. LAVERAGE) THEN
@@ -579,8 +576,8 @@
       ENDIF
 ! ----------------------------------------------------------------------
 
-!*    3. READ AGAIN AND CUMULATE THE DATA ON GRID POINTS.
-!        ------------------------------------------------
+!*    3. READ THE MEASUREMENT TAPE AND CUMULATE THE DATA ON GRID POINTS.
+!        ---------------------------------------------------------------
 
  3000 CONTINUE
       CALL READSAT (IU06, IUME, LLRAWA, CDTPRO, IDENTI, ISENSOR,        &
@@ -607,7 +604,7 @@
 
 !     CHECK DATE.
 
-      IF (CDATE < CBEGINDT)  then
+      IF (CDATE < CBEGINDT) THEN
         ICOUNTB(KSAT) = ICOUNTB(KSAT) + 1
 
       ELSE IF (CDATE <= CENDDT) THEN
@@ -672,7 +669,7 @@
           IF ( LLNEW ) THEN
             NCUNQ(KSAT) = NCUNQ(KSAT) + 1
             ICUNQ(KSAT) = NCUNQ(KSAT)
-            ICOUNT2IJ(ICUNQ(KSAT),KSAT) = IJ 
+            ICOUNT2IJ(ICUNQ(KSAT),KSAT) = IJ
           ENDIF
 
           IF (LLUNSTR) THEN
@@ -781,19 +778,21 @@
             NUWH=NUWH+NUMBWH(IC,ISAT)
           ENDDO
 
-          WRITE (IU06,'("  GRDATA: INPUT STATISTICS:")')
+          WRITE (IU06,'(" GRDATA: INPUT STATISTICS:")')
           WRITE (IU06,'("         THE SATELLITE IS",                    &
      &                  " ......:", I8)') JBUFRSAT(ISAT)
           WRITE (IU06,'("         NUMBER OF RECORDS READ FROM DATA ",   &
      &                  "FILE IS ......:", I8)') ICOUNTD(ISAT)
-          WRITE (IU06,'("         THERE OF NUMBER OF BLACKLISTED ",      &
+          WRITE (IU06,'("         THERE OF NUMBER OF BLOCKLISTED ",     &
      &                  "RECORDS IS .....:", I8)') ICOUNTBL(ISAT)
           WRITE (IU06,'("         NUMBER OF DATA IN SELECTED PERIOD ",  &
      &                  "IS ..........:", I8)') ICOUNTT(ISAT)
           WRITE (IU06,'("         NUMBER OF DATA BEFORE SELECTED ",     &
      &                  "PERIOD IS ......:", I8)') ICOUNTB(ISAT)
+          WRITE (IU06,'("         NUMBER OF DATA AFTER SELECTED ",      &
+     &                  "PERIOD IS .......:", I8)') ICOUNTA(ISAT)
           WRITE (IU06,'("         NUMBER OF DATA IN BOXES AROUND ",     &
-     &                  "OVER SEA IS ..:", I8)') ICOUNT(ISAT)
+     &                  "OVER SEA IS ....:", I8)') ICOUNT(ISAT)
           WRITE (IU06,'("         NUMBER OF GOOD DATA ABOVE LAND IS ",  &
      &                  ".............:", I8)') ICOUNTQCF(ISAT)
           WRITE (IU06,'("         NUMBER OF DATA RETAINED BY ",         &
@@ -805,7 +804,7 @@
             IF (NN >= NNMIN) THEN
 !             MEAN VALUES
               WHME(IC,ISAT) = WHME(IC,ISAT)/REAL(NN,JWRB)
-              IF ( IFLAG(IC,ISAT) /= 0 ) IFLAG(IC,ISAT) = 1 
+              IF ( IFLAG(IC,ISAT) /= 0 ) IFLAG(IC,ISAT) = 1
 !             COMPUTE THE STANDARD DEVIATION.
               IF (.NOT. LAVERAGE) THEN
                 WHSE2 =  (WHSE(IC,ISAT)-WHME(IC,ISAT)**2*REAL(NN,JWRB)) &
@@ -868,7 +867,7 @@
             ENDDO
           ENDIF ! LAVERAGE
 
-        ENDIF  ! JBUFRSAT 
+        ENDIF  ! JBUFRSAT
       ENDDO  ! ON ISAT
 
       DEALLOCATE(NUMBWH)
@@ -941,7 +940,7 @@
                   !! wind data are passive
                   IJALT(IOBS,4) = 0 
                 ELSE
-                  IJALT(IOBS,4) = -2 
+                  IJALT(IOBS,4) = -2
                 ENDIF
 
                 ! BIAS CORRECTION IS DONE IF NEEDED

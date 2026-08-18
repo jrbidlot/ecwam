@@ -48,6 +48,7 @@ list( APPEND wamda_srcs
   wamda/getwspec.F90
   wamda/grdata.F90
   wamda/grfield.F90
+  wamda/gwdwbounds.F90
   wamda/halfspread.F90
   wamda/lasttwobins.F90
   wamda/lowenergy.F90

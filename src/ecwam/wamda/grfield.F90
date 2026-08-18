@@ -66,7 +66,7 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
      &                      SINPH    ,COSPH,                            &
      &                      NPROMA_WAM, NCHNK, ICHNKFROMIJ, IPRMFROMIJ 
       USE YOWICE   , ONLY : CITHRSH_SAT  ,FLMIN
-      USE YOWMAP   , ONLY : XDELLA   ,ZDELLO   ,NIBLO
+      USE YOWMAP   , ONLY : XDELLA   ,ZDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,LL1D     ,LLUNSTR
       USE YOWPCONS , ONLY : RAD      ,ZMISS
@@ -77,8 +77,8 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
 
 #ifdef WAM_HAVE_UNWAM
       USE YOWPD,     ONLY : NODES=>NODES_GLOBAL, RANK
-#endif
       USE YOWSPHERE, ONLY : SPHERICAL_COORDINATE_DISTANCE
+#endif
 
       USE EC_LUN   , ONLY : NULERR
       USE MPL_MODULE
@@ -90,7 +90,6 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
 
 #include "abort1.intfb.h"
 #include "confile.intfb.h"
-
 #include "grdata.intfb.h"
 #include "iwam_get_unit.intfb.h"
 #include "mpbcastintfld.intfb.h"
@@ -114,6 +113,7 @@ SUBROUTINE GRFIELD(BLK2GLO, FL1, INTFLDS, MINIJS, MAXIJL, WHMOD,   &
       INTEGER(KIND=JWIM) :: NTOTFPAS, NTOTBLKL, NTOTREJP, NTOTREJICE, NTOTREJSD, NTOTREJBG, NTOTSAT
       INTEGER(KIND=JWIM) :: IJ, IJG, M, K, IR, JR, IALTDT, IJJ, KI, KJ
       INTEGER(KIND=JWIM) :: IP, IK, ISTART
+      INTEGER(KIND=JWIM) :: IJMIN, IJMAX
       INTEGER(KIND=JWIM) :: KRCOUNT, KRTAG, MPLENGTH
       INTEGER(KIND=JWIM) :: IZCOMLEN, ICOUNT
       INTEGER(KIND=JWIM) :: IUMAIL
@@ -196,6 +196,7 @@ NOBSPSAT(:)=0
 
 IF (LODBRALT) THEN
 !* INPUT DATA FROM ODB (rfl4wam needs to be run as part of preprocessing of the data
+  WRITE(IU06,*) '    GRFIELD :  ALTIMETER DATA ARE READ FROM ODB'
   CALL GETODBRALT(IREAD, NIJALTP1, NOBS, NSATOBS)
 
 ELSE
@@ -250,6 +251,12 @@ ELSE
           WRITE(IU06,'("WARNING IN GRFIELD:  W A R N I N G  !!!!!!")')
           CALL FLUSH(IU06)
           NOBS=0
+        ENDIF
+
+        IF (NOBS == 0) THEN
+          WRITE(IU06,*) '     NO RADAR ALTIMETER (RALT) DATA AVAILABLE'
+        ELSE
+          WRITE(IU06,*) '     RADAR ALTIMETER (RALT), TOTAL NUMBER OF ENTRIES FOUND:',  NOBS
         ENDIF
     ENDIF
 
@@ -322,9 +329,11 @@ IF (IRANK == IREAD) THEN
 !       (to insure that the results are the same on any number of PE's)
         IF (LODBRALT) THEN
           ITAG=0
+          IJMIN = MINVAL(IJALT(:,1))
+          IJMAX = MAXVAL(IJALT(:,1))
           DO ISAT=1,NUMALT
             IF (NSATOBS(ISAT) > 0 ) THEN
-              DO IJ = 1, NIBLO
+              DO IJ = IJMIN, IJMAX
                 DO IOBS = 1, NOBS
                   IF (IJALT(IOBS,2) == IBUFRSAT(ISAT)) THEN
                     IF (IJALT(IOBS,1) == IJ) THEN
@@ -735,16 +744,32 @@ ENDIF
         NREJBG=0
         NSAT=0
 
-        IF (ALTSDTHRSH(ISAT) < 0._JWRB) THEN
-          IF (XDELLA < 0.3_JWRB) THEN
-            ALTSDTHRSH(ISAT) = 0.75_JWRB
-          ELSE
-            ALTSDTHRSH(ISAT) = 0.6_JWRB
-          ENDIF
-          WRITE(IU06,'(A,F6.2,A)') &
-     &        '    SUSPICIOUS DATA THRESHOLD NOT GIVEN. IT IS SET TO ', &
-     &         ALTSDTHRSH(ISAT)*100.,'%.'
-        ENDIF
+        ! SUSPICIOUS DATA CHECK:
+        !
+        ! Reject all observations from a single satellite if its distribution
+        ! of FG departures shifts from a historical baseline.
+        !
+        ! Rule implemented:
+        !   Let frac = fraction of obs with |FG departure| > Y metres.
+        !   If frac > X, then reject all data from this satellite.
+        !
+        ! Chosen parameters:
+        !   Y = 1.0 m
+        !
+        !   X = 0.2
+        !
+        ! These parameters were tuned so that they trigger during May 10th
+        ! S3A event and only give one false alarm over 3 months (AMJ 2025)
+
+        REJECT           = 0.2_JWRB ! If 20% of ABS(O-B) is greater than...
+        ALTSDTHRSH(ISAT) = 1.0_JWRB ! 1.0 m, then reject the entire dataset.
+
+        WRITE(IU06,'(A,F6.2,A,F6.2,A)') &
+            '     SUSPICIOUS DATA: DATASET IS REJECTED IF ', &
+            REJECT * 100.0_JWRB, &
+            '% of ABS(O-B) > ', &
+            ALTSDTHRSH(ISAT), &
+            ' m'
 
         IF (LLALT(ISAT)) THEN
 
@@ -755,15 +780,18 @@ ENDIF
 
               IF (LALTPASSIV(IJALT(IOBS,2))) NFPAS=NFPAS+1
 
-              IF (LLIN(IOBS,IRANK)) THEN 
-                IF (IJALT(IOBS,3) == 0) NBLKL=NBLKL+1
-                IF (IJALT(IOBS,3) < 0) NREJP=NREJP+1
+              IF (LLIN(IOBS,IRANK)) THEN
+!               ONLY COUNT BLOCKLISTED DATA IF NOT PASSIVE
+                IF ( IJALT(IOBS,3) == 0 .AND. .NOT. LALTPASSIV(IJALT(IOBS,2)) ) NBLKL=NBLKL+1
+!               ONLY COUNT REJECTIONS DUE TO THE PRE-PORCESSING. -5 and -6 are against model values not part of preprocessing
+!               THEY ARE COUNTED SEPARATELY.
+                IF (IJALT(IOBS,3) < 0 .AND. IJALT(IOBS,3) /= -5 .AND. IJALT(IOBS,3) /= -6) NREJP=NREJP+1
               ENDIF
 
 !             EXCLUDE POINTS WHICH ARE ON MODEL SEA ICE
 
               IJG=IJALT(IOBS,1)
-              IF (CICVR(IJG) > CITHRSH_SAT .AND. IJALT(IOBS,3) >= 0) THEN
+              IF ( (CICVR(IJG) > CITHRSH_SAT .AND. IJALT(IOBS,3) >= 0) .OR. IJALT(IOBS,3) == -5) THEN
                 IJALT(IOBS,3)=-5
                 IF (LLIN(IOBS,IRANK)) NREJICE=NREJICE+1
               ENDIF
@@ -772,14 +800,14 @@ ENDIF
 !             ON VALID DATA ONLY.
 
               IF (ALTDATA(IOBS,1) > 0._JWRB .AND. IJALT(IOBS,3) >= 0 .AND. WHMOD(IJG) > 0._JWRB) THEN
-                THRSHLD=ABS(ALTDATA(IOBS,1)-WHMOD(IJG))/WHMOD(IJG)
+                THRSHLD=ABS(ALTDATA(IOBS,1)-WHMOD(IJG)) ! New suspicious data background check
                 IF (THRSHLD >= ALTSDTHRSH(ISAT)) THEN
                   IF (LLIN(IOBS,IRANK)) NREJSD=NREJSD+1
                 ENDIF
               ENDIF
 
-!              BACKGROUND CHECK (remove data that deviate too much from the first guess)
-!              ON VALID DATA ONLY.
+!             BACKGROUND CHECK (remove data that deviate too much from the first guess)
+!             ON VALID DATA ONLY.
 
               IF (ALTDATA(IOBS,1) > 0._JWRB .AND. IJALT(IOBS,3) >=0 .AND. WHMOD(IJG) > 0._JWRB) THEN
                 THRSHLD=(ALTDATA(IOBS,2)/SIGMOD)* &
@@ -789,10 +817,12 @@ ENDIF
                 IF (THRSHLD >= ALTBGTHRSH(ISAT) .OR. THRSHLDGR >= ALTGRTHRSH(ISAT) ) THEN
                   IJALT(IOBS,3)=-6
                   IF (LLIN(IOBS,IRANK)) NREJBG=NREJBG+1
-                ELSE IF (ALTDATA(IOBS,1) <= HSCUT .OR. WHMOD(IJG) <= HSCUT ) THEN 
+                ELSE IF (ALTDATA(IOBS,1) <= HSCUT .OR. WHMOD(IJG) <= HSCUT ) THEN
                   IJALT(IOBS,3)=-6
                   IF (LLIN(IOBS,IRANK)) NREJBG=NREJBG+1
                 ENDIF
+              ELSEIF ( IJALT(IOBS,3) == -6 ) THEN
+                  IF (LLIN(IOBS,IRANK)) NREJBG=NREJBG+1
               ENDIF
             ENDIF
           ENDDO
@@ -825,16 +855,18 @@ ENDIF
         NTOTREJBG=ISUMBUF(6)
         NTOTSAT=ISUMBUF(7)
 
-        WRITE(IU06,*)'   TOTAL NUMBER OF GRIDDED WAVE HEIGHTS= ', NOBSPSAT(ISAT)
+        WRITE(IU06,*)''
+        WRITE(IU06,*)'   TOTAL NUMBER OF WAVE HEIGHT OBSERVATIONS  = ', NOBSPSAT(ISAT)
         IF (NOBSPSAT(ISAT) > 0) THEN
-          WRITE(IU06,*)'   NUMBER OF SUBAREA WITH DATA= ',NTOTSAT
           WRITE(IU06,*)''
-          WRITE(IU06,*)'   NUMBER PASSIVE = ', NTOTFPAS
-          WRITE(IU06,*)'   NUMBER BLACKLISTED = ', NTOTBLKL
-          WRITE(IU06,*)'   NUMBER REJECTED BY PRE-PROCESSING = ', NTOTREJP
-          WRITE(IU06,*)'   NUMBER OVER MODEL SEA ICE= ',NTOTREJICE
-          WRITE(IU06,*)'   NUMBER REJECTED BY THE BACKGROUND CHECK= ',NTOTREJBG
-          WRITE(IU06,*)'   NUMBER OF SUSPICIOUS DATA= ',NTOTREJSD
+          WRITE(IU06,*)'   NUMBER OF SUBAREA WITH DATA............ = ',NTOTSAT
+          WRITE(IU06,*)''
+          WRITE(IU06,*)'   NUMBER PASSIVE......................... = ', NTOTFPAS
+          WRITE(IU06,*)'   NUMBER BLACKLISTED..................... = ', NTOTBLKL
+          WRITE(IU06,*)'   NUMBER REJECTED BY PRE-PROCESSING...... = ', NTOTREJP
+          WRITE(IU06,*)'   NUMBER OVER MODEL SEA ICE...............= ', NTOTREJICE
+          WRITE(IU06,*)'   NUMBER REJECTED BY THE BACKGROUND CHECK = ', NTOTREJBG
+          WRITE(IU06,*)'   NUMBER OF SUSPICIOUS DATA.............. = ', NTOTREJSD
         ENDIF
         WRITE(IU06,*)''
         WRITE(IU06,*)'-------------------------------------------------------'
@@ -842,20 +874,24 @@ ENDIF
 
         IF (NTOTSAT > 0) THEN
 
-          IF (XDELLA < 0.3_JWRB) THEN
-            REJECT=0.75_JWRB
+          IF (NOBSPSAT(ISAT) > 0) THEN
+
+            REJRATIO = FLOAT(NTOTREJSD) / FLOAT(NOBSPSAT(ISAT))
+
+            WRITE(IU06,'(A,I6,A,F6.2,A)') '     REJRATIO for altimeter ', &
+            IBUFRSAT(ISAT), ' is: ', REJRATIO*100.0_JWRB, ' %'
+
           ELSE
-            REJECT=0.5_JWRB
+            WRITE(IU06,*) '      REJRATIO for altimeter ', IBUFRSAT(ISAT), ' : NO OBS'
+            REJRATIO = 0.0_JWRB
           ENDIF
 
-          REJRATIO=FLOAT(NTOTREJSD)/FLOAT(NOBS)
-
-          IF (REJRATIO > REJECT) THEN
+          IF (REJRATIO > REJECT .AND. NOBS > 2) THEN
             WRITE(IU06,*)'*********************************************'
             WRITE(IU06,*)' '
             WRITE(IU06,*)'   ALTIMETER ',IBUFRSAT(ISAT)
-            WRITE(IU06,*)'  THE NUMBER OF SUSPICIOUS ALT DATA IS OVER ', &
-     &                   REJECT*100,' %'
+            WRITE(IU06,'(A,F6.2,A)') &
+              '  THE NUMBER OF SUSPICIOUS ALT DATA IS OVER ', REJECT*100._JWRB, ' %'
             WRITE(IU06,*)' '
             WRITE(IU06,*)'  THEY ARE ALL REJECTED AS A PRECAUTION !'
             WRITE(IU06,*)' '
@@ -866,19 +902,25 @@ ENDIF
             IF (IRANK == 1) THEN
               IUMAIL=IWAM_GET_UNIT(IU06,'MM','S','F',0,'READWRITE')
               WRITE(IUMAIL,*)'          !!!!!! WARNING !!!!!! '
-              WRITE(IUMAIL,*)' NUMBER OF SUSPICIOUS DATA IS OVER', &
-     &                       REJECT*100,' % ',REJRATIO*100,' %'
+              WRITE(IUMAIL,*)' ALTIMETER ',IBUFRSAT(ISAT)
+              WRITE(IUMAIL,*)' TOTAL NUMBER OF GRIDDED WAVE HEIGHTS= ', NOBSPSAT(ISAT)
+              WRITE(IUMAIL,*)' NUMBER OF SUSPICIOUS DATA IS OVER', REJECT*100,' % ',REJRATIO*100,' %'
               WRITE(IUMAIL,*)' IN EXPERIMENT ',YEXPVER
               CALL WSTREAM_STRG(ISTREAM,CSTRM,IDUM,IDUM,CDUM,IDUM,LDUM)
               WRITE(IUMAIL,*)' STREAM        ',CSTRM
               WRITE(IUMAIL,*)' AT TIME       ',CDTPRO
+              WRITE(IUMAIL,*)''
+              WRITE(IUMAIL,*)' NO ACTION MIGHT BE NECESSARY IF IT IS A RESEARCH EXPERIMENT'
+              WRITE(IUMAIL,*)''
               WRITE(IUMAIL,*)'          !!!!!! WARNING !!!!!! '
               CLOSE(IUMAIL)
-              CALL SYSTEM (' mail wab < MM ' )
+              CALL SYSTEM (' mail james.steer < MM ' )
             ENDIF
           ENDIF
 
         ENDIF
+        WRITE(IU06,*)'-------------------------------------------------------'
+        CALL FLUSH(IU06)
 
       ENDDO ! END LOOP ON SATELLITE
       DEALLOCATE(LLIN)
