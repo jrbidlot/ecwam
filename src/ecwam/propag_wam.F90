@@ -46,8 +46,9 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
       USE YOWMAP   , ONLY : NIBLO
       USE YOWMPP   , ONLY : NINF     ,NSUP
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,LLUNSTR
+      USE YOWPCONS , ONLY : R
       USE YOWREFD  , ONLY : LLUPDTTD ,THDD     ,THDC     ,SDOT
-      USE YOWSTAT  , ONLY : IPROPAGS ,IFRELFMAX, DELPRO_LF, IDELPRO
+      USE YOWSTAT  , ONLY : IPROPAGS ,IFRELFMAX, DELPRO_LF, IDELPRO, IGRSPR , PGSEALLEVIATE
       USE YOWUBUF  , ONLY : LUPDTWGHT
 #ifdef WAM_HAVE_UNWAM
       USE UNWAM    , ONLY : PROPAG_UNWAM
@@ -77,7 +78,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NCHNK), INTENT(IN) :: DEPTH, DELLAM1, COSPHM1, UCUR, VCUR
 
 
-      INTEGER(KIND=JWIM) :: IJ, K, M, J, II
+      INTEGER(KIND=JWIM) :: IJ, K, M, J, II, KM1, KP1
       INTEGER(KIND=JWIM) :: JKGLO, NPROMA, MTHREADS
       INTEGER(KIND=JWIM) :: NSTEP_LF, ISUBST
       INTEGER(KIND=JWIM) :: IJSG, IJLG, ICHNK, KIJS, KIJL, IJSB, IJLB
@@ -85,6 +86,8 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE, ZHOOK_HANDLE_MPI
 
+      REAL(KIND=JWRB) :: ZTUNE
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NFRE):: ZNU
 !     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
 !!! the advection schemes are still written in block structure
@@ -363,6 +366,10 @@ ENDIF  ! end sub time steps (if needed)
 
 !!! the advection schemes are still written in block structure
 !!!  So need to convert back to the nproma_wam chuncks
+        SELECT CASE (IGRSPR)
+
+        CASE(0)
+
 #ifdef _OPENACC
         !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
 #else
@@ -402,6 +409,56 @@ ENDIF  ! end sub time steps (if needed)
 !$OMP     END PARALLEL DO
 #endif /*_OPENACC*/
 
+        CASE(1)
+!         APPLY THE GARDEN SPRINKLER ALLEVIATION FIRST ORDER SCHEME OF IGOR LAVRENOV
+
+          ZTUNE = PGSEALLEVIATE * IDELPRO / R 
+
+!!!!!!!!!!!!!!!!!!!! the OPENACC will need to be done !!!!!!!!!!
+
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K, II, J, KM1, KP1, ZNU)
+          DO ICHNK = 1, NCHNK
+            KIJS = 1
+            IJSB = IJFROMCHNK(KIJS, ICHNK)
+            KIJL = KIJL4CHNK(ICHNK)
+            IJLB = IJFROMCHNK(KIJL, ICHNK)
+
+            DO M = 1, NFRE_RED
+              DO J = KIJS, KIJL
+                 ZNU(J,M) = ZTUNE * CGROUP(J,M,ICHNK)
+              ENDDO
+            ENDDO
+
+            DO K = 1, NANG
+              KP1 = K+1
+              IF (KP1 > NANG) KP1 = 1
+              KM1 = K-1
+              IF (KM1 < 1) KM1 = NANG
+
+              DO M = 1, NFRE_RED
+                 DO J = KIJS, KIJL
+                   II = IJSB + J - KIJS
+                   FL1(J, K, M, ICHNK) =  ZNU(J,M)*(FL3_EXT(II, KP1, M)+FL3_EXT(II, KM1, M)) + (1.0_JWRB-2.0_JWRB*ZNU(J,M))* FL3_EXT(II, K, M)
+                 ENDDO
+              ENDDO
+
+            ENDDO
+
+            IF (KIJL < NPROMA_WAM) THEN
+              !!! make sure fictious points keep values of the first point in the chunk
+              DO M = 1, NFRE_RED
+                DO K = 1, NANG
+                  DO J = KIJL+1,NPROMA_WAM
+                    FL1(J, K, M, ICHNK) =  FL1(1, K, M, ICHNK)
+                  ENDDO
+                ENDDO
+              ENDDO
+            ENDIF
+
+          ENDDO
+!$OMP     END PARALLEL DO
+
+           END SELECT 
            CALL GSTATS(1430,1)
 
         ENDIF  ! end propagation

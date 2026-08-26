@@ -134,6 +134,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
      &            IREFRA   ,IPROPAGS ,IASSI    ,                        &
+     &            IGRSPR   ,PGSEALLEVIATE      ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
@@ -881,6 +882,15 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' STARTING FROM ',CDATECURA
         ENDIF
       ENDIF
+
+      IF (IGRSPR == 1) THEN
+        WRITE(IU06,*) ' WITH FIRST ORDER GARDEN SPRINKLER ALLEVIATION WITH PGSEALLEVIATE = ',PGSEALLEVIATE
+      ELSEIF (IGRSPR == 2) THEN
+        WRITE(IU06,*) ' WITH SECOND ORDER GARDEN SPRINKLER ALLEVIATION WITH PGSEALLEVIATE = ',PGSEALLEVIATE
+      ELSE
+        WRITE(IU06,*) ' WITHOUT ANY GARDEN SPRINKLER ALLEVIATION '
+      ENDIF
+      WRITE(IU06,*) ' '
 
       IF (LLSOURCE) THEN
         IF (NDELW_LST <= 0) THEN
