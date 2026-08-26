@@ -87,7 +87,7 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE, ZHOOK_HANDLE_MPI
 
       REAL(KIND=JWRB) :: ZTUNE
-      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NFRE):: ZNU
+      REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NFRE):: ZNU, ZCW
 !     Spectra extended with the halo exchange for the propagation
 !     But limited to NFRE_RED frequencies
 !!! the advection schemes are still written in block structure
@@ -416,7 +416,7 @@ ENDIF  ! end sub time steps (if needed)
 
 !!!!!!!!!!!!!!!!!!!! the OPENACC will need to be done !!!!!!!!!!
 
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K, II, J, KM1, KP1, ZNU)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K, II, J, KP1, KM1, ZNU, ZCW)
           DO ICHNK = 1, NCHNK
             KIJS = 1
             IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -426,6 +426,7 @@ ENDIF  ! end sub time steps (if needed)
             DO M = 1, NFRE_RED
               DO J = KIJS, KIJL
                  ZNU(J,M) = ZTUNE * CGROUP(J,M,ICHNK)
+                 ZCW(J,M) = 1.0_JWRB-2.0_JWRB*ZNU(J,M)
               ENDDO
             ENDDO
 
@@ -438,7 +439,7 @@ ENDIF  ! end sub time steps (if needed)
               DO M = 1, NFRE_RED
                  DO J = KIJS, KIJL
                    II = IJSB + J - KIJS
-                   FL1(J, K, M, ICHNK) =  ZNU(J,M)*(FL3_EXT(II, KP1, M)+FL3_EXT(II, KM1, M)) + (1.0_JWRB-2.0_JWRB*ZNU(J,M))* FL3_EXT(II, K, M)
+                   FL1(J, K, M, ICHNK) =  ZNU(J,M)*(FL3_EXT(II, KP1, M)+FL3_EXT(II, KM1, M)) + ZCW(J,M)* FL3_EXT(II, K, M)
                  ENDDO
               ENDDO
 
@@ -458,7 +459,8 @@ ENDIF  ! end sub time steps (if needed)
           ENDDO
 !$OMP     END PARALLEL DO
 
-           END SELECT 
+        END SELECT 
+
            CALL GSTATS(1430,1)
 
         ENDIF  ! end propagation

@@ -612,7 +612,7 @@
       IDAMPING  = 1 
       IPROPAGS  = 0 
       IGRSPR    = 1
-      PGSEALLEVIATE = 1.0_JWRB
+      PGSEALLEVIATE = 5.0_JWRB
       IREFRA    = 0 
       ITEST     = 0 
       ITESTB    = 0 
