@@ -611,8 +611,8 @@
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
-      IGRSPR    = 1
-      PGSEALLEVIATE = 5.0_JWRB
+      IGRSPR    = 0
+      PGSEALLEVIATE = 0.0_JWRB
       IREFRA    = 0 
       ITEST     = 0 
       ITESTB    = 0 
