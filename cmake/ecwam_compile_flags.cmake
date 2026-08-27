@@ -54,6 +54,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
   endif()
 
   set(checkbounds_flags   "-Mbounds")
+  set(fpmodel_flags       "-Kieee")
 
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
   set(autopromote_flags   "-fdefault-real-8")
