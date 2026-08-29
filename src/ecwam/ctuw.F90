@@ -478,12 +478,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M) + DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M) + DRCM(IJ)
               ZNU_GSE = ZTUNE_GSE * CGROUP_EXT(IJ,M)
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) - 2.0_JWRB*ZNU_GSE
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + 2.0_JWRB*ZNU_GSE
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNU_GSE
-#ifdef _OPENACC
+
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-#endif
             ENDDO
           ENDDO
         ELSE
@@ -495,12 +494,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM(IJ)+DRCM(IJ)
               ZNU_GSE = ZTUNE_GSE * CGROUP_EXT(IJ,M)
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) - 2.0_JWRB*ZNU_GSE
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + 2.0_JWRB*ZNU_GSE
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNU_GSE
-#ifdef _OPENACC
+
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-#endif
             ENDDO
           ENDDO
         ENDIF
@@ -538,6 +536,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !!!   THE SUM IS NEEDED LATER ON !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #ifndef _OPENACC
+
+!!!!!!!!!! Jean Bidlot commented:
+!!!!!!!!!! excluding this test for real application is ill advised since the check could dependent on 
+!!!!!!!!!! surface currents is current refraction is active
+
       DO K=1,NANG
         DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
@@ -610,9 +613,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
 
-            SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-
-
             IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
 
               DO IC=-1,1
@@ -635,7 +635,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                 ENDIF
               ENDDO
 
-              SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WMPMN(IJ,K,M,0)
             ENDIF
 
 !           SUM < 1  ?
