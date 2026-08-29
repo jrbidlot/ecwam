@@ -37,7 +37,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWPCONS , ONLY : ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
-      USE YOWSTAT  , ONLY : ICASE    ,IREFRA
+      USE YOWSTAT  , ONLY : ICASE    ,IREFRA   , IGRSPR  , PGSEALLEVIATE
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,KCOR     ,WCOR     ,    &
      &                      SUMWN    ,WLATN    ,WLONN    ,WCORN    ,              &
@@ -90,6 +90,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB) :: DXX, DYY
       REAL(KIND=JWRB) :: UU, VV, UREL, VREL
       REAL(KIND=JWRB) :: XLAT, XLON
+      REAL(KIND=JWRB) :: ZTUNE_GSE, ZNU_GSE
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(2) :: ADXP, ADYP
@@ -110,6 +111,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
       NLAND = NSUP+1
 
       CMTODEG = 360.0_JWRB/CIRC
+
+      ZTUNE_GSE = IGRSPR * PGSEALLEVIATE * DELPRO / R
 
       IF (ICALL == 1) THEN
         LCFLFAIL(:) = .FALSE.
@@ -469,14 +472,15 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      NO DEPTH REFRACTION.
 !       -------------------
         IF (IREFRA == 0) THEN
-!$acc loop collapse(2) private(DTHP,DTHM)
+!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M) + DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M) + DRCM(IJ)
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
-              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
-              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
+              ZNU_GSE = ZTUNE_GSE * CGROUP_EXT(IJ,M)
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) - 2.0_JWRB*ZNU_GSE
+              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
+              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNU_GSE
 #ifdef _OPENACC
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
 #endif
@@ -485,14 +489,15 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         ELSE
 !*      SHALLOW WATER AND DEPTH REFRACTION.
 !       -----------------------------------
-!$acc loop collapse(2) private(DTHP,DTHM)
+!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM(IJ)+DRCM(IJ)
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
-              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
-              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
+              ZNU_GSE = ZTUNE_GSE * CGROUP_EXT(IJ,M)
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) - 2.0_JWRB*ZNU_GSE
+              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
+              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNU_GSE
 #ifdef _OPENACC
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
 #endif
