@@ -469,8 +469,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      REFRACTION WEIGHTS IN INTEGRATION SCHEME.
 !       -----------------------------------------
 
-!*      NO DEPTH REFRACTION.
-!       -------------------
+!*      NO DEPTH OR CUURENT REFRACTION.
+!       -------------------------------
         IF (IREFRA == 0) THEN
 !$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE)
           DO M = MSTART, MEND
@@ -485,10 +485,32 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
             ENDDO
           ENDDO
+
+!*      CURRENT REFRACTION WITH OR WITHOUT BOTTOM.
+!       ------------------------------------------
+        ELSEIF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
+!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE,UREL,VREL)
+          DO M = MSTART, MEND
+            DO IJ=KIJS,KIJL
+              DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
+              DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM(IJ)+DRCM(IJ)
+
+              UREL = CGROUP_EXT(IJ,M)*SINTH(K) + U_EXT(IJ)
+              VREL = CGROUP_EXT(IJ,M)*COSTH(K) + V_EXT(IJ)
+              ZNU_GSE = ZTUNE_GSE * MAX(SQRT(UREL**2+VREL**2), 0.0_JWRB) 
+
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + 2.0_JWRB*ZNU_GSE
+              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
+              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNU_GSE
+
+              SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
+            ENDDO
+          ENDDO
+
+!*      BOTTOM REFRACTION ONLY
+!       ----------------------
         ELSE
-!*      SHALLOW WATER AND DEPTH REFRACTION.
-!       -----------------------------------
-!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE)
+!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSEL)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
@@ -501,6 +523,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
             ENDDO
           ENDDO
+
         ENDIF
 
 !*      COMPUTE FREQUENCY SHIFTING DUE TO CURRENTS.
@@ -523,6 +546,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                 WMPMN(IJ,K,M,0) =(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
                 WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
                 WMPMN(IJ,K,M,-1)=(DTHM+ABS(DTHM))*FRATIO
+
+                SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WMPMN(IJ,K,M,0)
               ENDDO
             ENDDO
         ENDIF
