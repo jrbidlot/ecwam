@@ -497,7 +497,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
               UREL = CGROUP_EXT(IJ,M)*SINTH(K) + U_EXT(IJ)
               VREL = CGROUP_EXT(IJ,M)*COSTH(K) + V_EXT(IJ)
-              ZNU_GSE = ZTUNE_GSE * MAX(SQRT(UREL**2+VREL**2), 0.0_JWRB) 
+              ZNU_GSE = ZTUNE_GSE * SQRT(UREL**2 + VREL**2)
 
               WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + 2.0_JWRB*ZNU_GSE
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
@@ -510,7 +510,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      BOTTOM REFRACTION ONLY
 !       ----------------------
         ELSE
-!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSEL)
+!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
