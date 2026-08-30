@@ -90,7 +90,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB) :: DXX, DYY
       REAL(KIND=JWRB) :: UU, VV, UREL, VREL
       REAL(KIND=JWRB) :: XLAT, XLON
-      REAL(KIND=JWRB) :: ZTUNE_GSE, ZNU_GSE
+      REAL(KIND=JWRB) :: ZTUNE_GSE, ZNU_GSE, ZNUP1_GSE, ZNUM1_GSE
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(2) :: ADXP, ADYP
@@ -489,19 +489,22 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      CURRENT REFRACTION WITH OR WITHOUT BOTTOM.
 !       ------------------------------------------
         ELSEIF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
-!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE,UREL,VREL)
+!$acc loop collapse(2) private(DTHP,DTHM,ZNUP1_GSE,ZNUM1_GSE,UREL,VREL)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM(IJ)+DRCM(IJ)
 
-              UREL = CGROUP_EXT(IJ,M)*SINTH(K) + U_EXT(IJ)
-              VREL = CGROUP_EXT(IJ,M)*COSTH(K) + V_EXT(IJ)
-              ZNU_GSE = ZTUNE_GSE * SQRT(UREL**2 + VREL**2)
+              UREL = CGROUP_EXT(IJ,M)*SINTH(KP1) + U_EXT(IJ)
+              VREL = CGROUP_EXT(IJ,M)*COSTH(KP1) + V_EXT(IJ)
+              ZNUP1_GSE = ZTUNE_GSE * SQRT(UREL**2 + VREL**2)
+              UREL = CGROUP_EXT(IJ,M)*SINTH(KM1) + U_EXT(IJ)
+              VREL = CGROUP_EXT(IJ,M)*COSTH(KM1) + V_EXT(IJ)
+              ZNUM1_GSE = ZTUNE_GSE * SQRT(UREL**2 + VREL**2)
 
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + 2.0_JWRB*ZNU_GSE
-              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
-              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNU_GSE
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + ZNUP1_GSE + ZNUM1_GSE
+              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNUP1_GSE
+              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNUM1_GSE
 
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
             ENDDO
