@@ -46,6 +46,11 @@ forcings:
         end:       ${forecast.end}
         timestep:  01:00 
 
+currents:
+    # For testing the internal interpolation scheme for currents in ecWAM, we do not match the currents resolution with the model grid resolution
+    file:  data/forcings/daily_average_surface_currents_ORAS6_20221231_20230102_O160.grib
+    input_step: 86400 
+
 output:
     fields:
         name:
@@ -134,31 +139,31 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
-      average: 0.4039332563619328E+00
+      average: 4.038262895497731e-01
       relative_tolerance: 1.e-14
       hashes: ['0x3FD9DA0ADF75D79E']
 
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
-      average: 0.9740975537893726E+00
+      average: 9.808664045574004e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FEF2BCEA2147254']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1116009510311353E+01
+      average: 1.124931746804486e+00 
       relative_tolerance: 1.e-14
       hashes: ['0x3FF1DB2CC9CCFEEB']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.4326592382617202E-02
+      minimum: 4.315761832513768e-03 
       relative_tolerance: 1.e-14
       hashes: ['0x3F71B8C2CC955ADB']
     - name: swh
       time: 2023-01-01 06:00:00
-      maximum: 0.6288749015943962E+01
+      maximum: 6.309546854762974e+00 
       relative_tolerance: 1.e-14
       hashes: ['0x401927ADD270ED0E']
 
