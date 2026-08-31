@@ -37,7 +37,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       USE YOWPARAM , ONLY : NANG     ,NFRE_RED
       USE YOWPCONS , ONLY : ZPI      ,R        ,CIRC
       USE YOWREFD  , ONLY : THDD     ,THDC     ,SDOT
-      USE YOWSTAT  , ONLY : ICASE    ,IREFRA
+      USE YOWSTAT  , ONLY : ICASE    ,IREFRA   , IGRSPR  , PGSEALLEVIATE
       USE YOWTEST  , ONLY : IU06
       USE YOWUBUF  , ONLY : KLAT     ,KLON     ,WLAT     ,KCOR     ,WCOR     ,    &
      &                      SUMWN    ,WLATN    ,WLONN    ,WCORN    ,              &
@@ -90,6 +90,7 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB) :: DXX, DYY
       REAL(KIND=JWRB) :: UU, VV, UREL, VREL
       REAL(KIND=JWRB) :: XLAT, XLON
+      REAL(KIND=JWRB) :: ZTUNE_GSE, ZNU_GSE, ZNUP1_GSE, ZNUM1_GSE
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(2) :: ADXP, ADYP
@@ -110,6 +111,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
       NLAND = NSUP+1
 
       CMTODEG = 360.0_JWRB/CIRC
+
+      ZTUNE_GSE = IGRSPR * PGSEALLEVIATE * DELPRO / R
 
       IF (ICALL == 1) THEN
         LCFLFAIL(:) = .FALSE.
@@ -466,38 +469,64 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      REFRACTION WEIGHTS IN INTEGRATION SCHEME.
 !       -----------------------------------------
 
-!*      NO DEPTH REFRACTION.
-!       -------------------
+!*      NO DEPTH OR CUURENT REFRACTION.
+!       -------------------------------
         IF (IREFRA == 0) THEN
-!$acc loop collapse(2) private(DTHP,DTHM)
+!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M) + DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M) + DRCM(IJ)
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
-              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
-              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
-#ifdef _OPENACC
+              ZNU_GSE = ZTUNE_GSE * CGROUP_EXT(IJ,M)
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + 2.0_JWRB*ZNU_GSE
+              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
+              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNU_GSE
+
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-#endif
             ENDDO
           ENDDO
-        ELSE
-!*      SHALLOW WATER AND DEPTH REFRACTION.
-!       -----------------------------------
-!$acc loop collapse(2) private(DTHP,DTHM)
+
+!*      CURRENT REFRACTION WITH OR WITHOUT BOTTOM.
+!       ------------------------------------------
+        ELSEIF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
+!$acc loop collapse(2) private(DTHP,DTHM,ZNUP1_GSE,ZNUM1_GSE,UREL,VREL)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
               DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM(IJ)+DRCM(IJ)
-              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
-              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
-              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
-#ifdef _OPENACC
+
+              UREL = CGROUP_EXT(IJ,M)*SINTH(KP1) + U_EXT(IJ)
+              VREL = CGROUP_EXT(IJ,M)*COSTH(KP1) + V_EXT(IJ)
+              ZNUP1_GSE = ZTUNE_GSE * SQRT(UREL**2 + VREL**2)
+              UREL = CGROUP_EXT(IJ,M)*SINTH(KM1) + U_EXT(IJ)
+              VREL = CGROUP_EXT(IJ,M)*COSTH(KM1) + V_EXT(IJ)
+              ZNUM1_GSE = ZTUNE_GSE * SQRT(UREL**2 + VREL**2)
+
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + ZNUP1_GSE + ZNUM1_GSE
+              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNUP1_GSE
+              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNUM1_GSE
+
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-#endif
             ENDDO
           ENDDO
+
+!*      BOTTOM REFRACTION ONLY
+!       ----------------------
+        ELSE
+!$acc loop collapse(2) private(DTHP,DTHM,ZNU_GSE)
+          DO M = MSTART, MEND
+            DO IJ=KIJS,KIJL
+              DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
+              DTHM = DRGM(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDM(IJ)+DRCM(IJ)
+              ZNU_GSE = ZTUNE_GSE * CGROUP_EXT(IJ,M)
+              WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM) + 2.0_JWRB*ZNU_GSE
+              WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP) + ZNU_GSE
+              WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM) + ZNU_GSE
+
+              SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
+            ENDDO
+          ENDDO
+
         ENDIF
 
 !*      COMPUTE FREQUENCY SHIFTING DUE TO CURRENTS.
@@ -520,6 +549,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                 WMPMN(IJ,K,M,0) =(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
                 WMPMN(IJ,K,M,1) =(-DTHP+ABS(DTHP))/FRATIO
                 WMPMN(IJ,K,M,-1)=(DTHM+ABS(DTHM))*FRATIO
+
+                SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WMPMN(IJ,K,M,0)
               ENDDO
             ENDDO
         ENDIF
@@ -533,6 +564,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !!!   THE SUM IS NEEDED LATER ON !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #ifndef _OPENACC
+
+!!!!!!!!!! Jean Bidlot commented:
+!!!!!!!!!! excluding this test for real application is ill advised since the check could dependent on 
+!!!!!!!!!! surface currents is current refraction is active
+
       DO K=1,NANG
         DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
@@ -605,9 +641,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
 
-            SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
-
-
             IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
 
               DO IC=-1,1
@@ -630,7 +663,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                 ENDIF
               ENDDO
 
-              SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WMPMN(IJ,K,M,0)
             ENDIF
 
 !           SUM < 1  ?

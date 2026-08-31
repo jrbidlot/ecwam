@@ -228,8 +228,8 @@ SUBROUTINE PREWIND (BLK2LOC, WVENVI, FF_NOW, FF_NEXT,       &
 !     2.2 GET SURFACE CURRENTS TO WAM BLOCK STRUCTURE (if needed) 
 !         -------------------------------------------
 
-      CALL GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,          &
-     &             NXS, NXE, NYS, NYE, FIELDG,     &
+      CALL GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,   &
+     &             NXS, NXE, NYS, NYE, FIELDG, FF_NOW,     &
      &             NEMO2WAM, WVENVI)
 
 

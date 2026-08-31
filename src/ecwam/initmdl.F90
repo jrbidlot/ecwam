@@ -163,9 +163,9 @@ SUBROUTINE INITMDL (NADV,                                 &
 
       USE YOWCPBO  , ONLY : IBOUNC   ,NBOUNC   ,                        &
      &                      GBOUNC  , IPOGBO   ,CBCPREF
-      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWFLUX   ,LWNEMOCOU,    &
-     &                      LWNEMOCOUIBR
+      USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP ,LWNEMOCOU,LWNEMOCOUIBR
       USE YOWCOUT  , ONLY : COUTT    ,COUTLST  ,FFLAG20  ,GFLAG20  ,    &
+     &                      NASS     ,                                  &
      &                      NGOUT    ,NOUTT    ,LOUTINT  ,LSECONDORDER
       USE YOWCURR  , ONLY : CDTCUR   ,IDELCUR  ,CDATECURA
       USE YOWFPBO  , ONLY : IBOUNF
@@ -191,7 +191,7 @@ SUBROUTINE INITMDL (NADV,                                 &
      &                      LLUNSTR
       USE YOWPCONS , ONLY : G        ,CIRC     ,PI       ,ZPI      ,    &
      &                      RAD      ,ROWATER  ,ZPI4GM2  ,FM2FP
-      USE YOWPHYS  , ONLY : ALPHAPMAX, ALPHAPMINFAC, FLMINFAC
+      USE YOWPHYS  , ONLY : ALPHAPMAX
       USE YOWREFD  , ONLY : LLUPDTTD
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,TOOSHALLOW
       USE YOWSPEC  , ONLY : NBLKS    ,NBLKE    ,KLENTOP  ,KLENBOT
@@ -199,11 +199,11 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDTPRO   ,CDTRES   ,    &
      &            CDTINTT  ,CDTBC    ,                                  &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT ,               &
-     &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  ,              &
-     &            IREFRA   ,LNSESTART, LLSOURCE,                        &
+     &            IDELWI   ,IDELWO   ,IDELRES  ,IDELINT  , IDELALT ,    &
+     &            IREFRA   ,LNSESTART, LLSOURCE, LLUNSETICE,            &
      &            IPHYS    ,                                            &
      &            CDATEA   ,MARSTYPE ,LANAONLY ,ISNONLIN ,IPROPAGS ,    &
-     &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
+     &            IASSI    ,IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWTABL  , ONLY : FAC0     ,FAC1     ,FAC2     ,FAC3     ,    &
      &                      FAK      ,FRHF     ,DFIMHF
       USE YOWTEST  , ONLY : IU06
@@ -328,7 +328,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !        -------------------
 
       IF (LWCOU) THEN
-        IF ( IQGAUSS /= 1 ) THEN
+        IF ( IQGAUSS /= 1 .AND. IQGAUSS /= 2 ) THEN
           IF ( AMONOP < 90._JWRB ) THEN
               WRITE (IU06,*) ' *********************************'
               WRITE (IU06,*) ' *                               *'
@@ -469,8 +469,6 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         DFIM_END_L(M) = SCDF_L*FR(M)
         DFIM_END_U(M) = SCDF_U*FR(M)
       ENDDO
-
-      FLMINFAC = ALPHAPMINFAC*FM2FP*G/(PI*ZPI**3*FR(NFRE)**5)
 
       FLOGSPRDM1=1.0_JWRB/LOG10(FRATIO)
 
@@ -647,11 +645,14 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,3002) ' EASTERNMOST LONGITUDE IN GRID IS .......: ', AMOEAP, ' DEGREE'
       WRITE(IU06,*) '  '
       IF ( IQGAUSS == 1 ) THEN
-        WRITE(IU06,*) '   GAUSSIAN GRID ..........................: '
+        WRITE(IU06,*) '   REDUCED GAUSSIAN GRID ....................: '
+        WRITE(IU06,3002) ' APPROXIMATE LATITUDE INCREMENT IS ......: ', XDELLA, ' DEGREE'
+      ELSEIF ( IQGAUSS == 2 ) THEN
+        WRITE(IU06,*) '   REGULAR GAUSSIAN GRID ....................: '
         WRITE(IU06,3002) ' APPROXIMATE LATITUDE INCREMENT IS ......: ', XDELLA, ' DEGREE'
       ELSE
         IF ( IRGG == 1 ) THEN
-          WRITE(IU06,*) ' IRREGULAR LAT/LON  GRID ................: '
+          WRITE(IU06,*) ' REDUCED LAT/LON  GRID .................: '
           WRITE(IU06,3002) ' LATITUDE INCREMENT IS ..................: ', XDELLA, ' DEGREE'
         ELSE
           WRITE(IU06,*) ' LAT/LON  GRID ..........................: '
@@ -924,7 +925,11 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !*    7. NUMBER OF PROPAGATION TIME STEPS PER CALL.
 !        ------------------------------------------
 
-      NADV = IDELWI/IDELPRO
+      IF (.NOT.LWCOU .AND. IASSI == 1 .AND. NASS <= 0 ) THEN
+        NADV = IDELALT/IDELPRO
+      ELSE
+        NADV = IDELWI/IDELPRO
+      ENDIF
       NADV = MAX(NADV,1)
       IF (LANAONLY) THEN
         NADV = 0
@@ -1001,8 +1006,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
       WRITE(IU06,*) ' SUB. INITMDL: PREWIND DONE'
       CALL FLUSH (IU06)
 
-!    GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT
-!!!! might need to restrict call when needed !!!
+!     GET SEA ICE DIMENSIONLESS ENERGY ATTENUATION COEFFICIENT IF NEEDED
       IF(LCIWA1) CALL CIGETDEAC
 
 ! ----------------------------------------------------------------------
@@ -1010,7 +1014,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !*    9.1 READ SPECTRA
 !         ------------
 
-      CALL GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, NBLKS, NBLKE, IREAD)
+      CALL GETSPEC(FL1, BLK2GLO, BLK2LOC, WVENVI, WVPRPT, FF_NOW, NBLKS, NBLKE, IREAD)
 
       IF ( LNSESTART ) THEN
         WRITE(IU06,*) ' SUB. INITMDL: SPECTRA INITIALISED AT NOISE LEVEL'
@@ -1021,7 +1025,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
         WRITE(IU06,*) ' '
         CALL FLUSH (IU06)
 
-        IF (CDTPRO == CDATEA .AND. LLSOURCE ) THEN
+        IF (CDTPRO == CDATEA .AND. LLSOURCE .AND. LLUNSETICE ) THEN
 !         INSURE THERE IS SOME WAVE ENERGY FOR GRID POINTS THAT HAVE BEEN
 !         FREED FROM SEA ICE (ONLY DONE INITIALLY AND IF THE MODEL IS NOT RESTARTED
 !         IT ALSO RESETS THE MIMIMUM ENERGY LEVEL THAT MIGHT HAVE BEEN LOST
