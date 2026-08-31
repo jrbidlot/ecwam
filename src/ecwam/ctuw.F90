@@ -567,7 +567,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !!!!!!!!!! Jean Bidlot commented:
 !!!!!!!!!! excluding this test for real application is ill advised since the check could dependent on 
-!!!!!!!!!! surface currents is current refraction is active
+!!!!!!!!!! surface currents if current refraction is active
 
       DO K=1,NANG
         DO M = MSTART, MEND
