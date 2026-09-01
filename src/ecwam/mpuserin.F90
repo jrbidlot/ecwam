@@ -1065,7 +1065,7 @@
 !     Most of the namelist selection will be written to the logfiles in userin.
 
 !     Some are printed below
-!$acc update device(NFRE_RED)
+!$acc update device(NFRE_RED, IREFRA)
 
       IF (IRANK == 1) THEN
         WRITE(6,*) '==============================================='
