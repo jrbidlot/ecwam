@@ -90,6 +90,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
 #include "mwp2.intfb.h"
 #include "outbeta.intfb.h"
 #include "outsetwmask.intfb.h"
+#include "peak_freq.intfb.h"
 #include "se10mean.intfb.h"
 #include "sebtmean.intfb.h"
 #include "sepwisw.intfb.h"
@@ -132,7 +133,7 @@ SUBROUTINE OUTBLOCK (KIJS, KIJL, MIJ,                 &
       REAL(KIND=JWRB) :: GOZPI 
       REAL(KIND=JWRB) :: TEWHMIN, TEWHMAX
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: SWH, EM, FM, DP
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: SWH, EM, FM, FP
       REAL(KIND=JWRB), DIMENSION(KIJL) :: C3, C4, BF, QP, HMAX, TMAX
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CMAX_F, HMAX_N, CMAX_ST, HMAX_ST, PHIST
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ZWCF
@@ -213,7 +214,7 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
 
       CALL FEMEAN (KIJS, KIJL, FL2ND, EM, FM)
 
-      CALL DOMINANT_PERIOD (KIJS, KIJL, FL2ND, DP)
+      CALL PEAK_FREQ(KIJS, KIJL, FL2ND, FP)
 
       CALL KURTOSIS(KIJS, KIJL, FL1,                     &
      &              DEPTH,                               &
@@ -284,8 +285,8 @@ IF (LHOOK) CALL DR_HOOK('OUTBLOCK',0,ZHOOK_HANDLE)
       IF (IPFGTBL(6) /= 0) THEN
 !       CONVERSION TO PERIOD
         DO IJ=KIJS,KIJL
-          IF (DP(IJ) > 0.0_JWRB) THEN
-            BOUT(IJ,ITOBOUT(6))=DP(IJ)
+          IF (FP(IJ) > 0.0_JWRB) THEN
+            BOUT(IJ,ITOBOUT(6))=1.0_JWRB/FP(IJ)
           ELSE
             BOUT(IJ,ITOBOUT(6))=ZMISS
           ENDIF
