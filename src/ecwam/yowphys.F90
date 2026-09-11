@@ -90,7 +90,7 @@
       REAL(KIND=JWRB) :: ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_MIN
 
 !     Negative wind input, ARDHUIN et al. 2010:
-      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.6_JWRB ! controls the turbulent swell dissipation
+      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.63_JWRB ! controls the turbulent swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
       REAL(KIND=JWRB) :: SWELLF4  !! See *SETWAVPHYS*
