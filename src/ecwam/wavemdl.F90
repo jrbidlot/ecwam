@@ -131,6 +131,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
       USE YOWPHYS  , ONLY : RNU      ,RNUM     ,PRCHAR
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
+     &            IDELALT  ,                                            &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWSHAL  , ONLY : WVENVI   ,WVPRPT
@@ -445,7 +446,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
           RETURN
         ENDIF
 
-
       ELSE  ! .NOT. FRSTIME
 
 !     !!!! ANY OTHER TIMES !!!!
@@ -608,11 +608,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
 !          FOR GENERAL DISSIMINATION !
 !          ---------------------------------------------
 
-      IF (IASSI == 1) THEN
+      IF (IASSI == 1 .AND. .NOT. LLWAVEINIT_ONLY) THEN
 
         MARSTYPE = 'an'
 
 !       UPDATE ANALYSIS TIME
+        CDTASS = CDATEA
         DO J=1,NASS
           IF (CDTPRO == CASS(J)) THEN
             CDTASS=CDTPRO
@@ -620,13 +621,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
           ENDIF
         ENDDO
 
-        IF (NASS > 0 ) THEN
-          IF ( CDTPRO == CDTASS ) THEN
-            CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
- &                        WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                        WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
-          ENDIF
-        ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF) ) THEN
+        IF ( CDTPRO == CDTASS ) THEN
           CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
  &                      WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
  &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
