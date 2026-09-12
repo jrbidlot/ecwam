@@ -177,7 +177,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       LOGICAL, INTENT(IN) :: LWCUR
 
 
-      INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT
+      INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT, ICOUNT
       INTEGER(KIND=JWIM) :: LEN
       INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
       INTEGER(KIND=JWIM) :: IDELT_NEW
@@ -198,6 +198,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       CHARACTER(LEN=2) :: MARSFCTYPE
       CHARACTER(LEN=3) :: CITG
       CHARACTER(LEN=4) :: CSTREAM
+      CHARACTER(LEN=14) :: CDTASS
       CHARACTER(LEN=256) :: CLFORM
 
       LOGICAL :: LERROR, LASTREAM
@@ -1090,18 +1091,40 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IF (IASSI == 1) THEN
         WRITE(IU06,*) ' '
         WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
-        IF (NASS > 0) THEN
-          WRITE(IU06,*) ' AT DATE(S) '
-          WRITE(IU06,'(2X,A14)') (CASS(I),I=1,NASS)
+        IF ( NASS > 0 ) THEN
+          WRITE(IU06,*) ' FOR DATES PRESCRIBED BY THE NAMELIST NAAT:'
         ELSE
           IF (LWCOU) THEN
-            WRITE(IU06,*) ' AT DATE ', CDATEF
-          ELSE
-            WRITE(IU06,*) ' UNTIL THE END OF THE ANALYSIS PERIOD'
-            WRITE(IU06,*) ' AT DATE ', CDATEF
+            WRITE(IU06,*) ' FOR DATE = CDATEF'
+            NASS = 1
+            ALLOCATE(CASS(NASS))
+            CASS(1) = CDATEF
+          ELSE IF (IDELALT > 0) THEN
+            WRITE(IU06,*) ' FOR DATES OVER THE ANALYSIS PERIOD DETERMINED BY IDELALT:'
+            CDTASS = CDATEA
+            ICOUNT = 0
+            CALL INCDATE(CDTASS, IDELALT)
+            DO WHILE (CDTASS <= CDATEF)
+              ICOUNT = ICOUNT+1
+              CALL INCDATE(CDTASS, IDELALT)
+            ENDDO
+            IF (ICOUNT > 0 ) THEN
+              NASS = ICOUNT
+              ALLOCATE(CASS(NASS))
+            ENDIF
+            CDTASS = CDATEA
+            DO ICOUNT = 1, NASS
+              CALL INCDATE(CDTASS, IDELALT)
+              CASS(ICOUNT) = CDTASS
+            ENDDO
           ENDIF
+        ENDIF
+
+        IF (NASS > 0) THEN
+          WRITE(IU06,'(2X,A14)') (CASS(I),I=1,NASS)
           CALL FLUSH(IU06)
         ENDIF
+
         IF (LALTAS) THEN
           WRITE(IU06,*) ' WITH ALTIMETER DATA IN TIME WINDOW(S) OF '
           WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS'
