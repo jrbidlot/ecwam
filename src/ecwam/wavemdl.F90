@@ -131,7 +131,6 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
       USE YOWPHYS  , ONLY : RNU      ,RNUM     ,PRCHAR
       USE YOWSTAT  , ONLY : MARSTYPE ,CDATEA   ,CDATEE   ,CDATEF   ,    &
      &            CDTPRO   ,IDELPRO  ,IDELWI   ,IDELWO   ,IASSI    ,    &
-     &            IDELALT  ,                                            &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
      &            IDELWI_LST,IDELWO_LST,CDTW_LST,NDELW_LST
       USE YOWSHAL  , ONLY : WVENVI   ,WVPRPT
