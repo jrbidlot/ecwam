@@ -370,7 +370,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !           -----------------------------
         WRITE(IU06,*) ' !!!!!!!!!!!!!! WAVE FIELDS INTEGRATED FOR DATE : ', CDTPRO
 
-!       IS THIS AN ANALYSIS TIME FROM THE INPUT LIST ?
+!       IS THIS AN ANALYSIS TIME ?
         LLNONASSI=.TRUE.
         IF (IASSI == 1) THEN
           DO J=1,NASS
@@ -408,10 +408,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !             IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
 !             BECOMES TYPE AN (i.e. pseudo analysis)
               MARSTYPEBAK=MARSTYPE
-              IF ((MARSTYPE == 'fg' .AND. KADV < NADV) .OR.             &
-     &            (MARSTYPE == '4v' .AND. LLNONASSI) ) THEN
-                MARSTYPE='an'
-              ENDIF
+              IF ( (MARSTYPE == 'fg' .OR. MARSTYPE == '4v') .AND. LLNONASSI ) MARSTYPE='an'
 
 #ifdef WAM_GPU
               IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',0,ZHOOK_HANDLE_DATA_OFFLOAD)
@@ -525,10 +522,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 !         IF THE OUTPUT TIME IS NOT AN ANALYSIS TIME THEN TYPE FG or 4V
 !         BECOMES TYPE AN (i.e. speudo analysis)
           MARSTYPEBAK=MARSTYPE
-          IF ((MARSTYPE == 'fg' .AND. KADV < NADV) .OR.                 &
-     &        (MARSTYPE == '4v' .AND. LLNONASSI) ) THEN
-            MARSTYPE='an'
-          ENDIF
+          IF ( (MARSTYPE == 'fg' .OR. MARSTYPE == '4v') .AND. LLNONASSI ) MARSTYPE='an'
 
           IF (LHOOK) CALL DR_HOOK('IO_TIME',0,ZHOOK_HANDLE_IO)
           CALL OUTWINT(BOUT)

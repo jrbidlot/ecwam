@@ -926,7 +926,7 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !        ------------------------------------------
 
       IF (.NOT.LWCOU .AND. IASSI == 1 .AND. NASS <= 0 ) THEN
-        NADV = IDELALT/IDELPRO
+        NADV = MIN(IDELALT,IDELWI)/IDELPRO
       ELSE
         NADV = IDELWI/IDELPRO
       ENDIF
