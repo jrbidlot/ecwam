@@ -605,11 +605,12 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
 !          FOR GENERAL DISSIMINATION !
 !          ---------------------------------------------
 
-      IF (IASSI == 1) THEN
+      IF (IASSI == 1 .AND. .NOT. LLWAVEINIT_ONLY) THEN
 
         MARSTYPE = 'an'
 
 !       UPDATE ANALYSIS TIME
+        CDTASS = CDATEA
         DO J=1,NASS
           IF (CDTPRO == CASS(J)) THEN
             CDTASS=CDTPRO
@@ -617,13 +618,7 @@ SUBROUTINE WAVEMDL (CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,&
           ENDIF
         ENDDO
 
-        IF (NASS > 0 ) THEN
-          IF ( CDTPRO == CDTASS ) THEN
-            CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
- &                        WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
- &                        WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
-          ENDIF
-        ELSEIF ( (.NOT.LWCOU .AND. CDTPRO <= CDATEF ) .OR. (LWCOU .AND. CDTPRO == CDATEF) ) THEN
+        IF ( CDTPRO == CDTASS ) THEN
           CALL WAMASSI (LDSTOP, LDWRRE, BLK2GLO,          &
  &                      WVENVI, WVPRPT, FF_NOW, INTFLDS,  &
  &                      WAM2NEMO, NEMO2WAM, VARS_4D%FL1)
