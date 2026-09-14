@@ -36,9 +36,10 @@ class Stats:
     def load(self,doc):
         self = Stats()
         def parse_line(self,line):
-            [time, index, name, avg_dec, avg_hex, min_dec, min_hex, max_dec, max_hex, non_missing] = line.split()
+            [time, marstype, index, name, avg_dec, avg_hex, min_dec, min_hex, max_dec, max_hex, non_missing] = line.split()
             entry = {
                         'time': datetime.strptime(time, "%Y%m%d%H%M%S"),
+                        'marstype': marstype,
                         'index': int(index),
                         'name': name,
                         'average' : float(avg_dec),
@@ -118,6 +119,7 @@ validation_list = extract_validation_list(config, args.section.split('.'))
 for validate in validation_list:
     name = validate['name']
     time = validate['time']
+    marstype = validate['marstype']
     if 'average' in validate:
         norm_type = 'average'
     elif 'minimum' in validate:
@@ -130,7 +132,7 @@ for validate in validation_list:
     hashes_ref = validate['hashes'] if 'hashes' in validate else []
     rtol = validate['relative_tolerance'] if 'relative_tolerance' in validate else 0
 
-    validation_stats = stats.filter(name=name,time=time)
+    validation_stats = stats.filter(name=name,time=time,marstype=marstype)
     if not validation_stats.entries:
         validation_missing += 1
         continue
@@ -147,10 +149,11 @@ for validate in validation_list:
         format_str = "<21."+str(precision-1)+"e"
         return format(val, format_str)
 
-    print("Validating {norm: <8} {name: <6} at time {time} with reference {ref: <21} : {value: <21} (hash {hash})".format(
+    print("Validating {norm: <8} {name: <6} at time {time} {marstype: <3} with reference {ref: <21} : {value: <21} (hash {hash})".format(
             norm=norm_type,
             name="'"+name+"'",
             time=time,
+            marstype=marstype,
             ref=format_float_scientific(x_ref,precision=16),
             value=format_float_scientific(x,precision=16),
             hash=hash))

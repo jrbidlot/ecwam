@@ -764,8 +764,9 @@ ENDIF
         REJECT           = 0.2_JWRB ! If 20% of ABS(O-B) is greater than...
         ALTSDTHRSH(ISAT) = 1.0_JWRB ! 1.0 m, then reject the entire dataset.
 
+        WRITE(IU06,*)' '
         WRITE(IU06,'(A,F6.2,A,F6.2,A)') &
-            '     SUSPICIOUS DATA: DATASET IS REJECTED IF ', &
+            '    SUSPICIOUS DATA: DATASET IS REJECTED IF ', &
             REJECT * 100.0_JWRB, &
             '% of ABS(O-B) > ', &
             ALTSDTHRSH(ISAT), &
@@ -869,7 +870,6 @@ ENDIF
           WRITE(IU06,*)'   NUMBER OF SUSPICIOUS DATA.............. = ', NTOTREJSD
         ENDIF
         WRITE(IU06,*)''
-        WRITE(IU06,*)'-------------------------------------------------------'
         CALL FLUSH(IU06)
 
         IF (NTOTSAT > 0) THEN
@@ -878,11 +878,11 @@ ENDIF
 
             REJRATIO = FLOAT(NTOTREJSD) / FLOAT(NOBSPSAT(ISAT))
 
-            WRITE(IU06,'(A,I6,A,F6.2,A)') '     REJRATIO for altimeter ', &
-            IBUFRSAT(ISAT), ' is: ', REJRATIO*100.0_JWRB, ' %'
+            WRITE(IU06,'(A,A,A,F6.2,A)') '    REJRATIO for ', &
+            CSATNAME(ISAT), ' is: ', REJRATIO*100.0_JWRB, ' %'
 
           ELSE
-            WRITE(IU06,*) '      REJRATIO for altimeter ', IBUFRSAT(ISAT), ' : NO OBS'
+            WRITE(IU06,*) '      REJRATIO for ', IBUFRSAT(ISAT), ' : NO OBS'
             REJRATIO = 0.0_JWRB
           ENDIF
 

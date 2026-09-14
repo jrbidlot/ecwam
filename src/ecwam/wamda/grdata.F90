@@ -382,6 +382,7 @@
       NCUNQ(:) = 0
       ICOUNTT(:) = 0
       ICOUNTD(:) = 0
+      ICOUNTA(:) = 0
       ICOUNTB(:) = 0
       ICOUNTQCF(:) = 0
       ICOUNTBL(:) = 0
@@ -606,6 +607,9 @@
 
       IF (CDATE < CBEGINDT) THEN
         ICOUNTB(KSAT) = ICOUNTB(KSAT) + 1
+
+      ELSE IF (CDATE > CENDDT) THEN
+        ICOUNTA(KSAT) = ICOUNTA(KSAT) + 1
 
       ELSE IF (CDATE <= CENDDT) THEN
 !       DATE IS INSIDE THE TIME WINDOW AND RECORD FLAGGED AS RELIABLE.

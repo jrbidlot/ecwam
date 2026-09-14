@@ -27,7 +27,8 @@ assert_executable_is_available ${MODEL}-${prec} || abort 4
 
 begofrn=$(read_config begin               --format="%Y%m%d%H%M%S")
 endofrn=$(read_config end                 --format="%Y%m%d%H%M%S")
-begoffo=$(read_config forcing.at[1].begin --format="%Y%m%d%H%M%S" --default=${endofrn} )
+begoffo=$(read_config fcbegin --format="%Y%m%d%H%M%S" --default=${endofrn} )
+
 
 find_preproc_files
 
@@ -127,7 +128,14 @@ lciwa2=$(read_config physics.lciwa2 --default=F)
 lciwa3=$(read_config physics.lciwa3 --default=F)
 lciscal=$(read_config physics.lciscal --default=F)
 
+
+iassi=$(read_config analysis.iassi --default=0)
+idelalt=$(read_config analysis.idelalt --default=21600)
+laltas=$(read_config analysis.laltas --default=F)
+lsaras=$(read_config analysis.lsaras --default=F)
+
 nproma=$(read_config nproma --default=24)
+ll1d=$(read_config ll1d --default=F)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
@@ -156,6 +164,7 @@ ppfreq=$(read_config output.fields.at[0].timestep --format=hours --default=02:00
 
 forcings_file=$(read_config forcings.file)
 currents_file=$(read_config currents.file --default=NOTFOUND )
+altimeter_data_file=$(read_config analysis.altimeter_data_file --default=NOTFOUND )
 
 function cleanup() {
   shopt -s nullglob
@@ -275,6 +284,24 @@ if [ "${currents_file}" != NOTFOUND ]; then
   ln -s ${DATA_DIR}/${currents_file} currents 
 fi
 
+# Data for data analysis
+########################
+
+if [[ $iassi == 1 ]] ; then
+  if [ "${altimeter_data_file}" != NOTFOUND ]; then
+    log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${altimeter_data_file} ${DATA_DIR}/${altimeter_data_file} || {
+      echo "ERROR: Could not retrieve altimeter data in ${altimeter_data_file}"
+      exit 4
+}
+    tar xvf ${DATA_DIR}/${altimeter_data_file}
+    ls -ltr
+
+  else
+    echo "ERROR: Could not find altimeter data in ${altimeter_data_file}"
+    exit 4
+  fi
+fi
+
 # NAMELIST
 ##########
 
@@ -283,7 +310,7 @@ cat > wam_namelist << EOF
   CLHEADER              = " WAVE MODEL ",
   CLDOMAIN              = "${cldomain}",
   NPROMA_WAM            = ${nproma},
-  LL1D                  = F,
+  LL1D                  = ${ll1d},
   NANG                  = ${wamnang},
   NFRE                  = ${wamnfre_phys},
   NFRE_RED              = ${wamnfre},
@@ -315,6 +342,13 @@ cat > wam_namelist << EOF
   IREFRA                = ${irefra},
   LRELWIND              = T,
   RWFAC                 = 0.5,
+  IASSI                 = ${iassi},
+  LALTAS                = ${laltas}
+  LSARAS                = ${lsaras}
+  IDELALT               = ${idelalt},
+  LRALTPREPROC          = F, 
+  LRALTASCII            = T, 
+  LRALTAVERAGE          = F, 
   LFDBIOOUT             = F,
   LFDB                  = F,
   NGRIB_VERSION         = 2,

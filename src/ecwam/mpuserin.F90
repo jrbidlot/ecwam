@@ -670,9 +670,34 @@
 !       HSALTCUT is used in combination with the error estimate of
 !       the altimeter data to determine the minimum Hs allowed for
 !       altimeter data.
-        HSALTCUT(ISAT) = 999999._JWRB
-        LALTGRDOUT(ISAT)  = .FALSE.
+        HSALTCUT(ISAT) = 0.1_JWRB
+        LALTGRDOUT(ISAT)  = .TRUE.
       ENDDO
+!     AS DEFINED AT ECMWF
+      IBUFRSAT(1) = 1
+      CSATNAME(1) = 'ERS-1'
+      IBUFRSAT(2) = 2
+      CSATNAME(2) = 'ERS-2'
+      IBUFRSAT(3) = 60
+      CSATNAME(3) = 'ENVISAT'
+      IBUFRSAT(4) = 260
+      CSATNAME(4) = 'JASON-1'
+      IBUFRSAT(5) = 261
+      CSATNAME(5) = 'JASON-2'
+      IBUFRSAT(6) = 47
+      CSATNAME(6) = 'CRYOSAT-2'
+      IBUFRSAT(7) = 441
+      CSATNAME(7) = 'SARAL'
+      IBUFRSAT(8) = 262
+      CSATNAME(8) = 'JASON-3'
+      IBUFRSAT(9) = 61
+      CSATNAME(9) = 'Sentinel-3A'
+      IBUFRSAT(10) = 65
+      CSATNAME(10) = 'Sentinel-3B'
+      IBUFRSAT(11) = 66
+      CSATNAME(11) = 'Sentinel-6A'
+      IBUFRSAT(12) = 67
+      CSATNAME(12) = 'Sentinel-6B'
 
       L4VTYPE   = .FALSE. 
 
@@ -1106,9 +1131,10 @@
         WRITE(6,*) '*** IPROPAGS= ',IPROPAGS
         WRITE(6,*) '*** IREFRA= ',IREFRA
         WRITE(6,*) '*** LLUNSTR= ',LLUNSTR
-        WRITE(6,*) '*** LVECTOR= ',LVECTOR
-        WRITE(6,*) '*** IVECTOR= ',IVECTOR
-        WRITE(6,*) '*** LPREPROC= ',LPREPROC
+        WRITE(6,*) '*** IASSI= ', IASSI
+        WRITE(6,*) '*** IDELALT= ', IDELALT
+        WRITE(6,*) '*** LALTAS= ', LALTAS 
+        WRITE(6,*) '*** LSARAS= ', LSARAS 
         WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
         WRITE(6,*) '*** LLNORMIFS2WAM= ',LLNORMIFS2WAM
         WRITE(6,*) '*** LLNORMWAM2IFS= ',LLNORMWAM2IFS

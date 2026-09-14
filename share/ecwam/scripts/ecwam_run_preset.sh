@@ -23,6 +23,31 @@ source ${SCRIPTS_DIR}/ecwam_runtime.sh
 source ${SCRIPTS_DIR}/ecwam_parse_commandline.sh
 source ${SCRIPTS_DIR}/ecwam_helper_functions.sh
 
+
+restart_files_from=$(read_config input.from)
+
+if [[ ${restart_files_from} == file ]] ; then
+# In case you alrady have initial conditions, get them instead of running preset
+# We assume that they are in the appropriate format
+  restart_files=$(read_config input.file)
+
+  mkdir -p ${RUN_DIR}/restart/
+  cd ${WORK_DIR}
+
+  echo "Fetching restart files from "${restart_files}
+  echo "+ ${SCRIPTS_DIR}/ecwam_retrieve.sh ${restart_files} ${RUN_DIR}/restart/${restart_files}"
+  log ${SCRIPTS_DIR}/ecwam_retrieve.sh ${restart_files} ${RUN_DIR}/restart/${restart_files} || {
+    echo "ERROR: Could not retrieve forcings ${restart_files}"
+    exit 4
+  }
+  echo ""
+  tar xvf ${RUN_DIR}/restart/${restart_files} -C ${RUN_DIR}/restart
+
+  echo "Restart files have been copied to    ${RUN_DIR}/restart/"
+
+else
+# Run preset to generate your first inital conditions
+
 function cleanup() {
   shopt -s nullglob
   LOG_DIR=${RUN_DIR}/logs/preset
@@ -293,3 +318,5 @@ touch ${RUN_DIR}/preset.completed
 echo "==============================================================================="
 echo "ecwam_run_preset end"
 echo "==============================================================================="
+
+fi

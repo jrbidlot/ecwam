@@ -26,10 +26,10 @@ forecast.begin: 2023-01-01 00:00:00
 forecast.end:   2023-01-01 06:00:00
 
 begin: ${analysis.begin}
+fcbegin: ${forecast.begin}
 end:   ${forecast.end}
 
 nproma: 24
-
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
@@ -73,13 +73,15 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
+      marstype: an
       average: 3.798796788904921e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FD84FF2DB4FFA2F']
 
-    # initial forecast time
+    # last analysis time
     - name: swh
       time: 2023-01-01 00:00:00
+      marstype: an
       average: 9.248520794362616e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FED9863635A1F70']
@@ -87,16 +89,19 @@ validation:
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       average: 1.058544501579757e+00 
       relative_tolerance: 1.e-14
       hashes: ['0x3FF0EFCC5BFA54B0']
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       minimum: 1.678291872388009e-02 
       relative_tolerance: 1.e-14
       hashes: ['0x3F912F8A9C33B3ED']
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       maximum: 6.510952402299070e+00 
       relative_tolerance: 1.e-14
       hashes: ['0x401A0B371B46BFA2']
@@ -106,13 +111,15 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
+      marstype: an 
       average: 0.1305477499961853E+01
       relative_tolerance: 1.e-6
       hashes: ['0x3FF4E33C60000000']
 
-    # initial forecast time
+    # last analysis time
     - name: swh
       time: 2023-01-01 00:00:00
+      marstype: an 
       average: 0.1425064325332642E+01
       relative_tolerance: 1.e-6
       hashes: ['0x3FF6CD1040000000']
@@ -120,16 +127,19 @@ validation:
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       average: 0.1471550345420837E+01
       relative_tolerance: 1.e-6
       hashes: ['0x3FF78B7860000000']
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       minimum: 0.1756713353097439E-01
       relative_tolerance: 1.e-6
       hashes: ['0x3F91FD1E60000000']
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       maximum: 0.6986917018890381E+01
       relative_tolerance: 1.e-6
       hashes: ['0x401BF29A60000000']

@@ -40,7 +40,7 @@
       USE YOWCOUP  , ONLY : LLNORMWAMOUT_GLOBAL, CNORMWAMOUT_FILE
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
       USE YOWMPP   , ONLY : IRANK   ,NPROC
-      USE YOWSTAT  , ONLY : CDTPRO
+      USE YOWSTAT  , ONLY : CDTPRO  ,MARSTYPE
       USE YOWTEST  , ONLY : IU06
 
       USE YOMHOOK   ,ONLY : LHOOK, DR_HOOK, JPHOOK
@@ -126,8 +126,8 @@
               ENDIF
             ENDDO
             WRITE(IUNORM,'(A)') "#"
-            WRITE(IUNORM,'(A,  T3,A,   T19,A, T23,A,  T29,A,     T74,A,     T119,A,    T164,A )') &
-            &             '#', 'DATE', 'IDX', 'NAME', 'AVERAGE (DEC, HEX)', 'MINIMUM (DEC, HEX)', &
+            WRITE(IUNORM,'(A,  T3,A, T19,A,   T22,A, T26,A,  T31,A,     T77,A,     T122,A,    T167,A )') &
+            &             '#', 'DATE', 'MT', 'IDX', 'NAME', 'AVERAGE (DEC, HEX)', 'MINIMUM (DEC, HEX)', &
             & 'MAXIMUM (DEC, HEX)', 'NON MISSING POINTS'
           ENDIF
           WRITE(IUNORM,'(A)') ''
@@ -140,12 +140,12 @@
             WRITE(IU06,*) '  ',(WNORM(I,IT),I=1,3)
             WRITE(IU06,111) (WNORM(I,IT),I=1,3),INT(WNORM(4,IT)),INFO
             IF (IUNORM /= -1) THEN
-              WRITE(IUNORM,112) CDTPRO, ITG, COUTNAME(ITG), (WNORM(I,IT),REAL(WNORM(I,IT),JWRU),I=1,3),INT(WNORM(4,IT))
+              WRITE(IUNORM,112) CDTPRO, MARSTYPE, ITG, COUTNAME(ITG), (WNORM(I,IT),REAL(WNORM(I,IT),JWRU),I=1,3),INT(WNORM(4,IT))
             ENDIF
           ENDIF
         ENDDO
 111     FORMAT(5x,'HEX: ',3(Z16.16,2x),1x,i9,1x,i6)
-112     FORMAT(T3,A, T19,I0, T23,A, T28,3(E23.16,' 0x',Z16,3x),T164,I0)
+112     FORMAT(T3,A, T19,A, T22,I0, T26,A, T31,3(E23.16,' 0x',Z16,3x),T167,I0)
 
       ENDIF
 
