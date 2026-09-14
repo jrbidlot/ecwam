@@ -1079,33 +1079,38 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       IF (IASSI == 1) THEN
         WRITE(IU06,*) ' '
-        WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
-        IF ( NASS > 0 ) THEN
-          WRITE(IU06,*) ' FOR DATES PRESCRIBED BY THE NAMELIST NAAT:'
+        IF (.NOT. LALTAS .AND. .NOT. LSARAS) THEN
+          WRITE(IU06,*) ' WAVE DATA ASSIMILATION SHOULD BE CARRIED OUT, BUT'
+          WRITE(IU06,*) ' LALTAS AND LSARAS ARE BOTH FALSE, SO NOTHING WILL BE DONE !!'
         ELSE
-          IF (LWCOU) THEN
-            WRITE(IU06,*) ' FOR DATE = CDATEF'
-            NASS = 1
-            ALLOCATE(CASS(NASS))
-            CASS(1) = CDATEF
-          ELSE IF (IDELALT > 0) THEN
-            WRITE(IU06,*) ' FOR DATES OVER THE ANALYSIS PERIOD DETERMINED BY IDELALT:'
-            CDTASS = CDATEA
-            ICOUNT = 0
-            CALL INCDATE(CDTASS, IDELALT)
-            DO WHILE (CDTASS <= CDATEF)
-              ICOUNT = ICOUNT+1
-              CALL INCDATE(CDTASS, IDELALT)
-            ENDDO
-            IF (ICOUNT > 0 ) THEN
-              NASS = ICOUNT
+          WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
+          IF (NASS > 0) THEN
+            WRITE(IU06,*) ' FOR DATES PRESCRIBED BY THE NAMELIST NAAT:'
+          ELSE
+            IF (LWCOU) THEN
+              WRITE(IU06,*) ' FOR DATE = CDATEF'
+              NASS = 1
               ALLOCATE(CASS(NASS))
-            ENDIF
-            CDTASS = CDATEA
-            DO ICOUNT = 1, NASS
+              CASS(1) = CDATEF
+            ELSE IF (IDELALT > 0) THEN
+              WRITE(IU06,*) ' FOR DATES OVER THE ANALYSIS PERIOD DETERMINED BY IDELALT:'
+              CDTASS = CDATEA
+              ICOUNT = 0
               CALL INCDATE(CDTASS, IDELALT)
-              CASS(ICOUNT) = CDTASS
-            ENDDO
+              DO WHILE (CDTASS <= CDATEF)
+                ICOUNT = ICOUNT+1
+                CALL INCDATE(CDTASS, IDELALT)
+              ENDDO
+              IF (ICOUNT > 0 ) THEN
+                NASS = ICOUNT
+                ALLOCATE(CASS(NASS))
+              ENDIF
+              CDTASS = CDATEA
+              DO ICOUNT = 1, NASS
+                CALL INCDATE(CDTASS, IDELALT)
+                CASS(ICOUNT) = CDTASS
+              ENDDO
+            ENDIF
           ENDIF
         ENDIF
 
