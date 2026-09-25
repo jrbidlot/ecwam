@@ -68,6 +68,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWALTAS , ONLY : LECWAMDA
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -118,33 +119,45 @@
 !        -----------------------------------------------------
 
       IF (LLEOFD) THEN
-        LLTEST=.TRUE.
-        CALL CONFILE (IU06, IUME, CDTGE1, YOFID, IFAIL, LLTEST, LLASCII=LLRAWA)
-        IF (IFAIL /= 0) THEN
-          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
-          WRITE(IU06,*) ' +                                       +'
-          WRITE(IU06,*) ' +      WARNING ERROR IN --READSAT--     +'
-          WRITE(IU06,*) ' +      ==========================       +'
-          WRITE(IU06,*) ' +                                       +'
-          WRITE(IU06,*) ' +      NO ALTIMETER MEASUREMENTS        +'
-          WRITE(IU06,*) ' + MODEL TIME IS  CDTPRO = ', CDTPRO
-          WRITE(IU06,*) ' +                CDTGE1 = ', CDTGE1
-          WRITE(IU06,*) ' + IFAIL = ', IFAIL
-          WRITE(IU06,*) ' + LLEOFD  = ', LLEOFD
-          WRITE(IU06,*) ' + PROCESSING WILL BE CONTINUED          +'
-          WRITE(IU06,*) ' +                                       +'
-          WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
-          CALL FLUSH(IU06)
-          CDTGE1 = ZERO
-          IF (LHOOK) CALL DR_HOOK('READSAT',1,ZHOOK_HANDLE)
-          RETURN
+        IF (LECWAMDA) THEN
+          LLTEST=.TRUE.
+          CALL CONFILE (IU06, IUME, CDTGE1, YOFID, IFAIL, LLTEST, LLASCII=LLRAWA)
+          IF (IFAIL /= 0) THEN
+            WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
+            WRITE(IU06,*) ' +                                       +'
+            WRITE(IU06,*) ' +      WARNING ERROR IN --READSAT--     +'
+            WRITE(IU06,*) ' +      ==========================       +'
+            WRITE(IU06,*) ' +                                       +'
+            WRITE(IU06,*) ' +      NO ALTIMETER MEASUREMENTS        +'
+            WRITE(IU06,*) ' + MODEL TIME IS  CDTPRO = ', CDTPRO
+            WRITE(IU06,*) ' +                CDTGE1 = ', CDTGE1
+            WRITE(IU06,*) ' + IFAIL = ', IFAIL
+            WRITE(IU06,*) ' + LLEOFD  = ', LLEOFD
+            WRITE(IU06,*) ' + PROCESSING WILL BE CONTINUED          +'
+            WRITE(IU06,*) ' +                                       +'
+            WRITE(IU06,*) ' +++++++++++++++++++++++++++++++++++++++++'
+            CALL FLUSH(IU06)
+            CDTGE1 = ZERO
+            IF (LHOOK) CALL DR_HOOK('READSAT',1,ZHOOK_HANDLE)
+            RETURN
+          ENDIF
+          LLEOFD = .FALSE.
+          IF ( .NOT. LLRAWA) THEN
+!!          We have assumed that the ascii format will only contain the data
+            READ (IUME,END=4000) LNEWSAT
+            READ (IUME,END=4000) CTIME
+          ENDIF
+
+        ELSE
+
+! Ideally MeteoFrance should try to use the same procedure to input data as used ECMWF,
+! instead of having all the data in one single file called altidata now that the code has been modified
+! have an option to input the raw altimeter data in ascii format (see YOFID='ARQ in grdata.F90)
+         OPEN (UNIT=IUME, FILE='altidata')
+         LLEOFD=.FALSE.
+
         ENDIF
-        LLEOFD = .FALSE.
-        IF ( .NOT. LLRAWA) THEN
-!!        We have assumed that the ascii format will only contain the data
-          READ (IUME,END=4000) LNEWSAT
-          READ (IUME,END=4000) CTIME
-        ENDIF
+
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -153,10 +166,19 @@
 !        ---------------------
 
       IF (LLRAWA) THEN
-!       ASCII INPUT (TAILOR TO YOUR NEED. IT CURRENLT MIRRORS WHAT IS DONE IN BINARY INPUT)
-        READ(IUME,1111,END=4000,IOSTAT=IRS) CDATE, IDENTI, ISENSOR, RLAT, RLON, IDES_WS, WS, IDES_HS, SWH
-1111    FORMAT(A14,2(1X,I5),2(1X,F7.2),2(1X,I5,1X,F7.3))
 
+        IF (LECWAMDA) THEN
+!         ASCII INPUT (TAILOR TO YOUR NEED. IT CURRENLT MIRRORS WHAT IS DONE IN BINARY INPUT)
+          READ(IUME,1111,END=4000,IOSTAT=IRS) CDATE, IDENTI, ISENSOR, RLAT, RLON, IDES_WS, WS, IDES_HS, SWH
+1111      FORMAT(A14,2(1X,I5),2(1X,F7.2),2(1X,I5,1X,F7.3))
+        ELSE
+! Ideally MeteoFrance should try to use the same procedure to input data as used ECMWF,
+! and pre-process their data into the same ascii format as above....
+          isensor = 1000
+          ides_hs = 11028
+          ides_ws = 11012
+          READ(IUME,'(a14,2f8.2,2f6.2,i2)',END=4000)  CDATE,RLAT, RLON,SWH,WS,IDENTI 
+        ENDIF
       ELSE
 !       BINARY INPUT AS USED AT ECMWF
 3000    CONTINUE
