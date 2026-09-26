@@ -103,7 +103,6 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
             DO M = ND3S, ND3E
 
 !DIR$ IVDEP
-!DIR$ PREFERVECTOR
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
      &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
@@ -136,6 +135,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
           DO M = MIN(ND3S,MRVLCUR), MIN(ND3E,MRVLCUR-1)
             DO K = 1, NANG
+!DIR$ IVDEP
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                              &
      &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M)   &
