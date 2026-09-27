@@ -35,9 +35,9 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S,
 
 !     METHOD.
 !     -------
-
-!!  need text !!!!!!!!
-
+!
+!       CORNER TRANSPORT PROPAGATION SCHEME.
+!
 !     EXTERNALS.
 !     ----------
 
@@ -76,9 +76,8 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S,
 
 
       INTEGER(KIND=JWIM) :: K, M, IJ
-      INTEGER(KIND=JWIM) :: IC, ICR, ICL 
-      INTEGER(KIND=JWIM) :: KP1, KM1, MM1, MP1, KNS, KEW
 
+      REAL(KIND=JWRB)   :: ZF3
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -121,112 +120,167 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
           !$acc end parallel loop 
 
         ELSE
-!*      DEPTH AND CURRENT REFRACTION.
+!*      DEPTH AND/OR CURRENT REFRACTION.
 !       -----------------------------
 
-          !$acc parallel loop independent collapse(3) &
-          !$acc & present(F1,F3,SUMWN,WLONN,KLON,WLATN,KLAT,WCORN,KCOR, &
-          !$acc &         WKPMN,KPM,WMPMN,MPM)
+
+!*        The M and K loops are mapped to gangs. The contiguous IJ dimension is mapped to the vector level.
+!*        ZF3 is explicitly private to every IJ vector iteration.
+
+          !$acc parallel &
+          !$acc & present(F1,F3,SUMWN,WLONN,KLON,LLWLONN,WLATN,KLAT,LLWLATN,WCORN,KCOR,KCR,LLWCORN, &
+          !$acc &         WKPMN,KPM,LLWKPMN,WMPMN,MPM,LLWMPMN)
+
+          !$acc loop gang collapse(2)
           DO M = ND3S, ND3E
             DO K = 1, NANG
 
-              !$loki loop-fusion
+              !$acc loop vector private(ZF3)
 !DIR$ IVDEP
+!DIR$ PREFERVECTOR
               DO IJ = KIJS, KIJL
-                F3(IJ,K,M) = (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ,K,M)
-              ENDDO
 
-              !$loki loop-unroll
-              DO IC=1,2
-                IF (LLWLONN(K,M,IC)) THEN
-                  !$loki loop-fusion
-!DIR$ IVDEP
-                  DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M) + WLONN(IJ,K,M,IC)*F1(KLON(IJ,IC),K,M)
-                  ENDDO
-                ENDIF
-              ENDDO
+!*              CENTRAL CONTRIBUTION.
 
-              !$loki loop-unroll
-              DO ICL=1,2
-                !$loki loop-unroll
-                DO IC=1,2
-                  IF (LLWLATN(K,M,IC,ICL)) THEN
-                    !$loki loop-fusion
-!DIR$ IVDEP
-                    DO IJ = KIJS, KIJL
-                      F3(IJ,K,M) = F3(IJ,K,M) + WLATN(IJ,K,M,IC,ICL)*F1(KLAT(IJ,IC,ICL),K,M)
-                    ENDDO
-                  ENDIF
-                ENDDO
+                ZF3 = (1.0_JWRB-SUMWN(IJ,K,M))*F1(IJ,K,M)
 
-                !$loki loop-unroll
-                DO ICR=1,4
-                  IF (LLWCORN(K,M,ICR,ICL)) THEN
-                    !$loki loop-fusion
-!DIR$ IVDEP
-                    DO IJ = KIJS, KIJL
-                      F3(IJ,K,M) = F3(IJ,K,M) + WCORN(IJ,K,M,ICR,ICL)*F1(KCOR(IJ,KCR(K,ICR),ICL),K,M)
-                    ENDDO
-                  ENDIF
-                ENDDO
-              ENDDO
+!*              LONGITUDE CONTRIBUTIONS: IC=1,2.
 
-              !$loki loop-unroll
-              DO IC=-1,1,2
-
-                IF (LLWKPMN(K,M,IC)) THEN
-                  !$loki loop-fusion
-!DIR$ IVDEP
-                  DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M) + WKPMN(IJ,K,M,IC)* F1(IJ,KPM(K,IC),M)
-                  ENDDO
+                IF (LLWLONN(K,M,1)) THEN
+                  ZF3 = ZF3 + WLONN(IJ,K,M,1)*F1(KLON(IJ,1),K,M)
                 ENDIF
 
-                IF (LLWMPMN(K,M,IC)) THEN
-                  !$loki loop-fusion
-!DIR$ IVDEP
-                  DO IJ = KIJS, KIJL
-                    F3(IJ,K,M) = F3(IJ,K,M) + WMPMN(IJ,K,M,IC)* F1(IJ,K,MPM(M,IC))
-                  ENDDO
+                IF (LLWLONN(K,M,2)) THEN
+                  ZF3 = ZF3 + WLONN(IJ,K,M,2)*F1(KLON(IJ,2),K,M)
                 ENDIF
+
+!*              ICL=1: LATITUDE CONTRIBUTIONS.
+
+                IF (LLWLATN(K,M,1,1)) THEN
+                  ZF3 = ZF3 + WLATN(IJ,K,M,1,1)*F1(KLAT(IJ,1,1),K,M)
+                ENDIF
+
+                IF (LLWLATN(K,M,2,1)) THEN
+                  ZF3 = ZF3 + WLATN(IJ,K,M,2,1)*F1(KLAT(IJ,2,1),K,M)
+                ENDIF
+
+!*              ICL=1: CORNER CONTRIBUTIONS.
+
+                IF (LLWCORN(K,M,1,1)) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,1,1)*F1(KCOR(IJ,KCR(K,1),1),K,M)
+                ENDIF
+
+                IF (LLWCORN(K,M,2,1)) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,2,1)*F1(KCOR(IJ,KCR(K,2),1),K,M)
+                ENDIF
+
+                IF (LLWCORN(K,M,3,1)) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,3,1)*F1(KCOR(IJ,KCR(K,3),1),K,M)
+                ENDIF
+
+                IF (LLWCORN(K,M,4,1)) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,4,1)*F1(KCOR(IJ,KCR(K,4),1),K,M)
+                ENDIF
+
+!*              ICL=2: LATITUDE CONTRIBUTIONS.
+
+                IF (LLWLATN(K,M,1,2)) THEN
+                  ZF3 = ZF3 + WLATN(IJ,K,M,1,2)*F1(KLAT(IJ,1,2),K,M)
+                ENDIF
+
+                IF (LLWLATN(K,M,2,2)) THEN
+                  ZF3 = ZF3 + WLATN(IJ,K,M,2,2)*F1(KLAT(IJ,2,2),K,M)
+                ENDIF
+
+!*              ICL=2: CORNER CONTRIBUTIONS.
+
+                IF (LLWCORN(K,M,1,2)) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,1,2)*F1(KCOR(IJ,KCR(K,1),2),K,M)
+                ENDIF
+
+                IF (LLWCORN(K,M,2,2)) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,2,2)*F1(KCOR(IJ,KCR(K,2),2),K,M)
+                ENDIF
+
+                IF (LLWCORN(K,M,3,2)) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,3,2)*F1(KCOR(IJ,KCR(K,3),2),K,M)
+                ENDIF
+
+                IF (LLWCORN(K,M,4,2)) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,4,2)*F1(KCOR(IJ,KCR(K,4),2),K,M)
+                ENDIF
+
+!*              IC=-1: DIRECTIONAL REFRACTION FOLLOWED BY FREQUENCY REFRACTION.
+
+                IF (LLWKPMN(K,M,-1)) THEN
+                  ZF3 = ZF3 + WKPMN(IJ,K,M,-1)*F1(IJ,KPM(K,-1),M)
+                ENDIF
+
+                IF (LLWMPMN(K,M,-1)) THEN
+                  ZF3 = ZF3 + WMPMN(IJ,K,M,-1)*F1(IJ,K,MPM(M,-1))
+                ENDIF
+
+!*              IC=+1: DIRECTIONAL REFRACTION FOLLOWED BY FREQUENCY REFRACTION.
+
+                IF (LLWKPMN(K,M,1)) THEN
+                  ZF3 = ZF3 + WKPMN(IJ,K,M,1)*F1(IJ,KPM(K,1),M)
+                ENDIF
+
+                IF (LLWMPMN(K,M,1)) THEN
+                  ZF3 = ZF3 + WMPMN(IJ,K,M,1)*F1(IJ,K,MPM(M,1))
+                ENDIF
+
+!*              SINGLE WRITE TO F3.
+
+                F3(IJ,K,M) = ZF3
 
               ENDDO
 
             ENDDO
           ENDDO
-          !$acc end parallel loop
+
+          !$acc end parallel
 
         ENDIF
 
       ELSE
-!*    CARTESIAN GRID.
-!     ---------------
-        IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
-!*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
-!       ----------------------------------------
+
+!*      CARTESIAN GRID.
+!       ---------------
+
+        IF (IREFRA == 2 .OR. IREFRA == 3) THEN
+
+!*        DEPTH AND/OR CURRENT REFRACTION REQUESTED.
+!         ------------------------------------------
+
           WRITE (IU06,*) '******************************************'
           WRITE (IU06,*) '* PROPAGS2:                              *'
-          WRITE (IU06,*) '* CORNER TRANSPORT SCHEME NOT YET READY  *' 
-          WRITE (IU06,*) '* FOR  CARTESIAN GRID !                  *'
-          WRITE (IU06,*) '*                                        *'
-          WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.      *'
-          WRITE (IU06,*) '*                                        *'
-          WRITE (IU06,*) '******************************************'
-          CALL ABORT1
-        ELSE
-!*      DEPTH AND CURRENT REFRACTION.
-!       ----------------------------
-          WRITE (IU06,*) '******************************************'
-          WRITE (IU06,*) '* PROPAGS2:                              *'
-          WRITE (IU06,*) '* CORNER TRANSPORT SCHEME NOT YET READY  *' 
-          WRITE (IU06,*) '* FOR  CARTESIAN GRID !                  *'
+          WRITE (IU06,*) '* CORNER TRANSPORT SCHEME NOT YET READY  *'
+          WRITE (IU06,*) '* FOR CARTESIAN GRID !                   *'
           WRITE (IU06,*) '* FOR DEPTH OR/AND CURRENT REFRACTION !  *'
           WRITE (IU06,*) '*                                        *'
           WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.      *'
           WRITE (IU06,*) '*                                        *'
           WRITE (IU06,*) '******************************************'
+
           CALL ABORT1
+
+        ELSE
+
+!*        NO DEPTH OR CURRENT REFRACTION.
+!         -------------------------------
+
+          WRITE (IU06,*) '******************************************'
+          WRITE (IU06,*) '* PROPAGS2:                              *'
+          WRITE (IU06,*) '* CORNER TRANSPORT SCHEME NOT YET READY  *'
+          WRITE (IU06,*) '* FOR CARTESIAN GRID !                   *'
+          WRITE (IU06,*) '*                                        *'
+          WRITE (IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.      *'
+          WRITE (IU06,*) '*                                        *'
+          WRITE (IU06,*) '******************************************'
+
+          CALL ABORT1
+
         ENDIF
 
       ENDIF
