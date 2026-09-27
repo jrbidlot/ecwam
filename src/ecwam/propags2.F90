@@ -69,13 +69,76 @@ SUBROUTINE PROPAGS2 (F1, F3, NINF, NSUP, KIJS, KIJL, NANG, ND3SF1, ND3EF1, ND3S,
 
 #include "abort1.intfb.h"
 
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3SF1:ND3EF1), INTENT(IN) :: F1
-      REAL(KIND=JWRB),DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(OUT) :: F3
-      INTEGER(KIND=JWIM), INTENT(IN) :: NINF, NSUP, KIJS, KIJL
-      INTEGER(KIND=JWIM), INTENT(IN) :: NANG, ND3SF1, ND3EF1, ND3S, ND3E
+! ----------------------------------------------------------------------
+!     ARGUMENTS.
+! ----------------------------------------------------------------------
 
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, ND3SF1:ND3EF1), INTENT(IN) :: F1
+      REAL(KIND=JWRB), DIMENSION(NINF:NSUP+1, NANG, ND3S:ND3E), INTENT(OUT) :: F3 
 
-      INTEGER(KIND=JWIM) :: K, M, IJ
+      INTEGER(KIND=JWIM), INTENT(IN) :: NINF
+      INTEGER(KIND=JWIM), INTENT(IN) :: NSUP
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJS
+      INTEGER(KIND=JWIM), INTENT(IN) :: KIJL
+      INTEGER(KIND=JWIM), INTENT(IN) :: NANG
+      INTEGER(KIND=JWIM), INTENT(IN) :: ND3SF1
+      INTEGER(KIND=JWIM), INTENT(IN) :: ND3EF1
+      INTEGER(KIND=JWIM), INTENT(IN) :: ND3S
+      INTEGER(KIND=JWIM), INTENT(IN) :: ND3E
+
+! ----------------------------------------------------------------------
+!     LOOP INDICES.
+! ----------------------------------------------------------------------
+
+      INTEGER(KIND=JWIM) :: K
+      INTEGER(KIND=JWIM) :: M
+      INTEGER(KIND=JWIM) :: IJ
+
+! ----------------------------------------------------------------------
+!     PRIVATE INDICES, CONSTANT OVER THE IJ VECTOR LOOP.
+! ----------------------------------------------------------------------
+
+      INTEGER(KIND=JWIM) :: KCR1
+      INTEGER(KIND=JWIM) :: KCR2
+      INTEGER(KIND=JWIM) :: KCR3
+      INTEGER(KIND=JWIM) :: KCR4
+
+      INTEGER(KIND=JWIM) :: KPMM
+      INTEGER(KIND=JWIM) :: KPMP
+
+      INTEGER(KIND=JWIM) :: MPMM
+      INTEGER(KIND=JWIM) :: MPMP
+
+! ----------------------------------------------------------------------
+!     PRIVATE LOGICAL FLAGS, CONSTANT OVER THE IJ VECTOR LOOP.
+! ----------------------------------------------------------------------
+
+      LOGICAL :: LWLON1
+      LOGICAL :: LWLON2
+
+      LOGICAL :: LWLAT11
+      LOGICAL :: LWLAT21
+      LOGICAL :: LWLAT12
+      LOGICAL :: LWLAT22
+
+      LOGICAL :: LWC11
+      LOGICAL :: LWC21
+      LOGICAL :: LWC31
+      LOGICAL :: LWC41
+
+      LOGICAL :: LWC12
+      LOGICAL :: LWC22
+      LOGICAL :: LWC32
+      LOGICAL :: LWC42
+
+      LOGICAL :: LWKM
+      LOGICAL :: LWKP
+      LOGICAL :: LWMM
+      LOGICAL :: LWMP
+
+! ----------------------------------------------------------------------
+!     LOCAL REAL VARIABLES.
+! ----------------------------------------------------------------------
 
       REAL(KIND=JWRB)   :: ZF3
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
@@ -120,117 +183,176 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
           !$acc end parallel loop 
 
         ELSE
+
 !*      DEPTH AND/OR CURRENT REFRACTION.
 !       -----------------------------
 
+!*        DEPTH AND/OR CURRENT REFRACTION.
+!         --------------------------------
+!
+!*        The M and K loops are mapped to gangs.
+!*        The contiguous IJ dimension is mapped to the vector level.
+!*        Logical flags and neighbour indices are loaded once for each
+!*        (K,M) pair and reused by all IJ vector iterations.
+!*        ZF3 is private to each IJ vector iteration.
 
-!*        The M and K loops are mapped to gangs. The contiguous IJ dimension is mapped to the vector level.
-!*        ZF3 is explicitly private to every IJ vector iteration.
+          !$acc parallel                                                      &
+          !$acc& present(F1,F3,SUMWN,WLONN,KLON,LLWLONN,WLATN,KLAT,           &
+          !$acc&         LLWLATN,WCORN,KCOR,KCR,LLWCORN,WKPMN,KPM,            &
+          !$acc&         LLWKPMN,WMPMN,MPM,LLWMPMN)
 
-          !$acc parallel &
-          !$acc & present(F1,F3,SUMWN,WLONN,KLON,LLWLONN,WLATN,KLAT,LLWLATN,WCORN,KCOR,KCR,LLWCORN, &
-          !$acc &         WKPMN,KPM,LLWKPMN,WMPMN,MPM,LLWMPMN)
+          !$acc loop gang collapse(2)                                         &
+          !$acc& private(LWLON1,LWLON2,                                       &
+          !$acc&         LWLAT11,LWLAT21,LWLAT12,LWLAT22,                     &
+          !$acc&         LWC11,LWC21,LWC31,LWC41,                             &
+          !$acc&         LWC12,LWC22,LWC32,LWC42,                             &
+          !$acc&         LWKM,LWKP,LWMM,LWMP,                                 &
+          !$acc&         KCR1,KCR2,KCR3,KCR4,KPMM,KPMP,MPMM,MPMP)
 
-          !$acc loop gang collapse(2)
           DO M = ND3S, ND3E
             DO K = 1, NANG
+
+!*            Logical switches constant over the IJ vector loop.
+
+              LWLON1  = LLWLONN(K,M,1)
+              LWLON2  = LLWLONN(K,M,2)
+
+              LWLAT11 = LLWLATN(K,M,1,1)
+              LWLAT21 = LLWLATN(K,M,2,1)
+              LWLAT12 = LLWLATN(K,M,1,2)
+              LWLAT22 = LLWLATN(K,M,2,2)
+
+              LWC11   = LLWCORN(K,M,1,1)
+              LWC21   = LLWCORN(K,M,2,1)
+              LWC31   = LLWCORN(K,M,3,1)
+              LWC41   = LLWCORN(K,M,4,1)
+
+              LWC12   = LLWCORN(K,M,1,2)
+              LWC22   = LLWCORN(K,M,2,2)
+              LWC32   = LLWCORN(K,M,3,2)
+              LWC42   = LLWCORN(K,M,4,2)
+
+              LWKM    = LLWKPMN(K,M,-1)
+              LWKP    = LLWKPMN(K,M, 1)
+
+              LWMM    = LLWMPMN(K,M,-1)
+              LWMP    = LLWMPMN(K,M, 1)
+
+!*            K-dependent neighbour indices.
+
+              KCR1 = KCR(K,1)
+              KCR2 = KCR(K,2)
+              KCR3 = KCR(K,3)
+              KCR4 = KCR(K,4)
+
+              KPMM = KPM(K,-1)
+              KPMP = KPM(K, 1)
+
+!*            M-dependent neighbour indices.
+
+              MPMM = MPM(M,-1)
+              MPMP = MPM(M, 1)
 
               !$acc loop vector private(ZF3)
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
               DO IJ = KIJS, KIJL
 
-!*              CENTRAL CONTRIBUTION.
+!*              Central contribution.
 
                 ZF3 = (1.0_JWRB-SUMWN(IJ,K,M))*F1(IJ,K,M)
 
-!*              LONGITUDE CONTRIBUTIONS: IC=1,2.
+!*              Longitude contributions.
 
-                IF (LLWLONN(K,M,1)) THEN
+                IF (LWLON1) THEN
                   ZF3 = ZF3 + WLONN(IJ,K,M,1)*F1(KLON(IJ,1),K,M)
                 ENDIF
 
-                IF (LLWLONN(K,M,2)) THEN
+                IF (LWLON2) THEN
                   ZF3 = ZF3 + WLONN(IJ,K,M,2)*F1(KLON(IJ,2),K,M)
                 ENDIF
 
-!*              ICL=1: LATITUDE CONTRIBUTIONS.
+!*              ICL=1 latitude contributions.
 
-                IF (LLWLATN(K,M,1,1)) THEN
+                IF (LWLAT11) THEN
                   ZF3 = ZF3 + WLATN(IJ,K,M,1,1)*F1(KLAT(IJ,1,1),K,M)
                 ENDIF
 
-                IF (LLWLATN(K,M,2,1)) THEN
+                IF (LWLAT21) THEN
                   ZF3 = ZF3 + WLATN(IJ,K,M,2,1)*F1(KLAT(IJ,2,1),K,M)
                 ENDIF
 
-!*              ICL=1: CORNER CONTRIBUTIONS.
+!*              ICL=1 corner contributions.
 
-                IF (LLWCORN(K,M,1,1)) THEN
-                  ZF3 = ZF3 + WCORN(IJ,K,M,1,1)*F1(KCOR(IJ,KCR(K,1),1),K,M)
+                IF (LWC11) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,1,1)*F1(KCOR(IJ,KCR1,1),K,M)
                 ENDIF
 
-                IF (LLWCORN(K,M,2,1)) THEN
-                  ZF3 = ZF3 + WCORN(IJ,K,M,2,1)*F1(KCOR(IJ,KCR(K,2),1),K,M)
+                IF (LWC21) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,2,1)*F1(KCOR(IJ,KCR2,1),K,M)
                 ENDIF
 
-                IF (LLWCORN(K,M,3,1)) THEN
-                  ZF3 = ZF3 + WCORN(IJ,K,M,3,1)*F1(KCOR(IJ,KCR(K,3),1),K,M)
+                IF (LWC31) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,3,1)*F1(KCOR(IJ,KCR3,1),K,M)
                 ENDIF
 
-                IF (LLWCORN(K,M,4,1)) THEN
-                  ZF3 = ZF3 + WCORN(IJ,K,M,4,1)*F1(KCOR(IJ,KCR(K,4),1),K,M)
+                IF (LWC41) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,4,1)*F1(KCOR(IJ,KCR4,1),K,M)
                 ENDIF
 
-!*              ICL=2: LATITUDE CONTRIBUTIONS.
+!*              ICL=2 latitude contributions.
 
-                IF (LLWLATN(K,M,1,2)) THEN
+                IF (LWLAT12) THEN
                   ZF3 = ZF3 + WLATN(IJ,K,M,1,2)*F1(KLAT(IJ,1,2),K,M)
                 ENDIF
 
-                IF (LLWLATN(K,M,2,2)) THEN
+                IF (LWLAT22) THEN
                   ZF3 = ZF3 + WLATN(IJ,K,M,2,2)*F1(KLAT(IJ,2,2),K,M)
                 ENDIF
 
-!*              ICL=2: CORNER CONTRIBUTIONS.
+!*              ICL=2 corner contributions.
 
-                IF (LLWCORN(K,M,1,2)) THEN
-                  ZF3 = ZF3 + WCORN(IJ,K,M,1,2)*F1(KCOR(IJ,KCR(K,1),2),K,M)
+                IF (LWC12) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,1,2)*F1(KCOR(IJ,KCR1,2),K,M)
                 ENDIF
 
-                IF (LLWCORN(K,M,2,2)) THEN
-                  ZF3 = ZF3 + WCORN(IJ,K,M,2,2)*F1(KCOR(IJ,KCR(K,2),2),K,M)
+                IF (LWC22) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,2,2)*F1(KCOR(IJ,KCR2,2),K,M)
                 ENDIF
 
-                IF (LLWCORN(K,M,3,2)) THEN
-                  ZF3 = ZF3 + WCORN(IJ,K,M,3,2)*F1(KCOR(IJ,KCR(K,3),2),K,M)
+                IF (LWC32) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,3,2)*F1(KCOR(IJ,KCR3,2),K,M)
                 ENDIF
 
-                IF (LLWCORN(K,M,4,2)) THEN
-                  ZF3 = ZF3 + WCORN(IJ,K,M,4,2)*F1(KCOR(IJ,KCR(K,4),2),K,M)
+                IF (LWC42) THEN
+                  ZF3 = ZF3 + WCORN(IJ,K,M,4,2)*F1(KCOR(IJ,KCR4,2),K,M)
                 ENDIF
 
-!*              IC=-1: DIRECTIONAL REFRACTION FOLLOWED BY FREQUENCY REFRACTION.
+!*              IC=-1 directional refraction.
 
-                IF (LLWKPMN(K,M,-1)) THEN
-                  ZF3 = ZF3 + WKPMN(IJ,K,M,-1)*F1(IJ,KPM(K,-1),M)
+                IF (LWKM) THEN
+                  ZF3 = ZF3 + WKPMN(IJ,K,M,-1)*F1(IJ,KPMM,M)
                 ENDIF
 
-                IF (LLWMPMN(K,M,-1)) THEN
-                  ZF3 = ZF3 + WMPMN(IJ,K,M,-1)*F1(IJ,K,MPM(M,-1))
+!*              IC=-1 frequency refraction.
+
+                IF (LWMM) THEN
+                  ZF3 = ZF3 + WMPMN(IJ,K,M,-1)*F1(IJ,K,MPMM)
                 ENDIF
 
-!*              IC=+1: DIRECTIONAL REFRACTION FOLLOWED BY FREQUENCY REFRACTION.
+!*              IC=+1 directional refraction.
 
-                IF (LLWKPMN(K,M,1)) THEN
-                  ZF3 = ZF3 + WKPMN(IJ,K,M,1)*F1(IJ,KPM(K,1),M)
+                IF (LWKP) THEN
+                  ZF3 = ZF3 + WKPMN(IJ,K,M,1)*F1(IJ,KPMP,M)
                 ENDIF
 
-                IF (LLWMPMN(K,M,1)) THEN
-                  ZF3 = ZF3 + WMPMN(IJ,K,M,1)*F1(IJ,K,MPM(M,1))
+!*              IC=+1 frequency refraction.
+
+                IF (LWMP) THEN
+                  ZF3 = ZF3 + WMPMN(IJ,K,M,1)*F1(IJ,K,MPMP)
                 ENDIF
 
-!*              SINGLE WRITE TO F3.
+!*              Single write to F3.
 
                 F3(IJ,K,M) = ZF3
 
@@ -289,4 +411,4 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
 IF (LHOOK) CALL DR_HOOK('PROPAGS2',1,ZHOOK_HANDLE)
 
-END SUBROUTINE PROPAGS2 
+END SUBROUTINE PROPAGS2
