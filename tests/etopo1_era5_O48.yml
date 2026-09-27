@@ -122,9 +122,10 @@ validation:
 
   double_precision:
 
-    # initial time
+    # initial analysis time
     - name: swh
       time: 2022-01-01 00:00:00
+      marstype: an
       average: 3.795347095348355e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FD84A4BF34988DB']
@@ -132,6 +133,7 @@ validation:
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
+      marstype: an
       average: 4.811272707410717e-01
       relative_tolerance: 1.e-14
       hashes: ['0x3FDECACA0942FC29']
@@ -139,16 +141,19 @@ validation:
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
+      marstype: fc
       average: 7.932687872788891e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FE9627539499CF4']
     - name: swh
       time: 2022-01-01 06:00:00
+      marstype: fc
       minimum: 4.326433916803641e-03
       relative_tolerance: 1.e-14
       hashes: ['0x3F71B89842E547F4']
     - name: swh
       time: 2022-01-01 06:00:00
+      marstype: fc
       maximum: 4.282771088362100e+00 
       relative_tolerance: 1.e-14
       hashes: ['0x4011218EBE831404']
@@ -158,6 +163,7 @@ validation:
     # initial time
     - name: swh
       time: 2022-01-01 00:00:00
+      marstype: an
       average: 0.1328786134719849E+01
       relative_tolerance: 1.e-6
       hashes: ['0x3FF542B540000000']
@@ -165,6 +171,7 @@ validation:
     # After 1h
     - name: swh
       time: 2022-01-01 01:00:00
+      marstype: an
       average: 0.1354418754577637E+01
       relative_tolerance: 1.e-6
       hashes: ['0x3FF5ABB300000000']
@@ -172,16 +179,19 @@ validation:
     # After 6h
     - name: swh
       time: 2022-01-01 06:00:00
+      marstype: fc
       average: 0.1442409276962280E+01
       relative_tolerance: 1.e-6
       hashes: ['0x3FF7141BC0000000']
     - name: swh
       time: 2022-01-01 06:00:00
+      marstype: fc
       minimum: 0.2141046673059464E+00
       relative_tolerance: 1.e-6
       hashes: ['0x3FCB67C820000000']
     - name: swh
       time: 2022-01-01 06:00:00
+      marstype: fc
       maximum: 0.6566140174865723E+01
       relative_tolerance: 1.e-6
       hashes: ['0x401A43BA40000000']
