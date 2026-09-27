@@ -279,7 +279,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
     ENDDO
 
 !!!!!debile
-   MRVLCUR = MIN(MRVLCUR,15)
+!!!!!!!!!!!!!!!!!!this does not work, So abandon this development !!!1
 
   ENDDO
   WRITE(IU06,*) ''
