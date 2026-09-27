@@ -3,7 +3,7 @@ cldomain:     g
 directions:  36
 frequencies: 29
 frequencies_phys: 36
-fr1:         4.177248E-02 
+fr1:         4.177248E-02
 ifre1:       3
 bathymetry:  ETOPO1
 lsubgrid:    T
@@ -29,6 +29,7 @@ forecast.begin: 2023-01-01 00:00:00
 forecast.end:   2023-01-01 06:00:00
 
 begin: ${analysis.begin}
+fcbegin: ${forecast.begin}
 end:   ${forecast.end}
 
 nproma: 24
@@ -79,6 +80,7 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
+      marstype: an
       average: 3.874273769845209e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FD8CB9C326E4F24']
@@ -86,6 +88,7 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
+      marstype: an
       average: 1.054257258558611e+00
       relative_tolerance: 1.e-14
       hashes: ['0x3FF0DE3CDBF14713']
@@ -93,16 +96,19 @@ validation:
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       average: 1.213513777928195e+00 
       relative_tolerance: 1.e-14
       hashes: ['0x3FF36A8D6C5726EC']
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       minimum: 0.4387775653038153E-02
       relative_tolerance: 1.e-14
       hashes: ['0x3F71F8EA8EE967F6']
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       maximum: 0.7122682487149604E+01
       relative_tolerance: 1.e-14
       hashes: ['0x401C7DA07A5865E0']

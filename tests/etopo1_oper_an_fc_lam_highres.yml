@@ -29,6 +29,7 @@ forecast.begin: 2023-01-01 00:00:00
 forecast.end:   2023-01-01 06:00:00
 
 begin: ${analysis.begin}
+fcbegin: ${forecast.begin}
 end:   ${forecast.end}
 
 nproma: 24
@@ -45,6 +46,7 @@ forcings:
       - begin:     ${forecast.begin}
         end:       ${forecast.end}
         timestep:  01:00
+
 input:
     from: preset 
     format: binary 
@@ -76,6 +78,7 @@ validation:
     # initial analysis time
     - name: swh
       time: 2022-12-31 12:00:00
+      marstype: an
       average: 3.187297962906810e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FD46611A8D511E4']
@@ -83,22 +86,26 @@ validation:
     # initial forecast time
     - name: swh
       time: 2023-01-01 00:00:00
+      marstype: an
       average: 2.302391668008772e-01 
       hashes: ['0x3FCD787A1DD582E1']
 
     # 6h into forecast
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       average: 2.536693790443732e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FD03C1E7DBF8061']
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       minimum: 2.172002527339524e-02 
       relative_tolerance: 1.e-14
       hashes: ['0x3F963DC638DEBF23']
     - name: swh
       time: 2023-01-01 06:00:00
+      marstype: fc
       maximum: 9.275511810397952e-01 
       relative_tolerance: 1.e-14
       hashes: ['0x3FEDAE7FD07DD3BA']
