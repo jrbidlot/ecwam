@@ -33,6 +33,7 @@ fcbegin: ${forecast.begin}
 end:   ${forecast.end}
 
 nproma: 32
+ll1d: F
 
 forcings:
     # For testing the internal interpolation scheme in ecWAM, we do not match the wind forcing resolution with the model grid resolution

@@ -3,7 +3,7 @@ cldomain:     g
 directions:  24 
 frequencies: 25
 frequencies_phys: 33
-fr1:         4.177248E-02 
+fr1:         4.177248E-02
 ifre1:       1
 bathymetry:  ETOPO1
 lsubgrid:    T
