@@ -173,19 +173,20 @@
         I = MAX(1,NGX/2)
         DO J = 1,NGY
           IF (GOUT(IPHS,I,J) /= ZMISS) THEN
-            IF (LDEPTH) THEN
-              DEPTH=GOUT(IPBATHY,I,J)
+            IF(LDEPTH) THEN
+              DEPTH=GOUT(I,J,IPBATHY)
             ELSE
               DEPTH=999.0_JWRB
             ENDIF
 !
 !            TAKE RELATION BETWEEN USTAR AND U10G FROM BUILDSTRESS
 !
-            CD     = GOUT(IPCD,I,J)
-            U10    = GOUT(IPU10,I,J) 
-            HS     = GOUT(IPHS,I,J)
+            CD     = GOUT(I,J,IPCD)
+            U10    = GOUT(I,J,IPU10) 
+            HS     = GOUT(I,J,IPHS)
+            ZMSS   = GOUT(I,J,IPMSS)
             IF (LMSS) THEN
-              ZMSS   = GOUT(IPMSS,I,J)
+              ZMSS   = GOUT(I,J,IPMSS)
             ELSE
               ZMSS   = 0.0_JWRB 
             ENDIF
@@ -196,13 +197,13 @@
             DSTAR = G*DEPTH/(USTAR**2)
             E     = HS**2/16.0_JWRB
             ESTAR = G**2*E/(USTAR**4)
-            FMSTAR= USTAR/(GOUT(IPT1,I,J)*G)
+            FMSTAR=USTAR/(GOUT(I,J,IPT1)*G)
 
-            HSWS  = GOUT(IPHSWS,I,J) 
+            HSWS  = GOUT(I,J,IPHSWS) 
             Tws   = G*ITIME/USTAR
             E     = HSWS**2/16.0_JWRB
             Ews   = G**2*E/(USTAR**4)
-            Fws   = USTAR/(GOUT(IPT1WS,I,J)*G)
+            Fws   = USTAR/(GOUT(I,J,IPT1WS)*G)
 
             TSTAR_0 = 4.26_JWRB*10.0_JWRB**5
             XP      = 1.5_JWRB
@@ -212,7 +213,7 @@
             E_LIM = BETA_K**2/16.0_JWRB
             E_STAR_OBS = E_LIM/(1.+TSTAR_0/TSTAR)**XP 
 
-            FP     = 1.0_JWRB/GOUT(IPTP,I,J)
+            FP     = 1.0_JWRB/GOUT(I,J,IPTP)
             XNUSTAR = USTAR*FP/G
             XNU_OBS = (ALPHA_K/E_STAR_OBS)**(1.0_JWRB/3.0_JWRB)
 
@@ -237,21 +238,21 @@
             E_LIM = BETA_K**2/16.0_JWRB
             E_OBS = E_LIM/(1.+T_0/T10)**XP
  
-            IF (LPHIAW) THEN
-              PHIAW=GOUT(IPPHIAW,I,J)
+            IF(LPHIAW) THEN
+              PHIAW=GOUT(I,J,IPPHIAW)
             ELSE
               PHIAW=3.5_JWRB
             ENDIF
 
             IF (LPHIOC) THEN
 !             make it positive for comparison with PHIAW
-              PHIOC=-GOUT(IPPHIOC,I,J)
+              PHIOC=-GOUT(I,J,IPPHIOC)
             ELSE
               PHIOC=3.5_JWRB
             ENDIF
 
-            IF (LTAUOC) THEN
-              TAUOC=GOUT(IPTAUOC,I,J)
+            IF(LTAUOC) THEN
+              TAUOC=GOUT(I,J,IPTAUOC)
             ELSE
               TAUOC=1.0_JWRB
             ENDIF
