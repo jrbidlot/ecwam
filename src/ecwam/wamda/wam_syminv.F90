@@ -44,10 +44,17 @@
 
       IMPLICIT NONE
 
-      INTEGER(KIND=JWIM) :: NDIM, N, NDIA, I, J, K, NM1, IMX
-      REAL(KIND=JWRB) :: COND, EPS, ZMX, X, S
-      REAL(KIND=JWRB) :: A(NDIM,NDIM)
+      REAL(KIND=JWRB), INTENT(INOUT) :: A(NDIM,NDIM)
+      INTEGER(KIND=JWIM), INTENT(IN) :: NDIM
+      INTEGER(KIND=JWIM), INTENT(IN) :: N
+      REAL(KIND=JWRB), INTENT(OUT) :: COND
+
+
+      INTEGER(KIND=JWIM) :: NDIA, I, J, K, NM1, IMX
+      REAL(KIND=JWRB) :: EPS, ZMX, X, S
       REAL(KIND=JWRB) :: V(NDIM)
+
+! ----------------------------------------------------------------------
 
       IF (N < 1) RETURN
 

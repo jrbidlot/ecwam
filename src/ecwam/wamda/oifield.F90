@@ -22,8 +22,8 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
 !       THE FIRST GUESS FIELD XMO IS NOT MODIFIED                       
 !       IN THIS SUBROUTINE.                                             
 
-!**   INTERFACE.                                                        
-!     ----------                                                        
+!**   INTERFACE.
+!     ----------
 
 !       *CALL* *OIFIELD (IJS, IJL, MINIJS,MAXIJL,XMO,CICVR,
 !    &                   BLK2GLO,
@@ -37,7 +37,7 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
 !         *CICVR*   REAL     MODEL SEA ICE (global indexing !)
 !         *BLK2GLO*-         BLOCK TO GRID TRANSFORMATION
 !         *XOI*     REAL     FIELD FROM O.I. ON OUTPUT (local indexing).
-!         *SIGMOD*  REAL     MODEL ERROR ESTIMATE.                             
+!         *SIGMOD*  REAL     MODEL ERROR ESTIMATE.
 !         *DIST*    REAL     CORRELATION DISTANCE (in radian)
 !         *DISTMAX* REAL     MAXIMUM OF DIST
 !         *EXTENDMAX* REAL   EXTENDMAX*DIST = MAXIMUM SPREADING DISTANCE
@@ -72,7 +72,7 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
 
 #include "wamoi.intfb.h"
 
-      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, MINIJS, MAXIJL 
+      INTEGER(KIND=JWIM), INTENT(IN) :: IJS, IJL, MINIJS, MAXIJL
       TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO
       REAL(KIND=JWRB), INTENT(IN) :: SIGMOD, DISTMAX, EXTENDMAX
       REAL(KIND=JWRB), DIMENSION(IJS:IJL), INTENT(IN) :: DIST
@@ -88,7 +88,7 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: KALTMIN, KALTMAX
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: IOBS4IJ
 
-      REAL(KIND=JWRB) :: DIMAX, DOBS, DOBS2, DELLON, COSLON, XMODLON 
+      REAL(KIND=JWRB) :: DIMAX, DOBS, DOBS2, DELLON, COSLON, XMODLON
       REAL(KIND=JWRB) :: XII, XIIALT, ALTLON
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(IJS:IJL) :: HS_LOC
@@ -114,8 +114,8 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
 !!! ??? may not be optimal for unstructured grid !!!
       NDIM2 = (5+2*(NALTAVLB-1))*(2*LMAX+1)
 
-!      LOOP OVER GRID POINTS.                                          
-!      ----------------------                                          
+!      LOOP OVER GRID POINTS.
+!      ----------------------
 
 !     FIND THE INDEX OF ALL OBSERVATIONS INFLUENCING A GIVEN GRID POINT
 
@@ -190,7 +190,7 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
           ENDIF
           DO K = KMIN,KMAX
             DO I = 1,NLONRGG(K)
-              LLSIMASK(I,K) = .TRUE. 
+              LLSIMASK(I,K) = .TRUE.
             ENDDO
           ENDDO
           DO IJ = MINIJS, MAXIJL
@@ -198,14 +198,14 @@ SUBROUTINE OIFIELD (IJS, IJL, MINIJS, MAXIJL,                     &
             IF ( K >= KMIN .AND. K <= KMAX ) THEN
               I = BLK2GLO%IXLG(IJ)
               IF (XMO(IJ) > 0.0_JWRB .AND. CICVR(IJ) <= CITHRSH_SAT) THEN
-                LLSIMASK(I,K) = .FALSE. 
+                LLSIMASK(I,K) = .FALSE.
               ENDIF
             ENDIF
           ENDDO
 !         periodicity
           IF (IPER == 1) THEN
             DO K = KMIN,KMAX
-              DO I = -LMAX,0 
+              DO I = -LMAX,0
                 LLSIMASK(I,K) = LLSIMASK(NLONRGG(K)+I-1,K)
               ENDDO
               DO I = NLONRGG(K)+1,NLONRGG(K)+LMAX+1

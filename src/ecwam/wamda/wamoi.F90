@@ -1,10 +1,10 @@
 SUBROUTINE WAMOI (NOBS, IOBS4IJ, W, KIJS, KIJL, NDIM2, &
  &                BLK2GLO,                             &
- &                DIST, XMO, XOI) 
+ &                DIST, XMO, XOI)
 
 !**** *WAMOI* - CARRIES OUT OPTIMUM INTERPOLATION FOR EACH GRID POINT.
 
-!     J. BIDLOT      ECMWF      JULY 2007 SPLIT FROM *OIFIELD* 
+!     J. BIDLOT      ECMWF      JULY 2007 SPLIT FROM *OIFIELD*
 
 !     PURPOSE.                                                          
 !     --------                                                          
@@ -14,7 +14,7 @@ SUBROUTINE WAMOI (NOBS, IOBS4IJ, W, KIJS, KIJL, NDIM2, &
 !     ----------                                                        
 
 !       *CALL* *WAMOI ()*      
-!         *NOBS*    INTEGER  NUMBER OF OBSERVATIONS INFLUENCING GRID POINT. 
+!         *NOBS*    INTEGER  NUMBER OF OBSERVATIONS INFLUENCING GRID POINT.
 !         *IOBS4IJ* INTEGER  INDEX TO ALL OBSERVATIONS INFLUENCING GRID POINT.
 !         *W*       REAL     ERROR CORRELATION OF ALL OBSERVATIONS
 !                            INFLUENCING POINT IJ.
@@ -62,10 +62,10 @@ SUBROUTINE WAMOI (NOBS, IOBS4IJ, W, KIJS, KIJL, NDIM2, &
       REAL(KIND=JWRB) :: XNEW
       REAL(KIND=JWRB) :: DELLON, COSLON, DOBS, DOBS2
       REAL(KIND=JWRB) :: COND
-      REAL(KIND=JWRB) :: DIFF 
+      REAL(KIND=JWRB) :: DIFF
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: V
-      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: XM, D, P 
+      REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:,:) :: XM, D, P
 
       REAL(KIND=JWRU)  :: XLONID, XLATID, XLONJD, XLATJD, DISTD
 
@@ -153,10 +153,9 @@ IF (LHOOK) CALL DR_HOOK('WAMOI',0,ZHOOK_HANDLE)
         ENDDO
 
         DEALLOCATE(P)
-        DEALLOCATE(D)            
+        DEALLOCATE(D)
 
 !       INVERSE MATRIX D
-        COND=0._JWRB
 
         CALL WAM_SYMINV(XM,NOBS(IJ),NOBS(IJ),COND)
 
@@ -183,7 +182,7 @@ IF (LHOOK) CALL DR_HOOK('WAMOI',0,ZHOOK_HANDLE)
         XOI(IJ) = XMO(IJ) + XNEW
 
       ELSE
-!     NEGATIVE VALUES WILL REMAIN WHERE O.I. WILL PRODUCE NO RESULTS  
+!     NEGATIVE VALUES WILL REMAIN WHERE O.I. WILL PRODUCE NO RESULTS
         XOI(IJ) =  -1._JWRB
       ENDIF
       ENDDO
