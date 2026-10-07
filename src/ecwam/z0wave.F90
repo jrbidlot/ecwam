@@ -7,7 +7,7 @@
 ! nor does it submit to any jurisdiction.
 !
 
-      SUBROUTINE Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0, Z0B, CHRNCK)
+      SUBROUTINE Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, CICOVER, Z0, Z0B, CHRNCK)
 
 ! ----------------------------------------------------------------------
 
@@ -21,12 +21,13 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, Z0, Z0B, CHRNCK)
+!       *CALL* *Z0WAVE (KIJS, KIJL, US, TAUW, UTOP, CICOVER, Z0, Z0B, CHRNCK)
 !          *KIJS* - INDEX OF FIRST GRIDPOINT.
 !          *KIJL* - INDEX OF LAST GRIDPOINT.
 !          *US*   - OUTPUT BLOCK OF SURFACE STRESSES.
 !          *TAUW* - INPUT BLOCK OF WAVE STRESSES.
 !          *UTOP* - WIND SPEED.
+!          *CICOVER* - SEA ICE COVER
 !          *Z0*   - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 !          *Z0B*  - BACKGROUND ROUGHNESS LENGTH.
 !          *CHRNCK- CHARNOCK COEFFICIENT
@@ -61,7 +62,7 @@
 #include "chnkmin.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
-      REAL(KIND=JWRB),DIMENSION(KIJL),INTENT(IN)  ::  US, TAUW, UTOP
+      REAL(KIND=JWRB),DIMENSION(KIJL),INTENT(IN)  ::  US, TAUW, UTOP, CICOVER
       REAL(KIND=JWRB),DIMENSION(KIJL),INTENT(OUT) ::  Z0, Z0B, CHRNCK
 
 
@@ -76,7 +77,7 @@
 
       IF (LLCAPCHNK) THEN
         DO IJ=KIJS,KIJL
-          ALPHAOG(IJ)= CHNKMIN(UTOP(IJ))*GM1
+          ALPHAOG(IJ)= CHNKMIN(UTOP(IJ), CICOVER(IJ))*GM1
         ENDDO
       ELSE
         DO IJ=KIJS,KIJL

@@ -212,7 +212,7 @@ cat > PREINFO <<EOF
  YCLASS    = "rd"
  YEXPVER   = "wave"
  NANG      = ${wamnang}
- NFRE      = 36
+ NFRE      = 36 
  NFRE_RED  = ${wamnfre}
 /
 EOF

@@ -71,13 +71,11 @@
 
       IF (LHOOK) CALL DR_HOOK('IBRMEMOUT',0,ZHOOK_HANDLE)
 
-      DO IJ=KIJS,KIJL
-        IBRMEMMSK(IJ) = IBRMEM(IJ)
-      ENDDO
-
       DO IJ = KIJS,KIJL
         IF (.NOT. (CICV(IJ) > 0.0_JWRB)) THEN
           IBRMEMMSK(IJ) = ZMISS ! 1=SOLID,0=BROKEN
+        ELSE
+          IBRMEMMSK(IJ) = IBRMEM(IJ)
         ENDIF
       ENDDO        
 

@@ -58,8 +58,9 @@
 !      *NIBLO*     INTEGER   NUMBER OF SEA POINTS.
 !      *IPER*      INTEGER   = 1 IF GRID IS PERIODIC.
 !      *IRGG*      INTEGER   GRID CODE: 0 = REGULAR, 1 = IRREGULAR.
-!      *IQGAUSS*   INTEGER   =1 IF A QUASI GAUSSIAN GRID IS USED. 
-!                            =0 OTHERWISE.
+!      *IQGAUSS*   INTEGER   =1 IF A REDUCED GAUSSIAN GRID IS USED. 
+!                            =2 IF A REGULAR GAUSSIAN GRID IS USED (not implemented yet).
+!                            =0 IF LAT-LON (REGULAR OR REDUCED).
 !      *KMNOP*     INTEGER   INDEX FOR THE MOST NORTHERN LATITUDE WITH
 !                            MODEL SEA POINTS. IT SHOULD NORMALLY BE 1
 !                            EXCEPT IF THE NORHTERN LATITUDES HAVES BEEN

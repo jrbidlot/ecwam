@@ -7,8 +7,8 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,            &
- &                 NXS, NXE, NYS, NYE, FIELDG,       &
+SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,    &
+ &                 NXS, NXE, NYS, NYE, FIELDG, FF_NOW,      &
  &                 NEMO2WAM, WVENVI)
 
 !****  *GETCURR* - READS SURFACE CURRENTS FROM FILE (IF UNCOUPLED)
@@ -36,6 +36,8 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,            &
 !     *NXS:NXE*  FIRST DIMENSION OF FIELDG
 !     *NYS:NYE*  SECOND DIMENSION OF FIELDG
 !     *FIELDG* - INPUT FORCING FIELDS ON THE WAVE MODEL GRID
+!     *FF_NOW* - FORCING FIELDS AT CURRENT TIME
+
 !     *NEMOUCUR* U-COMPONENT OF CURRENT FROM NEMO (if used)
 !     *NEMOVCUR* V-COMPONENT OF CURRENT FROM NEMO (if used)
 !     *UCUR*   - U-COMPONENT OF THE SURFACE CURRENT
@@ -79,6 +81,7 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,            &
 #include "abort1.intfb.h"
 #include "current2wam.intfb.h"
 #include "incdate.intfb.h"
+#include "mcurp.intfb.h"
 #include "wamcur.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: IREAD
@@ -88,6 +91,7 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,            &
       TYPE(ENVIRONMENT), INTENT(INOUT) :: WVENVI
       INTEGER(KIND=JWIM), INTENT(IN) :: NXS, NXE, NYS, NYE
       TYPE(FORCING_FIELDS), INTENT(IN) :: FIELDG
+      TYPE(FORCING_FIELDS), INTENT(IN) :: FF_NOW
       TYPE(OCEAN2WAVE), INTENT(IN) :: NEMO2WAM
 
 
@@ -158,27 +162,20 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,            &
                   LLNEWINPUT=.TRUE.
 
                   CALL GSTATS(1444,0)
-!$OMP             PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, IJ, IX, JY)
+!$OMP             PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL)
                   DO ICHNK = 1, NCHNK
 
                     OLDUCUR(:,ICHNK) = WVENVI%UCUR(:,ICHNK)
                     OLDVCUR(:,ICHNK) = WVENVI%VCUR(:,ICHNK)
 
-                    DO IJ = 1, NPROMA_WAM
-                      IX = BLK2LOC%IFROMIJ(IJ,ICHNK)
-                      JY = BLK2LOC%JFROMIJ(IJ,ICHNK)
-                      IF (FIELDG%LKFR(IX,JY) <=  0.0_JWRB ) THEN
-!                       if lake cover = 0, we assume open ocean point, then get currents directly from NEMO 
-                        WVENVI%UCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOUCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
- &                                                   NEMO2WAM%NEMOUCUR(IJ,ICHNK))
-                        WVENVI%VCUR(IJ,ICHNK) = SIGN(MIN(ABS(NEMO2WAM%NEMOVCUR(IJ,ICHNK)),REAL(CURRENT_MAX,JWRO)), &
- &                                                 NEMO2WAM%NEMOVCUR(IJ,ICHNK))
-                      ELSE
-!                       no currents over lakes and land
-                        WVENVI%UCUR(IJ,ICHNK) = 0.0_JWRB
-                        WVENVI%VCUR(IJ,ICHNK) = 0.0_JWRB
-                      ENDIF
-                    ENDDO
+                    KIJS=1
+                    KIJL=NPROMA_WAM
+
+                    CALL MCURP(KIJS, KIJL, BLK2LOC%IFROMIJ(:,ICHNK), BLK2LOC%JFROMIJ(:,ICHNK),                  &
+     &                         NXS, NXE, NYS, NYE, FIELDG,                                                      &
+     &                         FF_NOW%CICOVER(:,ICHNK), NEMO2WAM%NEMOUCUR(:,ICHNK), NEMO2WAM%NEMOVCUR(:,ICHNK), &
+     &                         WVENVI%UCUR(:,ICHNK), WVENVI%VCUR(:,ICHNK))
+
                   ENDDO
 !$OMP             END PARALLEL DO
                   CALL GSTATS(1444,1)
@@ -245,6 +242,15 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,            &
                 WRITE (NULERR,*) ' **************************************'
                 CALL ABORT1
                 ENDIF
+
+!               In sea ice, the currents will be reduced as it not clear how wave - sea ice -current interaction works
+                DO ICHNK=1, NCHNK
+                  DO IJ = 1, KIJL4CHNK(ICHNK)
+                    WVENVI%UCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%UCUR(IJ,ICHNK) 
+                    WVENVI%VCUR(IJ,ICHNK) = (1.0_JWRB - FF_NOW%CICOVER(IJ,ICHNK)) * WVENVI%VCUR(IJ,ICHNK)
+                  ENDDO
+                ENDDO
+
               ELSE
                 DO ICHNK=1, NCHNK
                   WVENVI%UCUR(:,ICHNK)=0.0_JWRB
@@ -260,6 +266,8 @@ SUBROUTINE GETCURR(LWCUR, LLNEMOFLDUPDT, IREAD, BLK2LOC,            &
               ENDIF
 
             ENDIF
+
+
 
 !           CHECK IF UPDATE TO THE CALCULATION OF THE REFRACTION TERMS IS NEEDED
 !           --------------------------------------------------------------------

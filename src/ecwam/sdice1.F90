@@ -9,7 +9,7 @@
 
       SUBROUTINE SDICE1 (KIJS, KIJL, FL1, FLD, SL, SLICE,     &
      &                   WAVNUM, CGROUP,                      &
-     &                   CICV,CITH)
+     &                   CICV, CITH)
 ! ----------------------------------------------------------------------
 
 !**** *SDICE1* - COMPUTATION OF SEA ICE ATTENUATION DUE TO SCATTERING (CAME FROM CIWAF)
@@ -26,7 +26,7 @@
 
 !       *CALL* *SDICE1 (KIJS, KIJL, FL1, FLD,SL,
 !                       WAVNUM, CGROUP,                      
-!                       CICV,CITH)*
+!                       CICV, CITH)*
 !          *KIJS*   - INDEX OF FIRST GRIDPOINT
 !          *KIJL*   - INDEX OF LAST GRIDPOINT
 !          *FL1*    - SPECTRUM.
@@ -58,6 +58,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWCOUP  , ONLY : LWNEMOCOUWRS
       USE YOWFRED  , ONLY : FR      
       USE YOWICE   , ONLY : NICT   ,NICH     ,TICMIN   ,HICMIN   ,      &
      &              DTIC   ,DHIC   ,CIDEAC   ,ZALPFACB
@@ -75,29 +76,26 @@
 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(INOUT) :: FLD, SL
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) ::        SLICE
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: SLICE
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CGROUP
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CICV
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: CITH
 
       INTEGER(KIND=JWIM) :: IJ, K, M
-
-      REAL(KIND=JWRB)    :: FLDICE
-      REAL(KIND=JWRB)    :: DELTM, DELT5, DELT, GTEMP1
-
       INTEGER(KIND=JWIM) :: ICM, I, MAXICM
       INTEGER(KIND=JWIM) :: IT, IT1, IH, IH1
 
+      REAL(KIND=JWRB) :: DELTM, DELT5, DELT, GTEMP1
       REAL(KIND=JWRB) :: CIDMIN, CIDMAX, CIDMEAN, CIFRGL, CIFRGMT
       REAL(KIND=JWRB) :: SD, SN
       REAL(KIND=JWRB) :: TW, X
       REAL(KIND=JWRB) :: A, B, C
       REAL(KIND=JWRB) :: CIDEAC_INT, WT, WT1, WH, WH1
-      REAL(KIND=JWRB),DIMENSION(KIJL) :: DINV
-      REAL(KIND=JWRB),DIMENSION(KIJL,NFRE) :: ALP
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: DINV
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: ALP
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: FLDICE
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
 
 ! ----------------------------------------------------------------------
 
@@ -122,7 +120,7 @@
 !     to insure that CIDMEAN will be increasing with increasing sea ice cover
       MAXICM=INT(LOG(A/CIDMIN)/LOG(CIFRGMT))
       DO IJ=KIJS,KIJL
-        IF(CITH(IJ) > 0.0_JWRB) THEN
+        IF (CITH(IJ) > 0.0_JWRB) THEN
           ! sea ice foes maxmimum size (m)
 !!!       testing making it function of sea ice cover
           CIDMAX=A+C*CICV(IJ)
@@ -151,7 +149,7 @@
         WT1=MAX(MIN(1.0_JWRB,(TW-(TICMIN+(IT-1)*DTIC))/DTIC),0.0_JWRB)
         WT=1.0_JWRB-WT1
         DO IJ=KIJS,KIJL
-          IF(CITH(IJ) > 0.0_JWRB) THEN
+          IF (CITH(IJ) > 0.0_JWRB) THEN
             IH=FLOOR((CITH(IJ)-HICMIN)/DHIC+1)
             IH=MAX(1,MIN(IH,NICH))
             IH1=IH+1
@@ -161,7 +159,6 @@
             CIDEAC_INT=WT*(WH*CIDEAC(IT,IH)+ WH1*CIDEAC(IT,IH1)) +      &
      &                WT1*(WH*CIDEAC(IT1,IH)+WH1*CIDEAC(IT1,IH1))
             ALP(IJ,M)=EXP(CIDEAC_INT)*DINV(IJ) * ZALPFACB ! CICV accounted for below
-
           ELSE
             ALP(IJ,M)=0.0_JWRB
           ENDIF
@@ -169,22 +166,33 @@
       ENDDO
 
       DO M = 1,NFRE
-         DO K = 1,NANG
+        DO IJ = KIJS,KIJL
+          FLDICE(IJ,M) = -ALP(IJ,M)*CGROUP(IJ,M)         
+        ENDDO
+      ENDDO
+
+      DO M = 1,NFRE
+        DO K = 1,NANG
+          DO IJ = KIJS,KIJL
+!           apply the source term
+            SLICE(IJ,K,M) =  FL1(IJ,K,M) * FLDICE(IJ,M)
+            SL(IJ,K,M)    =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
+            FLD(IJ,K,M)   =  FLD(IJ,K,M) + CICV(IJ)*FLDICE(IJ,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
+      IF (LWNEMOCOUWRS) THEN
+        DO M = 1,NFRE
+          DO K = 1,NANG
             DO IJ = KIJS,KIJL
-
-!              apply the source term
-              FLDICE         = -ALP(IJ,M)   * CGROUP(IJ,M)   
-              SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE
-              SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
-              FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE
-
-!              to be used for wave radiative stress calculation
-              GTEMP1         =  MAX((1.0_JWRB-DELT5*FLDICE),1.0_JWRB)    
-              SLICE(IJ,K,M)  =  SLICE(IJ,K,M)/GTEMP1
-
-            END DO
-         END DO
-      END DO
+!             to be used for wave radiative stress calculation
+              GTEMP1        =  MAX((1.0_JWRB-DELT5*FLDICE(IJ,M)),1.0_JWRB)
+              SLICE(IJ,K,M) =  SLICE(IJ,K,M)/GTEMP1
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('SDICE1',1,ZHOOK_HANDLE)
 

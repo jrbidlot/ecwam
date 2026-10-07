@@ -19,6 +19,7 @@
      &                     CICOVER,                            &
      &                     UFRIC, Z0M,                         &
      &                     Z0B, CHRNCK, CITHICK,               &
+     &                     WCF, TLEMEAN,                       &
      &                     WSEMEAN, WSFMEAN,                   &
      &                     USTOKES, VSTOKES, STRNMS,           &
      &                     TAUXD, TAUYD, TAUOCXD,              &
@@ -66,13 +67,11 @@
       USE YOWDRVTYPE  , ONLY : ENVIRONMENT, FREQUENCY, FORCING_FIELDS,  &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN
 
-      USE YOWCOUP  , ONLY : LWFLUX   ,LWVFLX_SNL, LWNEMOCOUSTRN,        &
-                            LWNEMOCOUIBR, LWNEMOCOUWRS
+      USE YOWCOUP  , ONLY : LWFLUX   ,LWSPRAY, LWWCF, LWVFLX_SNL,       &
+                            LWNEMOCOUSTRN, LWNEMOCOUIBR, LWNEMOCOUWRS
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWICE   , ONLY : LICERUN  ,              &
-                            LCIWA1   ,LCIWA2    ,LCIWA3   ,LCISCAL   ,   &
- &                          ZALPFACX
+      USE YOWICE   , ONLY : LICERUN  ,FLMIN, LCISCAL , ZALPFACX
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
       USE YOWSTAT  , ONLY : IDELT    ,XIMP
@@ -90,6 +89,7 @@
 #include "sinflx.intfb.h"
 #include "snonlin.intfb.h"
 #include "stokestrn.intfb.h"
+#include "whitecap_fraction.intfb.h"
 #include "wnfluxes.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
@@ -111,6 +111,7 @@
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUXD, TAUYD, TAUOCXD, TAUOCYD, TAUOC
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: TAUICX, TAUICY
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: PHIOCD, PHIEPS, PHIAW, USTOKES, VSTOKES
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: WCF, TLEMEAN
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(INOUT) :: WSEMEAN, WSFMEAN, STRNMS
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN
       REAL(KIND=JWRO), DIMENSION(KIJL), INTENT(INOUT) :: NPHIEPS, NTAUOC, NSWH, NMWP, NEMOTAUX
@@ -122,9 +123,7 @@
       INTEGER(KIND=JWIM) :: IJ, K, M
       INTEGER(KIND=JWIM) :: ICALL, NCALL
 
-      REAL(KIND=JWRB) :: TAU, XN, PHIDIAG, TAUO, BETA
-      REAL(KIND=JWRB) :: DELTM, DELT5, DELT
-      REAL(KIND=JWRB) :: GTEMP1
+      REAL(KIND=JWRB) :: DELTM, DELT5, DELT, GTEMP1
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TAUW_LOC  ! TAUW should not be updated do use a local array
@@ -134,14 +133,13 @@
       REAL(KIND=JWRB), DIMENSION(KIJL) :: EMEANWS, FMEANWS
       REAL(KIND=JWRB), DIMENSION(KIJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PHIWA
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ALPFAC
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: RHOWGDFTH
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL, SPOS
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE, SLTEMP
-
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: ALPFAC
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
@@ -153,11 +151,12 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 !*    1. INITIALISATION.
 !        ---------------
 
-      LCFLX=LWFLUX.OR.LWFLUXOUT
-
       DELT  = IDELT
       DELTM = 1.0_JWRB/DELT
       DELT5 = XIMP*DELT
+
+      LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWWCF.OR.LWSPRAY
+
 ! ----------------------------------------------------------------------
 
 !*    1.2 COMPUTATION OF RELEVANT SOURCE FUNCTIONS.
@@ -188,16 +187,6 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      IF (LWNEMOCOUWRS .AND. (.NOT. (LCIWA1 .OR. LCIWA2 .OR. LCIWA3)))  THEN
-        DO M=1,NFRE
-          DO K=1,NANG
-            DO IJ=KIJS,KIJL
-              SLICE(IJ,K,M) = 0.0_JWRB
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
-      
       NCALL = 1
       ICALL = 1
       CALL SINFLX (ICALL, NCALL, KIJS, KIJL,        &
@@ -249,9 +238,8 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
             DO M = 1,NFRE
               DO K = 1,NANG
                 DO IJ = KIJS,KIJL
-                  BETA        = 1._JWRB - CICOVER(IJ)
-                  SL(IJ,K,M)  = BETA*SL(IJ,K,M)
-                  FLD(IJ,K,M) = BETA*FLD(IJ,K,M)
+                  SL(IJ,K,M)  = (1._JWRB - CICOVER(IJ))*SL(IJ,K,M)
+                  FLD(IJ,K,M) = (1._JWRB - CICOVER(IJ))*FLD(IJ,K,M)
                 END DO
               END DO
             END DO
@@ -263,9 +251,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
           ENDIF
 
 !        Attenuation of waves in ice
-          IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
-            CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
-         ENDIF
+         CALL SDICE (KIJS, KIJL, FL1, FLD, SL, SLICE, WAVNUM, CGROUP, CICOVER, CITHICK, ALPFAC)
 
         ENDIF
             
@@ -286,19 +272,27 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &                 PHIOCD, PHIEPS, PHIAW,             &
      &                .FALSE.)
 
-        IF (LWFLUX) THEN
+        IF (LWFLUX .OR. LWSPRAY) THEN
          CALL FEMEANWS(KIJS, KIJL, FL1, XLLWS, FMEANWS, EMEANWS)
 
           DO IJ=KIJS,KIJL
             IF (EMEANWS(IJ) < WSEMEAN_MIN) THEN
-              WSEMEAN(IJ) = WSEMEAN_MIN 
+              WSEMEAN(IJ) = MAX(WSEMEAN_MIN*(1.0_JWRB-CICOVER(IJ)),FLMIN)
               WSFMEAN(IJ) = 2._JWRB*FR(NFRE)
             ELSE
               WSEMEAN(IJ) = EMEANWS(IJ)
-              WSFMEAN(IJ) = FMEANWS(IJ) 
+              WSFMEAN(IJ) = FMEANWS(IJ)
             ENDIF
+            TLEMEAN(IJ) = MAX(EMEAN(IJ),WSEMEAN(IJ))
           ENDDO
+        ELSE
+          TLEMEAN(:) = EMEAN(:)
         ENDIF
+
+        IF (LWWCF) THEN
+          CALL WHITECAP_FRACTION (KIJS, KIJL, FL1, XLLWS, CINV, DEPTH, WSWAVE, CICOVER, UFRIC, COSWDIF, PHIOCD, WCF)
+        ENDIF
+
 
         CALL STOKESTRN(KIJS, KIJL, FL1, WAVNUM, STOKFAC, DEPTH, WSWAVE, WDWAVE, CICOVER, CITHICK, &
 &                      USTOKES, VSTOKES, STRNMS, NEMOUSTOKES, NEMOVSTOKES, NEMOSTRN)

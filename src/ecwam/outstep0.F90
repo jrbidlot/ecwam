@@ -121,6 +121,7 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
      &                   FF_NOW%CICOVER(:,ICHNK), &
      &                   FF_NOW%UFRIC(:,ICHNK), FF_NOW%Z0M(:,ICHNK), &
      &                   FF_NOW%Z0B(:,ICHNK), FF_NOW%CHRNCK(:,ICHNK), FF_NOW%CITHICK(:,ICHNK), &
+     &                   INTFLDS%WCF(:,ICHNK), INTFLDS%TLEMEAN(:,ICHNK), &
      &                   INTFLDS%WSEMEAN(:,ICHNK), INTFLDS%WSFMEAN(:,ICHNK), &
      &                   INTFLDS%USTOKES(:,ICHNK), INTFLDS%VSTOKES(:,ICHNK), INTFLDS%STRNMS(:,ICHNK), &
      &                   INTFLDS%TAUXD(:,ICHNK), INTFLDS%TAUYD(:,ICHNK), INTFLDS%TAUOCXD(:,ICHNK), &
@@ -176,8 +177,8 @@ IF (LHOOK) CALL DR_HOOK('OUTSTEP0',0,ZHOOK_HANDLE)
       IF (NGOUT > 0 ) CALL OUTWPSP (FL1, FF_NOW)
 
 
-!*    3.0 SAVE INITIAL INTEGRATED FIELDS (if needed)
-!         ------------------------------
+!*    3.0 SAVE INITIAL INTEGRATED FIELDS AND POTENTIALLY THE SPECTRA (if needed)
+!         ----------------------------------------------------------------------
       IF ((MARSTYPE == 'cf' .OR. MARSTYPE == 'pf' .OR.                 &
      &     MARSTYPE == 'fc' .OR. MARSTYPE == '4v' .OR.                 &
      &     LANAONLY         .OR. LFRSTFLD             )                &

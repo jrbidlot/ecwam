@@ -77,8 +77,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT ,CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,LWCOU2W  ,LWCOURNW, LWCOUAST,     &
-     &             LWCOUHMF, KCOUSTEP , LWFLUX, LWVFLX_SNL,             &
-     &             LWNEMOCOUIBR,LWNEMOCOUWRS,                           &
+     &            LWCOUHMF, KCOUSTEP , LWFLUX, LWSPRAY, LWWCF,          &
+     &            LWVFLX_SNL, LWNEMOCOUIBR,LWNEMOCOUWRS, LWNEMOCOUCIT,  &
      &            LWNEMOCOU, LWNEMOCOUSEND, LWNEMOCOURECV,              &
      &            LLCAPCHNK, LLGCBZ0, LLNORMAGAM,                       &
      &            IFSCONTEXT
@@ -105,10 +105,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWCPBO  , ONLY : IBOUNC
       USE YOWCURR  , ONLY : IDELCUR  ,CDATECURA, LLCFLCUROFF
       USE YOWFPBO  , ONLY : IBOUNF
-      USE YOWFRED  , ONLY : FR, XKMSS_CUTOFF, NWAV_GC, XK_GC
+      USE YOWFRED  , ONLY : FR, XKMSS_CUTOFF, XKMSS_CUTOFF_IFS, NWAV_GC, XK_GC
       USE YOWGRIBHD, ONLY : NGRIB_VERSION, LGRHDIFS ,LNEWLVTP ,IMDLGRBID_G,IMDLGRBID_M
       USE YOWGRIB_HANDLES , ONLY : NGRIB_HANDLE_IFS2
-      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI ,            &
+      USE YOWICE   , ONLY : LICERUN  ,LMASKICE ,LWAMRSETCI , LCIWA_ANY, &
      &            LCIWA1   ,LCIWA2   ,LCIWA3   ,LCISCAL    ,ZIBRW_THRSH,&
      &            CITHRSH  ,CIBLOCK  ,LICETH   ,ZALPFACX   ,ZALPFACB   ,&
      &            CITHRSH_SAT, CITHRSH_TAIL    ,CDICWA     ,ZALPWRS
@@ -117,11 +117,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWMPP   , ONLY : IRANK, NPROC    ,NPRECI   ,NPRECR
       USE YOWPARAM , ONLY : SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,    &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS   ,LL1D     ,LLUNSTR
+      USE YOWPCONS , ONLY : G, ZPI
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            CHNKMIN_U, CDIS ,DELTA_SDIS, CDISVIS,                 &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
-     &            SWELLF4,  SWELLF7, SSDSC5
+     &            SWELLF4, SWELLF5, SWELLF7, SSDSC5
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IFRELFMAX, DELPRO_LF, IDELPRO, IDELT   ,IDELWI   ,    &
@@ -137,10 +138,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
-     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,              &
+     &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LLUNSETICE,   &
      &            LNSESTART,                                            &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
-     &            LRELWIND ,                                            &
+     &            LRELWIND ,LADDGUST ,                                  &
      &            IDELWI_LST, IDELWO_LST, CDTW_LST, NDELW_LST
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : LRESTARTED,ICPLEN   ,USERID   ,RUNID    ,   &
@@ -175,7 +176,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       LOGICAL, INTENT(IN) :: LWCUR
 
 
-      INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT
+      INTEGER(KIND=JWIM) :: ITG, IC, I, J, ISAT, ICOUNT
       INTEGER(KIND=JWIM) :: LEN
       INTEGER(KIND=JWIM) :: IFS_STREAM, KSTREAM
       INTEGER(KIND=JWIM) :: IDELT_NEW
@@ -191,10 +192,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       REAL(KIND=JWRB) :: DELPRO_LF_NEW
       REAL(KIND=JWRB) :: WSPEED, WTHETA
       REAL(KIND=JWRB) :: DEPTHMAX
+      REAL(KIND=JWRB) :: ZCUTOFF_IFS
 
       CHARACTER(LEN=2) :: MARSFCTYPE
       CHARACTER(LEN=3) :: CITG
       CHARACTER(LEN=4) :: CSTREAM
+      CHARACTER(LEN=14) :: CDTASS
       CHARACTER(LEN=256) :: CLFORM
 
       LOGICAL :: LERROR, LASTREAM
@@ -230,14 +233,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' WRONG VALUE FOR IDAMPING !!!'
         WRITE(IU06,*) ' IDAMPING =',IDAMPING
         CALL WAM_ABORT(__FILENAME__,__LINE__)
-      ENDIF
-
-      IF (.NOT.LWCOU .AND. LODBRALT) THEN
-        WRITE(IU06,*)'WARNING IN SUBROUTINE USERIN:'
-        WRITE(IU06,*)'        ODB IS NOT READY FOR STAND-ALONE MODEL'
-        WRITE(IU06,*)'        ODB WILL NOT BE USED!'
-        LODBRALT = .FALSE.  ! ODB is not ready for stand-alone wave model
-                            ! this needs to be changed later.
       ENDIF
 
       IF (.NOT.LWCOU) LGRHDIFS = .FALSE.  ! by definition
@@ -394,6 +389,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           DELPRO_LF = DELPRO_LF_NEW
 
       ENDIF
+
+      LCIWA_ANY = (LCIWA1 .OR. LCIWA2 .OR. LCIWA3)
 
       IF (LCIWA3 .AND. (LCIWA1 .OR. LCIWA2) ) THEN
         WRITE(IU06,*)'+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  +'
@@ -781,6 +778,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                CDISVIS = ...... ', CDISVIS
       ELSEIF (IPHYS == 1) THEN
       WRITE(IU06,*) '                SWELLF4 = ...... ', SWELLF4
+      WRITE(IU06,*) '                SWELLF5 = ...... ', SWELLF5
       WRITE(IU06,*) '                SWELLF7 = ...... ', SWELLF7
       WRITE(IU06,*) '                SSDSC5 = ....... ', SSDSC5 
       ENDIF
@@ -923,7 +921,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE (IU06,*) ' '
 
         IF (LGUST) THEN
-          WRITE(IU06,*) ' GUSTINESS EFFECT IS INCLUDED.'
+          WRITE(IU06,*) ' GUSTINESS EFFECT ON THE WIND INPUT IS INCLUDED.'
         ENDIF
         IF (LADEN) THEN
           WRITE(IU06,*) ' VARIABLE AIR DENSITY EFFECT IS INCLUDED.'
@@ -948,9 +946,35 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             ENDIF
           ENDIF
         ENDIF
+
+        IF (LADDGUST .AND. LGUST) THEN
+          WRITE(IU06,*) ''
+          IF (LWCOU) THEN
+            LADDGUST=.FALSE.
+            WRITE(IU06,*) ' THE GUST CORRECTION TO THE MEAN WIND IS ALREADY DONE IN THE ATMOSPHERE MODEL !!!' 
+            WRITE(IU06,*) ' LADDGUST IS SET TO FALSE'
+          ELSE
+            WRITE(IU06,*) ' THE GUST CORRECTION TO THE MEAN WIND WILL BE APPLIED'
+          ENDIF
+          WRITE(IU06,*) ''
+        ELSEIF (LADDGUST .AND. .NOT. LGUST .AND. .NOT. LWCOU) THEN
+          LADDGUST=.FALSE.
+          WRITE(IU06,*) ''
+          WRITE(IU06,*) ' THE WIND GUST CORRECTION TO THE MEAN WIND WAS REQUESTED'
+          WRITE(IU06,*) ' BUT NO WIND GUST FIELD WAS PROVIDED !!!!!'
+          WRITE(IU06,*) ' LADDGUST IS SET TO FALSE'
+          WRITE(IU06,*) ''
+        ENDIF
+
       ELSE
         WRITE(IU06,*) ' ADVECTION ONLY RUN '
         WRITE(IU06,*) ' NO CONTRIBUTION FROM SOURCE TERMS'
+      ENDIF
+ 
+      IF (.NOT. LLUNSETICE) THEN
+        WRITE(IU06,*) ''
+        WRITE(IU06,*) ' UNSETICE WILL NOT BE CALLED !!!!'
+        WRITE(IU06,*) ''
       ENDIF
 
 !     WHEN IMPOSING THE ICE MASK SET THRESHOLD TO 0.3
@@ -963,8 +987,8 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ELSE
 !     RELAX IT A BIT WHEN THE WAVES ARE ALLOWED TO PROPAGATE INTO THE ICE.
         CITHRSH=1.0_JWRB
-!     EXCEPT FOR DATA ASSIMILATION
-        CITHRSH_SAT=0.3_JWRB
+!     EXCEPT FOR DATA ASSIMILATION (if there are altimeter wave observations there should be no sea ice)
+        CITHRSH_SAT=0.0_JWRB
 !     BUT ENFORCE FULL BLOCKING CI > CIBLOCK
         CIBLOCK=1.0_JWRB
 !     HIGH FREQUENCY SPECTRAL TAIL WILL ONLY BE IMPOSED IF SEA ICE COVER <=CITHRSH_TAIL
@@ -1014,13 +1038,13 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
           WRITE (IU06,*)  ' ICE ATTENUATION DUE TO VISCOUS FRICTION ACTIVATED, BASED ON:'
           WRITE (IU06,*)  '    YU J., W. E. ROGERS, D. W. WANG, 2022'
         ENDIF
-        IF (LCISCAL)   WRITE (IU06,*) ' LINEAR SCALING OF INPUT AND DISSIPATION SOURCE TERMS BY SEA ICE CONCENTRATION ACTIVATED'
+        IF (LCISCAL) WRITE (IU06,*) ' LINEAR SCALING OF INPUT AND DISSIPATION BY SEA ICE COVER'
         IF (LWNEMOCOUIBR) THEN
           WRITE (IU06,*) ' COUPLING THROUGH ICE BREAK UP AND ATTENUATION ACTIVATED'
           WRITE (IU06,*) '    THRESHOLD AT WHICH SEA ICE IS CONSIDERED BROKEN, ZIBRW_THRSH= ', ZIBRW_THRSH
           WRITE (IU06,*) '    ATTENUATION SCALED UP/DOWN BY FACTOR ZALPFACX FOR SOLID/BROKEN ICE, ZALPFACX= ', ZALPFACX
         ENDIF
-        WRITE (IU06,*) ' ATTENUATION SCALED BY FACTOR ZALPFACB FOR ALL SEA ICE,              ZALPFACB= ', ZALPFACB
+        WRITE (IU06,*) ' ATTENUATION SCALED BY ZALPFACB FOR ALL SEA ICE = ', ZALPFACB
         IF (LWNEMOCOUWRS) THEN
           WRITE (IU06,*) ' COUPLING THROUGH WAVE RADIATIVE STRESS ACTIVATED'
           WRITE (IU06,*) '    PROPORTION OF ENERGY LOST DUE TO WAVE-SEA ICE INTERACTIONS ',&
@@ -1042,6 +1066,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,*) ' '
       ENDIF
 
+      WRITE(IU06,*) ' '
       IF (LNSESTART) THEN
         WRITE(IU06,*) ' WAVE INITIAL CONDITIONS NOT READ IN AND INITIAL SPECTRA SET TO NOISE'
       ELSE
@@ -1054,19 +1079,46 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       IF (IASSI == 1) THEN
         WRITE(IU06,*) ' '
-        WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
-        IF (NASS > 0) THEN
-          WRITE(IU06,*) ' AT DATE(S) '
-          WRITE(IU06,'(2X,A14)') (CASS(I),I=1,NASS)
+        IF (.NOT. LALTAS .AND. .NOT. LSARAS) THEN
+          WRITE(IU06,*) ' WAVE DATA ASSIMILATION SHOULD BE CARRIED OUT, BUT'
+          WRITE(IU06,*) ' LALTAS AND LSARAS ARE BOTH FALSE, SO NOTHING WILL BE DONE !!'
         ELSE
-          IF (LWCOU) THEN
-            WRITE(IU06,*) ' AT DATE ', CDATEF
+          WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
+          IF (NASS > 0) THEN
+            WRITE(IU06,*) ' FOR DATES PRESCRIBED BY THE NAMELIST NAAT:'
           ELSE
-            WRITE(IU06,*) ' UNTIL THE END OF THE ANALYSIS PERIOD'
-            WRITE(IU06,*) ' AT DATE ', CDATEF
+            IF (LWCOU) THEN
+              WRITE(IU06,*) ' FOR DATE = CDATEF'
+              NASS = 1
+              ALLOCATE(CASS(NASS))
+              CASS(1) = CDATEF
+            ELSE IF (IDELALT > 0) THEN
+              WRITE(IU06,*) ' FOR DATES OVER THE ANALYSIS PERIOD DETERMINED BY IDELALT:'
+              CDTASS = CDATEA
+              ICOUNT = 0
+              CALL INCDATE(CDTASS, IDELALT)
+              DO WHILE (CDTASS <= CDATEF)
+                ICOUNT = ICOUNT+1
+                CALL INCDATE(CDTASS, IDELALT)
+              ENDDO
+              IF (ICOUNT > 0 ) THEN
+                NASS = ICOUNT
+                ALLOCATE(CASS(NASS))
+              ENDIF
+              CDTASS = CDATEA
+              DO ICOUNT = 1, NASS
+                CALL INCDATE(CDTASS, IDELALT)
+                CASS(ICOUNT) = CDTASS
+              ENDDO
+            ENDIF
           ENDIF
+        ENDIF
+
+        IF (NASS > 0) THEN
+          WRITE(IU06,'(2X,A14)') (CASS(I),I=1,NASS)
           CALL FLUSH(IU06)
         ENDIF
+
         IF (LALTAS) THEN
           WRITE(IU06,*) ' WITH ALTIMETER DATA IN TIME WINDOW(S) OF '
           WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS'
@@ -1195,10 +1247,17 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDDO
       WRITE(IU06,*) ''
 
-      IF (LWCOU .AND. LWFLUX) THEN
-        WRITE(IU06,*) ''
-        WRITE(IU06,*) ' OCEAN FLUXES WILL ALSO BE RETURNED TO IFS.'
-        WRITE(IU06,*) ''
+      !!! THE MSS PASSED BACK TO THE IFS WILL BE COMPUTED WITH A CUTOFF OF 2Hz IN DEEP WATER
+!!!!!! JB_note : 2Hz !!!!
+      ZCUTOFF_IFS = 2.0_JWRB
+      XKMSS_CUTOFF_IFS = (ZPI * ZCUTOFF_IFS)**2/G
+      IF (LWCOU .AND. (LWFLUX .OR. LWSPRAY)) THEN
+        WRITE(IU06,*) ' OCEAN FLUXES AND A FEW OTHER WAVE FIELDS WILL BE RETURNED TO IFS.'
+        WRITE(IU06,*) ' THE MEAN SQUARE SLOPE RETURNED TO IFS WILL BE COMPUTED UP TO ',ZCUTOFF_IFS,' Hz'
+      ENDIF
+
+      IF (LWCOU .AND. LWWCF) THEN
+        WRITE(IU06,*) ' WHITECAP FIELD WILL ALSO BE RETURNED TO IFS.'
       ENDIF
 
       IF (LWVFLX_SNL) THEN
@@ -1215,8 +1274,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ENDIF
       WRITE(IU06,*) ' THE MAXIMUM WAVE NUMBER FOR MSS CALCULATION IS ',XKMSS_CUTOFF
 
-      WRITE(IU06,*) ' ACCESS TO THE FIELD DATA BASE, LFDB =  ', LFDB
+
+
       WRITE(IU06,*) '  '
+      WRITE(IU06,*) ' ACCESS TO THE FIELD DATA BASE, LFDB =  ', LFDB
 
 
       IF ( LFDB .AND. .NOT. GFLAG20) THEN
@@ -1240,7 +1301,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       IF (LFDB) THEN
         WRITE(IU06,*) ' ANY OUTPUT OF GRIB INTEGRATED PARAMETERS REDIRECTED' &
      &   ,' TO THE FIELD DATA BASE'
-        WRITE(IU06,*) '                    '
       ENDIF
 
       WRITE(IU06,*) '  '
@@ -1286,7 +1346,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE (IU06,*) ' ZERO WAVE STRESS (TAUW)'
       ENDIF
       IF (LGRIBIN) THEN
-        WRITE(IU06,*) '  '
         WRITE (IU06,*) ' GRIB SPECTRA FIELD ARE USED AS INPUT'
       ENDIF
       IF (IREST == 1) THEN
@@ -1356,7 +1415,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,'("  ENSEMBLE FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
-        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ********************* ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE IF ( ISTREAM == 1085 ) THEN
@@ -1366,14 +1425,14 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         WRITE(IU06,'("  NEW ENSEMBLE FORECAST HINDCAST RUN OVERLAP: ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
-        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ********************* ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE IF ( ISTREAM == 1079 ) THEN
         WRITE(IU06,'("  NEW ENSEMBLE FORECAST HINDCAST RUN : ")')
         WRITE(IU06,'("  WITH REFERENCE DATE:      ", I8  )') IREFDATE
         WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
-        WRITE(IU06,'("  ************************************ ")')
+        WRITE(IU06,'("  ********************* ")')
         WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
         WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
       ELSE IF ( ISTREAM == 1088 ) THEN
@@ -1384,7 +1443,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       ELSE
         IF (NENSFNB /= 0 .OR. NTOTENS /= 0) THEN
           WRITE(IU06,'("  ENSEMBLE FORECAST RUN : ")')
-          WRITE(IU06,'("  ************************************ ")')
+          WRITE(IU06,'("  ********************* ")')
           WRITE(IU06,'("  ENSEMBLE NUMBER:         ", I4  )') NENSFNB
           WRITE(IU06,'("  TOTAL NUMBER OF ENSEMBLE:", I4,/)') NTOTENS
         ENDIF
@@ -1796,7 +1855,21 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
             LERROR = .TRUE.
           ENDIF
         ENDDO
+
+      ELSEIF ( NASS <= 0 .AND. IASSI == 1 .AND. MOD(IDELALT,IDELPRO) /= 0 .AND. .NOT.LRESTARTED) THEN
+        WRITE(IU06,*) '*******************************************'
+        WRITE(IU06,*) '*                                         *'
+        WRITE(IU06,*) '*    FATAL ERROR IN SUB. USERIN           *'
+        WRITE(IU06,*) '*    ==========================           *'
+        WRITE(IU06,*) '* THE ASSIMILATION TIMSTEP AND PROPAGATION*'
+        WRITE(IU06,*) '* TIME STEP DO NOT HAVE INTEGER RATIO.    *'
+        WRITE(IU06,*) '* ASSIMILATION TIMSTEP  IDELALT = ', IDELALT
+        WRITE(IU06,*) '* PROPAGATION TIME STEP IDELPRO = ', IDELPRO
+        WRITE(IU06,*) '*                                         *'
+        WRITE(IU06,*) '*******************************************'
+        LERROR = .TRUE.
       ENDIF
+
 
 ! ----------------------------------------------------------------------
 

@@ -7,11 +7,11 @@
 ! nor does it submit to any jurisdiction.
 !
 
-SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
- &                     WAVNUM, CINV, XK2CG,           &
- &                     WDWAVE, WSWAVE, UFRIC, Z0M,    &
- &                     COSWDIF, SINWDIF2,             &
- &                     RAORW, WSTAR, RNFAC,           &
+SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,      &
+ &                     WAVNUM, CINV, XK2CG,                &
+ &                     WDWAVE, WSWAVE, UFRIC, Z0M, CHRNCK, &
+ &                     COSWDIF, SINWDIF2,                  &
+ &                     RAORW, WSTAR, RNFAC,                &
  &                     FLD, SL, SPOS, XLLWS)
 ! ----------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
 
 !     *CALL* *SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1,
 !    &                    WAVNUM, CINV, XK2CG,
-!    &                    WSWAVE, WDWAVE, UFRIC, Z0M,
+!    &                    WSWAVE, WDWAVE, UFRIC, Z0M, CHRNCK,
 !    &                    COSWDIF, SINWDIF2,
 !    &                    RAORW, WSTAR, RNFAC,
 !    &                    FLD, SL, SPOS, XLLWS)
@@ -61,6 +61,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
 !                  CLOCKWISE FROM NORTH).
 !        *UFRIC* - NEW FRICTION VELOCITY IN M/S.
 !        *Z0M* - ROUGHNESS LENGTH IN M.
+!       *CHRNCK* - CHARNOCK COEFFICIENT.
 !      *COSWDIF* - COS(TH(K)-WDWAVE(IJ))
 !     *SINWDIF2* - SIN(TH(K)-WDWAVE(IJ))**2
 !        *RAORW* - RATIO AIR DENSITY TO WATER DENSITY.
@@ -105,7 +106,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE), INTENT(IN) :: WAVNUM, CINV, XK2CG
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: WDWAVE, WSWAVE, UFRIC, Z0M, CHRNCK
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT(IN) :: RAORW, WSTAR, RNFAC
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG), INTENT(IN) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(OUT) :: FLD, SL, SPOS
@@ -131,6 +132,7 @@ SUBROUTINE SINPUT_ARD (NGST, LLSNEG, KIJS, KIJL, FL1, &
       REAL(KIND=JWRB), DIMENSION(KIJL) :: Z0VIS, Z0NOZ, FWW
       REAL(KIND=JWRB), DIMENSION(KIJL) :: PVISC, PTURB
       REAL(KIND=JWRB), DIMENSION(KIJL) :: ZCN
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: ZTANHKD
       REAL(KIND=JWRB), DIMENSION(KIJL) :: SIG_N, UORBT, AORB, TEMP, RE, RE_C, ZORB
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CNSN, SUMF, SUMFSIN2
       REAL(KIND=JWRB), DIMENSION(KIJL) :: CSTRNFAC
@@ -165,7 +167,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       IF (NGST > 1)THEN
         !$loki inline
-        CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, WSTAR, SIG_N)
+        CALL WSIGSTAR (KIJS, KIJL, WSWAVE, UFRIC, Z0M, CHRNCK, WSTAR, SIG_N)
       ENDIF
 
 
@@ -299,7 +301,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
       !... unroll it whilst still retaining correctness for the case
       !... where NGST == 1. This is an important optimisation for GPUs.
       DO IGST=1,2
-        IF(IGST <= NGST)THEN
+        IF (IGST <= NGST) THEN
           DO IJ=KIJS,KIJL
             USTPM1(IJ,IGST) = 1.0_JWRB/MAX(USTP(IJ,IGST),EPSUS)
           ENDDO
@@ -308,7 +310,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 
       IF (LTAUWSHELTER) THEN
         DO IGST=1,2
-          IF(IGST <= NGST)THEN
+          IF (IGST <= NGST) THEN
             DO IJ=KIJS,KIJL
               XSTRESS(IJ,IGST)=0.0_JWRB
               YSTRESS(IJ,IGST)=0.0_JWRB
@@ -348,14 +350,14 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         SIG2 = SIG**2
         CONST=SIG*CONST1
 
-        IF(LLSNEG)THEN
+        IF (LLSNEG) THEN
           COEF =-SWELLF*16._JWRB*SIG2/G
           COEF5=-SWELLF5*2._JWRB*SQRT(2._JWRB*NU_AIR*SIG)
         ENDIF
 
         IF (LTAUWSHELTER) THEN
           DO IGST=1,2
-            IF(IGST <= NGST)THEN
+            IF (IGST <= NGST) THEN
               DO IJ=KIJS,KIJL
                 TAUPX=TAUX(IJ,IGST)-ABS_TAUWSHELTER*XSTRESS(IJ,IGST)
                 TAUPY=TAUY(IJ,IGST)-ABS_TAUWSHELTER*YSTRESS(IJ,IGST)
@@ -375,8 +377,12 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
 !*      PRECALCULATE FREQUENCY DEPENDENCE.
 !       ----------------------------------
 
+        DO IJ=KIJS,KIJL
+          ZTANHKD(IJ) = SIG2/(G*WAVNUM(IJ,M)) 
+        ENDDO
+
         DO IGST=1,2
-          IF(IGST <= NGST)THEN
+          IF (IGST <= NGST) THEN
             DO IJ=KIJS,KIJL
               UCN(IJ,IGST) = USTP(IJ,IGST)*CINV(IJ,M)
               UCNZALPD(IJ,IGST) = XKAPPA/(UCN(IJ,IGST) + ZALP)
@@ -385,7 +391,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDDO
         DO IJ=KIJS,KIJL
           ZCN(IJ) = LOG(WAVNUM(IJ,M)*Z0M(IJ))
-          CNSN(IJ) = CONST*RAORW(IJ)
+          CNSN(IJ) = CONST*ZTANHKD(IJ)*RAORW(IJ)
         ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
@@ -412,9 +418,9 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         ENDIF
 
         DO IGST=1,2
-          IF(IGST <= NGST)THEN
+          IF (IGST <= NGST) THEN
             DO K=1,NANG
-              IF(LTAUWSHELTER)THEN
+              IF (LTAUWSHELTER) THEN
                 DO IJ=KIJS,KIJL
                   COSLP(IJ,K) = COS(TH(K)-USDIRP(IJ,IGST))
                 ENDDO
@@ -470,7 +476,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
         DO K=1,NANG
 
           DO IGST=1,2
-            IF(IGST <= NGST)THEN
+            IF (IGST <= NGST) THEN
               DO IJ=KIJS,KIJL
                 ! SLP: only the positive contributions
                 SLP(IJ) =  GAM0(IJ,K,IGST) * GAMNORMA(IJ,IGST)
@@ -492,7 +498,7 @@ IF (LHOOK) CALL DR_HOOK('SINPUT_ARD',0,ZHOOK_HANDLE)
                 ENDDO
               ENDIF
   
-              IF(IGST == 1)THEN
+              IF (IGST == 1) THEN
                 DO IJ=KIJS,KIJL
                   SLP_AVG(IJ) = SLP(IJ)
                   FLP_AVG(IJ) = FLP(IJ)

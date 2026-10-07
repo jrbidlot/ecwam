@@ -267,7 +267,7 @@
         AMOWEP = REAL(DAMOWEP,JWRB)
         AMOEAP = REAL(DAMOEAP,JWRB)
 
-        ! A spectral truncation > 0 implies a Gaussian grid
+        ! A spectral truncation > 0 implies a reduced Gaussian grid
         IF (ISPECTRUNC > 0) IQGAUSS=1 
 
       ENDIF

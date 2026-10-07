@@ -18,14 +18,12 @@
       TYPE(WAVE2OCEAN) :: WAM2NEMO
       TYPE(OCEAN2WAVE) :: NEMO2WAM
 
-      LOGICAL :: LNEMOCITHICK, LNEMOICEREST
+      LOGICAL :: LNEMOCITHICK
 
 !--------------------------------------------------------------------
 
 !*    VARIABLE     TYPE      PURPOSE
 !     --------     ----      -------
-!     LNEMOCITHICK LOGICAL   SET TO TRUE IF SEA ICE THICKNESS IS 
-!                            AVAILABLE FROM NEMO (E.G. LIM2 ACTIVE).
-!     LNEMOICEREST LOGICAL   SET TO TRUE IF SEA ICE IS NOT RESCALED BY ICE COVER
+!     LNEMOCITHICK LOGICAL   SET TO TRUE IF SEA ICE THICKNESS IS AVAILABLE FROM NEMO 
 !---------------------------------------------------------------------
       END MODULE YOWNEMOFLDS

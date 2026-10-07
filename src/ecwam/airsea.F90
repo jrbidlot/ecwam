@@ -8,7 +8,7 @@
 !
 
       SUBROUTINE AIRSEA (KIJS, KIJL, &
-&                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,  &
+&                        HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, CICOVER,  &
 &                        US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)
 
 ! ----------------------------------------------------------------------
@@ -30,7 +30,7 @@
 !     ----------
 
 !       *CALL* *AIRSEA (KIJS, KIJL, FL1, WAVNUM,
-!                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC,
+!                       HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, CICOVER,
 !                       US, Z0, Z0B, CHRNCK, ICODE_WND, IUSFG)*
 
 !          *KIJS*    - INDEX OF FIRST GRIDPOINT.
@@ -43,6 +43,7 @@
 !          *TAUW*    - WAVE STRESS.
 !          *TAUWDIR* - WAVE STRESS DIRECTION.
 !          *RNFAC*   - WIND DEPENDENT FACTOR USED IN THE GROWTH RENORMALISATION.
+!          *CICOVER* - SEA ICE COVER
 !          *US*      - OUTPUT OR OUTPUT BLOCK OF FRICTION VELOCITY.
 !          *Z0*      - OUTPUT BLOCK OF ROUGHNESS LENGTH.
 !          *Z0B*     - BACKGROUND ROUGHNESS LENGTH.
@@ -73,7 +74,7 @@
 #include "z0wave.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
-      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC
+      REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (IN) :: HALP, U10DIR, TAUW, TAUWDIR, RNFAC, CICOVER
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (INOUT) :: U10, US
       REAL(KIND=JWRB), DIMENSION(KIJL), INTENT (OUT) :: Z0, Z0B, CHRNCK
 
@@ -94,7 +95,7 @@
 
         !$loki inline
         CALL TAUT_Z0 (KIJS, KIJL, IUSFG,          &
-     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, CICOVER, &
      &                US, Z0, Z0B, CHRNCK)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
@@ -104,7 +105,7 @@
 !        ---------------------------
 
         !$loki inline
-        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, Z0, Z0B, CHRNCK)
+        CALL Z0WAVE (KIJS, KIJL, US, TAUW, U10, CICOVER, Z0, Z0B, CHRNCK)
 
 !*    3. DETERMINE U10 (if needed).
 !        ---------------------------

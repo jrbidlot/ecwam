@@ -72,8 +72,8 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       USE YOWALTAS , ONLY : EGRCRV   ,AFCRV       ,BFCRV
       USE YOWCOUP  , ONLY : LWCOUAST, LWNEMOCOU, LWNEMOTAUOC, LWNEMOCOUWRS
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH    , RHOWG_DFIM
-      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK, ZALPWRS,&
-     &                      LCIWA1   ,LCIWA2    ,LCIWA3
+      USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK, ZALPWRS, &
+     &                      LCIWA_ANY
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
      &               EPSUS ,EPSU10   ,G        ,ZPI      ,ROWATER, EPSMIN
@@ -147,7 +147,7 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
       EPSUS3 =  EPSUS*SQRT(EPSUS)
       EPSMIN1000=EPSMIN*1000.0_JWRB
 
-      IF(LCIWA1 .OR. LCIWA2 .OR. LCIWA3) THEN
+      IF(LCIWA_ANY) THEN
         ZCITHRS=0._JWRB
         CITHRSH_INV=50._JWRB
         ZMAXEXP=20._JWRB
@@ -163,20 +163,17 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 !*    DETERMINE NORMALIZED FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
 !     -------------------------------------------------------------------
 
-!     ENERGY FLUX from SSURF
-!     MOMENTUM FLUX FROM SSURF and SLICE
       DO IJ=KIJS,KIJL
         PHILF(IJ) = 0.0_JWRB
         XSTRESS(IJ) = 0.0_JWRB
         YSTRESS(IJ) = 0.0_JWRB
         XSTRESSICE(IJ) = 0.0_JWRB
         YSTRESSICE(IJ) = 0.0_JWRB
-        SUMXICE(IJ) = 0.0_JWRB
-        SUMYICE(IJ) = 0.0_JWRB
       ENDDO
 
       IF (LWNEMOCOUWRS) THEN
-!     THE INTEGRATION UP TO FR(NFRE)
+!       MOMENTUM FLUX FROM SLICE
+!       THE INTEGRATION UP TO FR(NFRE)
         DO M=1,NFRE
           K=1
 !         NOTE THAT EVERYTHING HERE IS ALWAYS NEGATIVE DUE TO SLICE BEING NEGATIVE
@@ -194,9 +191,11 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
             XSTRESSICE(IJ) = XSTRESSICE(IJ) + ZALPWRS*SUMXICE(IJ)*CINV(IJ,M)*RHOWG_DFIM(M)
             YSTRESSICE(IJ) = YSTRESSICE(IJ) + ZALPWRS*SUMYICE(IJ)*CINV(IJ,M)*RHOWG_DFIM(M)
           ENDDO
-          ENDDO
-        ENDIF
+        ENDDO
+      ENDIF
 
+!     ENERGY FLUX and MOMENTUM FLUX from SSURF
+!     THE INTEGRATION UP TO FR(MIJ(IJ)) because of how RHOWGDFTH is defined (see frcutindex.F90)
       DO M=1,NFRE
         K=1
         DO IJ=KIJS,KIJL
@@ -211,15 +210,16 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
             SUMY(IJ) = SUMY(IJ) + COSTH(K)*SSURF(IJ,K,M)
           ENDDO
         ENDDO
+
         DO IJ=KIJS,KIJL
-          PHILF(IJ)   = PHILF(IJ)   + SUMT(IJ)*RHOWGDFTH(IJ,M)
-          CMRHOWGDFTH(IJ) = CINV(IJ,M)*RHOWGDFTH(IJ,M)
-          XSTRESS(IJ) = XSTRESS(IJ) + SUMX(IJ)*CMRHOWGDFTH(IJ)
-          YSTRESS(IJ) = YSTRESS(IJ) + SUMY(IJ)*CMRHOWGDFTH(IJ)
+          PHILF(IJ)   = PHILF(IJ)   + RHOWGDFTH(IJ,M)*SUMT(IJ)
+          CMRHOWGDFTH(IJ) = RHOWGDFTH(IJ,M)*CINV(IJ,M)
+          XSTRESS(IJ) = XSTRESS(IJ) + CMRHOWGDFTH(IJ)*SUMX(IJ)
+          YSTRESS(IJ) = YSTRESS(IJ) + CMRHOWGDFTH(IJ)*SUMY(IJ)
         ENDDO
       ENDDO
 
-      IF (LICERUN .AND. LWAMRSETCI) THEN
+      IF (LICERUN) THEN
         DO IJ=KIJS,KIJL
           IF(CICOVER(IJ) > ZCITHRS) THEN
             OOVAL(IJ)=EXP(-MIN((CICOVER(IJ)*CITHRSH_INV)**4,ZMAXEXP))
@@ -231,14 +231,21 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
             CD_ICE = OOVAL(IJ)*CD_WAVE + (1.0_JWRB-OOVAL(IJ))*CD_BULK
             USTAR(IJ) = MAX(SQRT(CD_ICE)*U10P,EPSUS)
 
-            ! EM_OC and F1_OC with fully developed model ENERGY 
-            ! The significant wave height derived from EM_OC will be used
-            ! by NEMO as a scaling factor as if it was open ocean
-            EFD = MIN(EFD_FAC*USTAR(IJ)**4, EFD_MAX)
-            EM_OC(IJ) = MAX(OOVAL(IJ)*EM(IJ)+(1.0_JWRB-OOVAL(IJ))*EFD, EFD_MIN)
-            FFD = FFD_FAC/USTAR(IJ)
-            F1_OC(IJ) = OOVAL(IJ)*F1(IJ) + (1.0_JWRB-OOVAL(IJ))*FFD
-            F1_OC(IJ) = MIN(MAX(F1_OC(IJ), FR(2)),FR(NFRE))
+            IF (LWAMRSETCI) THEN
+!             RESETTING EM_OC AND F1_OC OVER SEA ICE
+!             THIS IS ONLY MEANINGFUL IF NO WAVE SEA-ICE INTERACTION 
+              ! EM_OC and F1_OC with fully developed model ENERGY 
+              ! The significant wave height derived from EM_OC will be used
+              ! by NEMO as a scaling factor as if it was open ocean
+              EFD = MIN(EFD_FAC*USTAR(IJ)**4, EFD_MAX)
+              EM_OC(IJ) = MAX(OOVAL(IJ)*EM(IJ)+(1.0_JWRB-OOVAL(IJ))*EFD, EFD_MIN)
+              FFD = FFD_FAC/USTAR(IJ)
+              F1_OC(IJ) = OOVAL(IJ)*F1(IJ) + (1.0_JWRB-OOVAL(IJ))*FFD
+              F1_OC(IJ) = MIN(MAX(F1_OC(IJ), FR(2)),FR(NFRE))
+            ELSE
+              EM_OC(IJ) = EM(IJ)
+              F1_OC(IJ) = F1(IJ)
+            ENDIF
           ELSE
             OOVAL(IJ) = 1.0_JWRB
             USTAR(IJ) = UFRIC(IJ)
@@ -266,11 +273,11 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
       IF (LWNEMOCOUWRS) THEN
         ! FLIP COMPONENTS TO APPLY POSITIVE STRESS TO SEA ICE
-        DO IJ=KIJS,KIJL 
-          TAUICX(IJ) = -XSTRESSICE(IJ) 
+        DO IJ=KIJS,KIJL
+          TAUICX(IJ) = -XSTRESSICE(IJ)
           TAUICY(IJ) = -YSTRESSICE(IJ)
         ENDDO
-      ELSEIF (.NOT. LWNEMOCOUWRS) THEN
+      ELSE
         DO IJ=KIJS,KIJL
           TAUICX(IJ) = 0.0_JWRB
           TAUICY(IJ) = 0.0_JWRB
