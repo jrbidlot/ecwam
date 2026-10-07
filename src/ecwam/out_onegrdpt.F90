@@ -172,7 +172,7 @@
       IF (LPARAM .AND. (.NOT. LLUNSTR)) THEN
         I = MAX(1,NGX/2)
         DO J = 1,NGY
-          IF (GOUT(I,J,IPHYS) /= ZMISS) THEN
+          IF (GOUT(I,J,IPHS) /= ZMISS) THEN
             IF (LDEPTH) THEN
               DEPTH=GOUT(I,J,IPBATHY)
             ELSE
