@@ -172,8 +172,8 @@
       IF (LPARAM .AND. (.NOT. LLUNSTR)) THEN
         I = MAX(1,NGX/2)
         DO J = 1,NGY
-          IF (GOUT(IPHS,I,J) /= ZMISS) THEN
-            IF(LDEPTH) THEN
+          IF (GOUT(I,J,IPHYS) /= ZMISS) THEN
+            IF (LDEPTH) THEN
               DEPTH=GOUT(I,J,IPBATHY)
             ELSE
               DEPTH=999.0_JWRB
@@ -184,7 +184,6 @@
             CD     = GOUT(I,J,IPCD)
             U10    = GOUT(I,J,IPU10) 
             HS     = GOUT(I,J,IPHS)
-            ZMSS   = GOUT(I,J,IPMSS)
             IF (LMSS) THEN
               ZMSS   = GOUT(I,J,IPMSS)
             ELSE
@@ -197,7 +196,7 @@
             DSTAR = G*DEPTH/(USTAR**2)
             E     = HS**2/16.0_JWRB
             ESTAR = G**2*E/(USTAR**4)
-            FMSTAR=USTAR/(GOUT(I,J,IPT1)*G)
+            FMSTAR= USTAR/(GOUT(I,J,IPT1)*G)
 
             HSWS  = GOUT(I,J,IPHSWS) 
             Tws   = G*ITIME/USTAR
@@ -238,7 +237,7 @@
             E_LIM = BETA_K**2/16.0_JWRB
             E_OBS = E_LIM/(1.+T_0/T10)**XP
  
-            IF(LPHIAW) THEN
+            IF (LPHIAW) THEN
               PHIAW=GOUT(I,J,IPPHIAW)
             ELSE
               PHIAW=3.5_JWRB
@@ -251,7 +250,7 @@
               PHIOC=3.5_JWRB
             ENDIF
 
-            IF(LTAUOC) THEN
+            IF (LTAUOC) THEN
               TAUOC=GOUT(I,J,IPTAUOC)
             ELSE
               TAUOC=1.0_JWRB
