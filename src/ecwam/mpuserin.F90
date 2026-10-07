@@ -102,6 +102,7 @@
      &            IDAMPING ,                                            &
      &            LBIWBK   ,                                            &
      &            IREFRA   ,IPROPAGS ,IASSI    ,                        &
+     &            IGRSPR   ,PGSEALLEVIATE ,                             &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
@@ -193,6 +194,7 @@
      &   LSECONDORDER,                                                  &
      &   ICASE, ISHALLO, ITEST, ITESTB, IREST, IASSI,                   &
      &   IPROPAGS,                                                      &
+     &   IGRSPR, PGSEALLEVIATE,                                         &
      &   IREFRA,                                                        &
      &   IPHYS,                                                         &
      &   ISNONLIN,                                                      &
@@ -609,6 +611,8 @@
       ISNONLIN  = 1 
       IDAMPING  = 1 
       IPROPAGS  = 0 
+      IGRSPR    = 0
+      PGSEALLEVIATE = 0.0_JWRB
       IREFRA    = 0 
       ITEST     = 0 
       ITESTB    = 0 
@@ -1086,6 +1090,8 @@
         WRITE(6,*) '*** LWNEMOTAUOC    = ',LWNEMOTAUOC
         WRITE(6,*) '*** LSUBGRID= ',LSUBGRID
         WRITE(6,*) '*** IPROPAGS= ',IPROPAGS
+        WRITE(6,*) '*** IGRSPR= ', IGRSPR
+        WRITE(6,*) '*** PGSEALLEVIATE= ',  PGSEALLEVIATE
         WRITE(6,*) '*** IREFRA= ',IREFRA
         WRITE(6,*) '*** LLUNSTR= ',LLUNSTR
         WRITE(6,*) '*** LVECTOR= ',LVECTOR
