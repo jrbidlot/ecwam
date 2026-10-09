@@ -89,7 +89,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       USE YOWFRED  , ONLY : FR       ,TH       ,COFRM4    ,FLMAX
       USE YOWICE   , ONLY : FLMIN    ,LICERUN  ,LMASKICE  ,LCISCAL,      &
 &                           ZALPFACX
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,LLUNSTR
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_SRD  ,LLUNSTR
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
       USE YOWSTAT  , ONLY : IDELT    ,LBIWBK   ,XIMP
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
@@ -166,8 +166,7 @@ SUBROUTINE IMPLSCH (KIJS, KIJL, FL1,                         &
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: RHOWGDFTH
 !     *FLD* DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !     *SL*  TOTAL SOURCE FUNCTION ARRAY.
-!     *SPOS* : POSITIVE SINPUT ONLY
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL, SPOS
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE 
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE
 
@@ -255,9 +254,19 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
      &               FLM,                       &
      &               UFRIC, TAUW, TAUWDIR,      &
      &               Z0M, Z0B, CHRNCK, PHIWA,   &
-     &               FLD, SL, SPOS,             &
+     &               FLD, SL,                   &
      &               MIJ, RHOWGDFTH, XLLWS)
 
+      ENDDO
+
+!     THE SOURCE TERMS WILL NOT BE DEFINED ABOVE FR(NFRE_SRD)
+      DO M = NFRE_SRD+1, NFRE
+        DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            SL(IJ,K,M) = 0.0_JWRB
+            FLD(IJ,K,M) = 0.0_JWRB
+          ENDDO
+        ENDDO
       ENDDO
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
@@ -271,7 +280,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !     Save source term contributions relevant for the calculation of ocean fluxes
       IF (LCFLX .AND. .NOT.LWVFLX_SNL) THEN
-        DO M=1,NFRE
+        DO M = 1, NFRE_SRD
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               SSOURCE(IJ,K,M) = SL(IJ,K,M)
@@ -286,7 +295,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !     Save source term contributions relevant for the calculation of ocean fluxes
 !!!!!!  SL must only contain contributions contributed to fluxes into the oceans
 !       MODULATE SL BY IMPLICIT FACTOR
-        DO M=1,NFRE
+        DO M = 1, NFRE_SRD
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
@@ -305,7 +314,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
 !       Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
         IF (LCISCAL) THEN
-          DO M = 1,NFRE
+          DO M = 1,NFRE_SRD
             DO K = 1,NANG
               DO IJ = KIJS,KIJL
                 SL(IJ,K,M)  = (1._JWRB-CICOVER(IJ))*SL(IJ,K,M)  
@@ -339,14 +348,14 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 !     INCREASE OF SPECTRUM IN A TIME STEP IS LIMITED TO A FINITE
 !     FRACTION OF A TYPICAL F**(-4) EQUILIBRIUM SPECTRUM.
 
-      DO M=1,NFRE
+      DO M = 1, NFRE_SRD
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
       DO IJ=KIJS,KIJL
         USFM(IJ) = UFRIC(IJ)*MAX(FMEANWS(IJ), FMEAN(IJ))
       ENDDO
 
-      DO M=1,NFRE
+      DO M = 1, NFRE_SRD
         DO IJ=KIJS,KIJL
           TEMP(IJ,M) = USFM(IJ)*DELFL(M)
         ENDDO
@@ -354,7 +363,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 
       IF (LLUNSTR) THEN
         DO K=1,NANG
-          DO M=1,NFRE
+          DO M = 1, NFRE_SRD
             DO IJ=KIJS,KIJL
               GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
               GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
@@ -369,7 +378,7 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDDO
       ELSE
         DO K=1,NANG
-          DO M=1,NFRE
+          DO M = 1, NFRE_SRD
             DO IJ=KIJS,KIJL
               GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
               GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1

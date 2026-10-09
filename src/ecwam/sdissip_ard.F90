@@ -64,7 +64,7 @@
 
       USE YOWFRED  , ONLY : FR      , TH     ,ZPIFR   ,FRATIO    ,DELTH
       USE YOWPCONS , ONLY : G        ,ZPI
-      USE YOWPARAM , ONLY : NANG    ,NFRE
+      USE YOWPARAM , ONLY : NANG    ,NFRE    ,NFRE_SRD
       USE YOWPHYS  , ONLY : SDSBR   ,ISDSDTH ,ISB     ,IPSAT    ,      &
 &                  SSDSC2  , SSDSC4, SSDSC6,  MICHE, SSDSC3, SSDSBRF1, &
 &                  BRKPBCOEF ,SSDSC5, NSDSNTH,                         &
@@ -98,15 +98,15 @@
 
       REAL(KIND=JWRB) :: SSDSC2_SIG 
       REAL(KIND=JWRB), DIMENSION(KIJL) :: FACTURB
-      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: FACSAT, FACWTRB, TEMP1 
-      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: BTH0 !saturation spectrum
-      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: C_, C_C, DSIP, TRPZ_DSIP
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: BTH !saturation spectrum 
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: TEMP2
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: D
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SCUMUL 
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: RENEWALFREQ
-      REAL(KIND=JWRB), DIMENSION(KIJL,0:NANG/2,NFRE) :: WCUMUL
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE_SRD) :: FACSAT, FACWTRB, TEMP1 
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE_SRD) :: BTH0 !saturation spectrum
+      REAL(KIND=JWRB), DIMENSION(KIJL,NFRE_SRD) :: C_, C_C, DSIP, TRPZ_DSIP
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE_SRD) :: BTH !saturation spectrum 
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE_SRD) :: TEMP2
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE_SRD) :: D
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE_SRD) :: SCUMUL 
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE_SRD) :: RENEWALFREQ
+      REAL(KIND=JWRB), DIMENSION(KIJL,0:NANG/2,NFRE_SRD) :: WCUMUL
 
 ! ----------------------------------------------------------------------
 
@@ -124,14 +124,14 @@
 
       SSDSC6M1=1._JWRB-SSDSC6
 
-      DO M=1, NFRE
+      DO M = 1, NFRE_SRD
         DO IJ=KIJS,KIJL
           FACSAT(IJ,M) = WAVNUM(IJ,M)*TPIINV*XK2CG(IJ,M)
         ENDDO
       ENDDO
 
       ! COMPUTE SATURATION SPECTRUM
-      DO M=1,NFRE
+      DO M = 1, NFRE_SRD
         DO IJ=KIJS,KIJL
           BTH0(IJ,M) = 0.0_JWRB
         ENDDO
@@ -142,7 +142,7 @@
         ENDDO
       ENDDO
 
-      DO M=1,NFRE
+      DO M = 1, NFRE_SRD
         DO K=1,NANG
           ! integrates in directional sector
           DO K2=1,NSDSNTH*2+1
@@ -161,7 +161,7 @@
 
       ! SATURATION TERM
 
-      DO  M=1,NFRE
+      DO  M = 1, NFRE_SRD
         SSDSC2_SIG = SSDSC2*ZPIFR(M)
         ZCOEF = SSDSC2_SIG*SSDSC6
         ZCOEFM1 = SSDSC2_SIG*SSDSC6M1
@@ -188,7 +188,7 @@
 !!! wrong !!???        NDIKCUMUL = NINT(SSDSBRF1/(FRATIO-1.))
         NDIKCUMUL = NINT(-LOG(SSDSBRF1)/LOG(FRATIO))
 
-        DO M=1,NFRE
+        DO M = 1, NFRE_SRD
           DO IJ=KIJS,KIJL
             C_(IJ,M)=ZPIFR(M)/WAVNUM(IJ,M)
             C_C(IJ,M)=C_(IJ,M)**2
@@ -196,7 +196,7 @@
           ENDDO
         ENDDO
 
-        DO M2=1,NFRE-NDIKCUMUL
+        DO M2 = 1, NFRE_SRD-NDIKCUMUL
           DO IJ=KIJS,KIJL
             IF (BTH0(IJ,M2) > SDSBR) THEN
               TEMP1(IJ,M2)=1.0_JWRB
@@ -205,7 +205,7 @@
             ENDIF
           ENDDO
         ENDDO
-        DO M2=1,NFRE-NDIKCUMUL
+        DO M2 = 1, NFRE_SRD-NDIKCUMUL
           DO K2=1,NANG
             DO IJ=KIJS,KIJL
               SCUMUL(IJ,K2,M2)=TEMP1(IJ,M2)*(MAX(SQRT(BTH(IJ,K2,M2))-EPSR,0.0_JWRB))**2
@@ -213,7 +213,7 @@
           ENDDO
         ENDDO
 
-        DO M=NDIKCUMUL+1,NFRE
+        DO M = NDIKCUMUL+1, NFRE_SRD
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               RENEWALFREQ(IJ,K,M)=0.0_JWRB
@@ -222,7 +222,7 @@
         ENDDO
 
 
-        DO M=NDIKCUMUL+1,NFRE
+        DO M = NDIKCUMUL+1, NFRE_SRD
 
           IF (M-NDIKCUMUL >= 3) THEN
             DO IJ=KIJS,KIJL
@@ -274,7 +274,7 @@
           ENDDO
         ENDDO
 
-        DO M=NDIKCUMUL+1,NFRE
+        DO M = NDIKCUMUL+1, NFRE_SRD
           DO K=1,NANG
             DO IJ=KIJS,KIJL
               D(IJ,K,M)= D(IJ,K,M) + RENEWALFREQ(IJ,K,M)
@@ -290,7 +290,7 @@
         DO IJ=KIJS,KIJL
           FACTURB(IJ) = TMP01*RAORW(IJ)*UFRIC(IJ)*UFRIC(IJ)
         ENDDO
-        DO M=1, NFRE
+        DO  M = 1, NFRE_SRD
           DO IJ=KIJS,KIJL
             FACWTRB(IJ,M) = ZPIFR(M)*WAVNUM(IJ,M)*FACTURB(IJ)
           ENDDO
@@ -304,7 +304,7 @@
 
 
       ! ADD ALL CONTRIBUTIONS TO SOURCE TERM
-      DO  M=1, NFRE
+      DO  M = 1, NFRE_SRD
         DO K=1, NANG
           DO IJ=KIJS,KIJL
             SL(IJ,K,M) = SL(IJ,K,M)+D(IJ,K,M)*FL1(IJ,K,M)

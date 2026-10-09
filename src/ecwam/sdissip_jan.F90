@@ -67,7 +67,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,DELTH    ,DFIM     ,FRATIO
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_SRD
       USE YOWPCONS , ONLY : G        ,ZPI      ,ZPI4GM2
       USE YOWPHYS  , ONLY : CDIS     ,DELTA_SDIS, RNU    ,CDISVIS
 
@@ -107,7 +107,7 @@
         SDS(IJ)=CONSS*F1MEAN(IJ)*EMEAN(IJ)**2*XKMEAN(IJ)**4
       ENDDO
 
-      DO M=1,NFRE
+      DO M = 1, NFRE_SRD
         DO IJ=KIJS,KIJL
           X(IJ) = WAVNUM(IJ,M)/XKMEAN(IJ)
           XK2(IJ) = WAVNUM(IJ,M)**2

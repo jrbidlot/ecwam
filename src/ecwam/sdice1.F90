@@ -62,7 +62,7 @@
       USE YOWFRED  , ONLY : FR      
       USE YOWICE   , ONLY : NICT   ,NICH     ,TICMIN   ,HICMIN   ,      &
      &              DTIC   ,DHIC   ,CIDEAC   ,ZALPFACB
-      USE YOWPARAM , ONLY : NANG    ,NFRE
+      USE YOWPARAM , ONLY : NANG    ,NFRE    ,NFRE_SRD
       USE YOWPCONS , ONLY : G       ,ZPI
       USE YOWSTAT  , ONLY : IDELT   ,XIMP
 
@@ -140,7 +140,7 @@
       ENDDO
 
 
-      DO M=1,NFRE
+      DO M = 1, NFRE
         TW=1.0_JWRB/FR(M)
         IT=FLOOR((TW-TICMIN)/DTIC+1)
         IT=MAX(1,MIN(IT,NICT))
@@ -165,17 +165,24 @@
         ENDDO
       ENDDO
 
-      DO M = 1,NFRE
+      DO M = 1, NFRE
         DO IJ = KIJS,KIJL
           FLDICE(IJ,M) = -ALP(IJ,M)*CGROUP(IJ,M)         
         ENDDO
       ENDDO
 
-      DO M = 1,NFRE
+      DO M = 1, NFRE
+        DO K = 1,NANG
+          DO IJ = KIJS,KIJL
+            SLICE(IJ,K,M) =  FL1(IJ,K,M) * FLDICE(IJ,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
+      DO M = 1, NFRE_SRD
         DO K = 1,NANG
           DO IJ = KIJS,KIJL
 !           apply the source term
-            SLICE(IJ,K,M) =  FL1(IJ,K,M) * FLDICE(IJ,M)
             SL(IJ,K,M)    =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
             FLD(IJ,K,M)   =  FLD(IJ,K,M) + CICV(IJ)*FLDICE(IJ,M)
           ENDDO
@@ -183,7 +190,7 @@
       ENDDO
 
       IF (LWNEMOCOUWRS) THEN
-        DO M = 1,NFRE
+        DO M = 1, NFRE
           DO K = 1,NANG
             DO IJ = KIJS,KIJL
 !             to be used for wave radiative stress calculation

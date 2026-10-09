@@ -51,7 +51,7 @@
       USE YOWFRED  , ONLY : FR       ,DFIM       ,FRATIO   ,FLOGSPRDM1, &
      &                DELTH          ,RHOWG_DFIM ,FRIC
       USE YOWICE   , ONLY : CITHRSH_TAIL
-      USE YOWPARAM , ONLY : NFRE
+      USE YOWPARAM , ONLY : NFRE     ,NFRE_SRD
       USE YOWPCONS , ONLY : G        ,ZPI        ,EPSMIN   ,ROWATER
       USE YOWPHYS  , ONLY : TAILFACTOR, TAILFACTOR_PM
       USE YOWWIND  , ONLY : WSPMIN_WAVE
@@ -95,12 +95,12 @@
           FPM = FPPM/MAX(UFRIC(IJ),EPSMIN)
           FPM4 = MAX(FM2,FPM)
           MIJ(IJ) = INT((LOG10(FPM4)-ZLOG10FR1)*FLOGSPRDM1)+2
-          MIJ(IJ) = MIN(MAX(2,MIJ(IJ)),NFRE)
+          MIJ(IJ) = MIN(MAX(2,MIJ(IJ)),NFRE_SRD)
           FCUT(IJ) = FPM4
-          FCUT(IJ) = MAX(MIN(FCUT(IJ),FR(NFRE)),FR(1))
+          FCUT(IJ) = MAX(MIN(FCUT(IJ),FR(NFRE_SRD)),FR(1))
         ELSE
-          MIJ(IJ) = NFRE
-          FCUT(IJ) = FR(NFRE)
+          MIJ(IJ) = NFRE_SRD
+          FCUT(IJ) = FR(NFRE_SRD)
         ENDIF
       ENDDO
 

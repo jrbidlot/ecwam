@@ -62,7 +62,7 @@
       USE YOWCOUP  , ONLY : LWNEMOCOUWRS
       USE YOWFRED  , ONLY : DFIM
       USE YOWICE   , ONLY : CDICWA  ,ZALPFACB
-      USE YOWPARAM , ONLY : NANG    ,NFRE
+      USE YOWPARAM , ONLY : NANG    ,NFRE,  NFRE_SRD
       USE YOWPCONS , ONLY : EPSMIN  
       USE YOWSTAT  , ONLY : IDELT   ,XIMP
 
@@ -100,19 +100,26 @@
       DELTM = 1.0_JWRB/DELT
       DELT5 = XIMP*DELT
 
-      DO M = 1,NFRE
+      DO M = 1, NFRE
         XK2(M)= WAVNUM(IJ,M)**2
       ENDDO
 
-      DO M = 1,NFRE
+      DO M = 1, NFRE
         DO K = 1,NANG
           DO IJ = KIJS,KIJL
             EWH            = 4.0_JWRB*SQRT(MAX(EPSMIN,FL1(IJ,K,M)*DFIM(M)))
             ALP            = CDICWA*XK2(M)*EWH*ZALPFACB
 
-!           apply the source term
             FLDICE(IJ,M)   = -ALP * CGROUP(IJ,M)
             SLICE(IJ,K,M)  =  FL1(IJ,K,M) * FLDICE(IJ,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
+      DO M = 1, NFRE_SRD
+        DO K = 1,NANG
+          DO IJ = KIJS,KIJL
+!           apply the source term
             SL(IJ,K,M)     =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
             FLD(IJ,K,M)    =  FLD(IJ,K,M) + CICV(IJ)*FLDICE(IJ,M)
           ENDDO
@@ -120,7 +127,7 @@
       ENDDO
 
       IF (LWNEMOCOUWRS) THEN
-        DO M = 1,NFRE
+        DO M = 1, NFRE
           DO K = 1,NANG
             DO IJ = KIJS,KIJL
 !             to be used for wave radiative stress calculation

@@ -72,7 +72,7 @@
       USE YOWCOUT  , ONLY : LWFLUXOUT 
       USE YOWFRED  , ONLY : FR       ,TH
       USE YOWICE   , ONLY : LICERUN  ,FLMIN, LCISCAL , ZALPFACX
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE , NFRE_SRD
       USE YOWPCONS , ONLY : WSEMEAN_MIN, ROWATERM1
       USE YOWSTAT  , ONLY : IDELT    ,XIMP
 
@@ -137,9 +137,9 @@
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: COSWDIF, SINWDIF2
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG) :: FLM
       REAL(KIND=JWRB), DIMENSION(KIJL,NFRE) :: RHOWGDFTH
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL, SPOS
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: FLD, SL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SSOURCE
-      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE, SLTEMP
+      REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE) :: SLICE
 
       LOGICAL :: LCFLX
       LOGICAL :: LUPDTUS
@@ -200,8 +200,18 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
      &             FLM,                             &
      &             UFRIC, TAUW_LOC, TAUWDIR_LOC,    &
      &             Z0M, Z0B, CHRNCK, PHIWA,         &
-     &             FLD, SL, SPOS,                   &
+     &             FLD, SL,                         &
      &             MIJ, RHOWGDFTH, XLLWS)
+
+!     THE SOURCE TERMS WILL NOT BE DEFINED ABOVE FR(NFRE_SRD)
+      DO M = NFRE_SRD+1, NFRE
+        DO K=1,NANG
+          DO IJ=KIJS,KIJL
+            SL(IJ,K,M) = 0.0_JWRB
+            FLD(IJ,K,M) = 0.0_JWRB
+          ENDDO
+        ENDDO
+      ENDDO
 
       IF (LCFLX) THEN
 
@@ -221,7 +231,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 !         Save source term contributions relevant for the calculation of ocean fluxes
 !!!!!!    SL must only contain contributions contributed to fluxes into the oceans
 !         MODULATE SL BY IMPLICIT FACTOR
-          DO M=1,NFRE
+          DO M = 1, NFRE_SRD
             DO K=1,NANG
               DO IJ=KIJS,KIJL
                 GTEMP1 = MAX((1.0_JWRB-DELT5*FLD(IJ,K,M)),1.0_JWRB)
@@ -235,7 +245,7 @@ IF (LHOOK) CALL DR_HOOK('WDFLUXES',0,ZHOOK_HANDLE)
 
 !         Use linear scaling of ALL proceeding source terms under sea ice (this is a complete unknown)
           IF (LCISCAL) THEN
-            DO M = 1,NFRE
+            DO M = 1, NFRE_SRD
               DO K = 1,NANG
                 DO IJ = KIJS,KIJL
                   SL(IJ,K,M)  = (1._JWRB - CICOVER(IJ))*SL(IJ,K,M)

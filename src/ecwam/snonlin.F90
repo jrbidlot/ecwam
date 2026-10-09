@@ -69,7 +69,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED  , ONLY : FR       ,FRATIO   ,ZPIFR
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_SRD
       USE YOWINDN  , ONLY : IKP      ,IKP1     ,IKM      ,IKM1     ,    &
      &            K1W      ,K2W      ,K11W     ,K21W     ,AF11     ,    &
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,              &
@@ -136,13 +136,13 @@
         ENDDO
 
       CASE(1)      
-        DO MC=1,NFRE
+        DO MC = 1, NFRE_SRD
           DO IJ = KIJS, KIJL 
             ENH(IJ,MC) = MAX(MIN(ENH_MAX,TRANSF(WAVNUM(IJ,MC),DEPTH(IJ))),ENH_MIN)
           ENDDO
         ENDDO
-        DO MC=NFRE+1,MLSTHG
-          XK = GM1*(ZPIFR(NFRE)*FRATIO**(MC-NFRE))**2
+        DO MC = NFRE_SRD+1, MLSTHG
+          XK = GM1*(ZPIFR(NFRE_SRD)*FRATIO**(MC-NFRE_SRD))**2
           DO IJ = KIJS, KIJL 
             ENH(IJ,MC) = MAX(MIN(ENH_MAX,TRANSF(XK,DEPTH(IJ))),ENH_MIN)
           ENDDO
@@ -151,13 +151,13 @@
       CASE(2)      
         !$loki inline      
         CALL PEAK_ANG(KIJS, KIJL, FL1, XNU, SIG_TH)
-        DO MC=1,NFRE
+        DO MC = 1, NFRE_SRD
           DO IJ = KIJS, KIJL 
             ENH(IJ,MC) = TRANSF_SNL(WAVNUM(IJ,MC), DEPTH(IJ), XNU(IJ), SIG_TH(IJ))
           ENDDO
         ENDDO
-        DO MC=NFRE+1,MLSTHG
-          XK = GM1*(ZPIFR(NFRE)*FRATIO**(MC-NFRE))**2
+        DO MC = NFRE_SRD+1, MLSTHG
+          XK = GM1*(ZPIFR(NFRE_SRD)*FRATIO**(MC-NFRE_SRD))**2
           DO IJ = KIJS, KIJL 
             ENH(IJ,MC) = TRANSF_SNL(XK, DEPTH(IJ), XNU(IJ), SIG_TH(IJ))
           ENDDO
@@ -169,7 +169,7 @@
 !        ---------------
 
       MFR1STFR=-MFRSTLW+1
-      MFRLSTFR=NFRE-KFRH+MFR1STFR
+      MFRLSTFR=NFRE_SRD-KFRH+MFR1STFR
 
       DO MC=1,MLSTHG
         MP  = IKP (MC)
@@ -348,7 +348,7 @@
                 FLD(IJ,K21,MM ) = FLD(IJ,K21,MM ) + DELAM(IJ)*FKLAM22
               ENDDO
 
-              IF (MM1 <= NFRE) THEN
+              IF (MM1 <= NFRE_SRD) THEN
                 DO IJ=KIJS,KIJL
                   SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
                 ENDDO
@@ -362,7 +362,7 @@
                   FLD(IJ,K21,MM1) = FLD(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
                 ENDDO
 
-                IF (MC <= NFRE) THEN
+                IF (MC <= NFRE_SRD) THEN
                   DO IJ=KIJS,KIJL
                     SL(IJ,K  ,MC ) = SL(IJ,K  ,MC ) - 2.0_JWRB*AD(IJ)
                   ENDDO
@@ -370,7 +370,7 @@
                     FLD(IJ,K  ,MC ) = FLD(IJ,K  ,MC ) - 2.0_JWRB*DELAD(IJ)
                   ENDDO
 
-                  IF (MP <= NFRE) THEN
+                  IF (MP <= NFRE_SRD) THEN
                     DO IJ=KIJS,KIJL
                       SL(IJ,K1 ,MP ) = SL(IJ,K1 ,MP ) + AD(IJ)*FKLAMP1
                     ENDDO
@@ -386,7 +386,7 @@
      &                               + DELAP(IJ)*FKLAP22
                     ENDDO
 
-                    IF (MP1 <= NFRE) THEN
+                    IF (MP1 <= NFRE_SRD) THEN
                       DO IJ=KIJS,KIJL
                         SL(IJ,K1 ,MP1) = SL(IJ,K1 ,MP1)                 &
      &                                 + AD(IJ)*FKLAMPA

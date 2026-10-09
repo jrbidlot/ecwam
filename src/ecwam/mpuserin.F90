@@ -85,7 +85,7 @@
       USE YOWMESPAS, ONLY : LFDBIOOUT,LGRIBIN  ,LGRIBOUT ,LNOCDIN
       USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
-      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,              &
+      USE YOWPARAM , ONLY : NANG     ,NFRE      ,NFRE_SRD, NFRE_RED ,   &
      &            SWAMPWIND,SWAMPWIND2,DTNEWWIND,LTURN90 ,              &
      &            SWAMPCIFR,SWAMPCITH,LWDINTS  ,LL1D     ,LLUNSTR
       USE YOWPCONS , ONLY : ROAIR    ,ROWATER  ,GAM_SURF
@@ -177,7 +177,7 @@
 
       NAMELIST /NALINE/ CLHEADER,                                       &
      &   CLDOMAIN,                                                      &
-     &   NANG, IFRE1, FR1, NFRE, NFRE_RED,                              &
+     &   NANG, IFRE1, FR1, NFRE, NFRE_SRD, NFRE_RED,                    &
      &   CBPLTDT, CEPLTDT, CDATEF,                                      &
      &   IFRELFMAX, DELPRO_LF, IDELPRO, IDELT, IDELWO, IDELWI, CLMTSU,  &
      &   IDELALT, IDELINT, IDELRES,                                     &
@@ -553,6 +553,7 @@
       IFRE1     = 3
       FR1       = 4.177248E-02_JWRB
       NFRE      = 0
+      NFRE_SRD  = 0
       NFRE_RED  = 0
 
       CLMTSU    = 'S'
@@ -867,7 +868,21 @@
       ENDIF
       IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
       IF( NFRE_RED <= 0 ) NFRE_RED = NFRE
+      IF( NFRE_SRD <= 0 ) NFRE_SRD = NFRE
       IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
+
+      IF (NFRE_SRD > NFRE ) THEN
+        WRITE (IU06,*) '**********************************************'
+        WRITE (IU06,*) '*                                            *'
+        WRITE (IU06,*) '*       FATAL ERROR IN SUB. UIPREP           *'
+        WRITE (IU06,*) '*       ==========================           *'
+        WRITE (IU06,*) '* THE REDUCED NUMBER OF FREQUENCIES NFRE_SRD *'
+        WRITE (IU06,*) '* IS LARGER THAN THE TOTAL NUMNBER NFRE  !!  *'
+        WRITE (IU06,*) '* NFRE_SRD = ', NFRE_SRD
+        WRITE (IU06,*) '* NFRE     = ', NFRE
+        WRITE (IU06,*) '**********************************************'
+        CALL WAM_ABORT(__FILENAME__,__LINE__)
+      ENDIF
 
       IF (NFRE_RED > NFRE ) THEN
         WRITE (IU06,*) '**********************************************'
@@ -1064,6 +1079,7 @@
         WRITE(6,*) '*** MPUSERIN has read the following settings'
         WRITE(6,*) '*** NANG=',NANG
         WRITE(6,*) '*** NFRE=',NFRE
+        WRITE(6,*) '*** NFRE_SRD=',NFRE_SRD
         WRITE(6,*) '*** NFRE_RED=',NFRE_RED
         WRITE(6,*) '*** CBPLTDT=',CBPLTDT
         WRITE(6,*) '*** CEPLTDT=',CEPLTDT

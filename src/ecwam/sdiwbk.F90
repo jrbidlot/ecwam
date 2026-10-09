@@ -51,7 +51,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWPARAM , ONLY : NANG     ,NFRE,    NFRE_RED
+      USE YOWPARAM , ONLY : NANG     ,NFRE   ,NFRE_SRD  ,NFRE_RED
       USE YOWSTAT  , ONLY : LBIWBK
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
@@ -103,7 +103,7 @@
            ENDIF
         ENDDO 
       
-        DO M = 1, NFRE_RED
+        DO M = 1, MIN(NFRE_SRD, NFRE_RED)
            DO K=1,NANG
               DO IJ=KIJS,KIJL
                 IF(DEPTH(IJ) < DEPTHTRS) THEN

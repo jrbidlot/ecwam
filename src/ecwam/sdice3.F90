@@ -63,7 +63,7 @@
       USE YOWCOUP  , ONLY : LWNEMOCOUWRS
       USE YOWFRED  , ONLY : FR      
       USE YOWICE   , ONLY : ZALPFACB
-      USE YOWPARAM , ONLY : NANG    ,NFRE
+      USE YOWPARAM , ONLY : NANG    ,NFRE   ,NFRE_SRD
       USE YOWPCONS , ONLY : G       ,ZPI
       USE YOWSTAT  , ONLY : IDELT   ,XIMP
 
@@ -112,7 +112,7 @@
 !          Best fit w Tempelfjorde obs from Lotfi Aouf
            CDICE=0.0656_JWRB
 
-           DO M = 1,NFRE
+           DO M = 1, NFRE
              DO IJ = KIJS,KIJL
                 ALP(IJ,M) = (CDICE*CITH(IJ)*WAVNUM(IJ,M)**2) * ALPFAC(IJ)
              ENDDO
@@ -122,14 +122,14 @@
 !          Jie Yu, W. Erik Rogers, David W. Wang 2022
            CDICE=0.1274_JWRB*( ZPI/SQRT(G) )**(4.5_JWRB)
 
-           DO M = 1,NFRE
+           DO M = 1, NFRE
              FRP(M) = FR(M)**4.5_JWRB
            ENDDO
            CDICE2 = 2._JWRB*CDICE*ZALPFACB
            DO IJ = KIJS,KIJL
              ALPTMP(IJ) = (CDICE2*(CITH(IJ)**1.25_JWRB)) * ALPFAC(IJ) 
            ENDDO
-           DO M = 1,NFRE
+           DO M = 1, NFRE
              DO IJ = KIJS,KIJL
                ALP(IJ,M) = ALPTMP(IJ)*FRP(M)
              ENDDO
@@ -137,17 +137,24 @@
          
       END SELECT
 
-      DO M = 1,NFRE
+      DO M = 1, NFRE
          DO IJ = KIJS,KIJL
            FLDICE(IJ,M) = -ALP(IJ,M)*CGROUP(IJ,M)
          ENDDO
       ENDDO
 
-      DO M = 1,NFRE
+      DO M = 1, NFRE
+        DO K = 1,NANG
+          DO IJ = KIJS,KIJL
+            SLICE(IJ,K,M) =  FL1(IJ,K,M) * FLDICE(IJ,M)
+          ENDDO
+        ENDDO
+      ENDDO
+
+      DO M = 1, NFRE_SRD
         DO K = 1,NANG
           DO IJ = KIJS,KIJL
 !           apply the source term
-            SLICE(IJ,K,M) =  FL1(IJ,K,M) * FLDICE(IJ,M)
             SL(IJ,K,M)    =  SL(IJ,K,M)  + CICV(IJ)*SLICE(IJ,K,M)
             FLD(IJ,K,M)   =  FLD(IJ,K,M) + CICV(IJ)*FLDICE(IJ,M)
           ENDDO
@@ -155,7 +162,7 @@
       ENDDO
 
       IF (LWNEMOCOUWRS) THEN
-        DO M = 1,NFRE
+        DO M = 1, NFRE
           DO K = 1,NANG
             DO IJ = KIJS,KIJL
 !             to be used for wave radiative stress calculation

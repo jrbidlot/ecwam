@@ -212,6 +212,7 @@ cat > wam_namelist << EOF
 &NALINE
   NANG                  = ${wamnang},
   NFRE                  = 40,
+  NFRE_SRD              = 33,
   NFRE_RED              = ${wamnfre},
   CLHEADER              = " WAVE MODEL ",
   CBPLTDT               = "${begofrn}",

@@ -74,7 +74,7 @@ SUBROUTINE WNFLUXES (KIJS, KIJL,                       &
       USE YOWFRED  , ONLY : FR       ,COSTH       ,SINTH    , RHOWG_DFIM
       USE YOWICE   , ONLY : LICERUN  ,LWAMRSETCI, CITHRSH, CIBLOCK, ZALPWRS, &
      &                      LCIWA_ANY
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_SRD
       USE YOWPCONS , ONLY : TAUOCMIN ,TAUOCMAX ,PHIEPSMIN,PHIEPSMAX,    &
      &               EPSUS ,EPSU10   ,G        ,ZPI      ,ROWATER, EPSMIN
 
@@ -196,7 +196,7 @@ IF (LHOOK) CALL DR_HOOK('WNFLUXES',0,ZHOOK_HANDLE)
 
 !     ENERGY FLUX and MOMENTUM FLUX from SSURF
 !     THE INTEGRATION UP TO FR(MIJ(IJ)) because of how RHOWGDFTH is defined (see frcutindex.F90)
-      DO M=1,NFRE
+      DO M = 1, NFRE_SRD
         K=1
         DO IJ=KIJS,KIJL
           SUMT(IJ) = SSURF(IJ,K,M)

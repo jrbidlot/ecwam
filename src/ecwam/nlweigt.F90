@@ -56,7 +56,7 @@
      &            FKLAP    ,FKLAP1   ,FKLAM    ,FKLAM1   ,ACL1     ,    &
      &            ACL2     ,CL11     ,CL21     ,DAL1     ,DAL2     ,    &
      &            FRH      ,KFRH     ,MFRSTLW  ,MLSTHG
-      USE YOWPARAM , ONLY : NANG     ,NFRE
+      USE YOWPARAM , ONLY : NANG     ,NFRE_SRD
       USE YOWPCONS , ONLY : PI       ,DEG      ,G        ,G_EARTH
       USE YOWTEST  , ONLY : IU06
 
@@ -101,13 +101,13 @@
 
       MFRSTLW=1+ISM
 
-      MLSTHG=NFRE-ISM
+      MLSTHG=NFRE_SRD-ISM
 
       KFRH=-ISM+ISP+2
 
       ALLOCATE(JA1(NANG,2))
       ALLOCATE(JA2(NANG,2))
-      ALLOCATE(FRLON(MFRSTLW:NFRE+KFRH))
+      ALLOCATE(FRLON(MFRSTLW:NFRE_SRD+KFRH))
 
       IF (.NOT.ALLOCATED(IKP)) ALLOCATE(IKP(MFRSTLW:MLSTHG))
       IF (.NOT.ALLOCATED(IKP1)) ALLOCATE(IKP1(MFRSTLW:MLSTHG))
@@ -214,13 +214,13 @@
 !*    2. COMPUTATION FOR FREQUENCY GRID.
 !        -------------------------------
 
-      DO M=1,NFRE
+      DO M=1,NFRE_SRD
         FRLON(M) = FR(M)
       ENDDO
       DO M=0,MFRSTLW,-1
         FRLON(M)=FRLON(M+1)/FRATIO
       ENDDO
-      DO M=NFRE+1,NFRE+KFRH
+      DO M=NFRE_SRD+1,NFRE_SRD+KFRH
         FRLON(M) = FRATIO*FRLON(M-1)
       ENDDO
       DO M=MFRSTLW,MLSTHG
@@ -261,8 +261,8 @@
 !        ------------------------------
 
       DO I=1,KFRH
-        M = NFRE+I-1
-        FRH(I) = (FRLON(NFRE)/FRLON(M))**5
+        M = NFRE_SRD+I-1
+        FRH(I) = (FRLON(NFRE_SRD)/FRLON(M))**5
       ENDDO
 
 !*    4. PRINTER PROTOCOL.
