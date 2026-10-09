@@ -108,7 +108,7 @@ fi
 cat > procin <<EOF
 &NALINE
   CLINE=     " PREPROC INPUT "
-  NFRE=      36,
+  NFRE=      40,
   NFRE_RED=  ${wamnfre},
   FR1=       ${fr1},
   IFRE1=     ${ifre1},
