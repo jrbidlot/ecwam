@@ -211,7 +211,7 @@ ln -s ${DATA_DIR}/${forcings_file} sfcwindin
 cat > wam_namelist << EOF
 &NALINE
   NANG                  = ${wamnang},
-  NFRE                  = 36,
+  NFRE                  = 38,
   NFRE_RED              = ${wamnfre},
   CLHEADER              = " WAVE MODEL ",
   CBPLTDT               = "${begofrn}",
