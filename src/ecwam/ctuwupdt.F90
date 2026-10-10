@@ -135,8 +135,8 @@ IF (LFRSTCTU) THEN
         JXO(K,1)=2
         JXO(K,2)=1
         KCR(K,1)=2
-        KCR(K,2)=3
-        KCR(K,3)=1
+        KCR(K,2)=1
+        KCR(K,3)=3
         KCR(K,4)=4
       ENDIF
     ELSE
