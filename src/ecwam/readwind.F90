@@ -309,6 +309,7 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
      &                         CDSTRING='READWIND IDUM:')
             IF (IRANK /= IREAD) THEN
               ISIZE=IDUM(1)
+              IF (ALLOCATED(KGRIB)) DEALLOCATE(KGRIB)
               ALLOCATE(KGRIB(ISIZE))
             ENDIF
 
@@ -379,9 +380,12 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
               ICODE = 3
             ENDIF
 
-          ELSEIF (IPARAM == 31 .OR. IPARAMID == 263001 ) THEN
+          ELSEIF (IPARAM == 31 .OR. IPARAMID == 262001 .OR. IPARAMID == 263001 ) THEN
 
-            IF (LLNOTREAD(IVAR)) THEN 
+            IF (.NOT.LICERUN) THEN
+!             SKIP SEA ICE MASK INFORMATION AS IT IS NOT NEEDED
+              GOTO 2002
+            ELSEIF (LLNOTREAD(IVAR)) THEN 
               DO J = NYS, NYE
                 JSN = NGY-J+1
                 DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
@@ -389,17 +393,16 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
-            ELSEIF (.NOT.LICERUN .AND.                                  &
-     &              (IPARAM == 31 .OR. IPARAMID == 263001 ) ) THEN
-!             SKIP SEA ICE MASK INFORMATION AS IT IS NOT NEEDED
-              GOTO 2002
             ELSE
               LLABORT=.TRUE.
             ENDIF
 
-          ELSEIF (IPARAM == 92 .OR. IPARAMID == 263000) THEN
+          ELSEIF (IPARAM == 92 .OR. IPARAMID == 262000 .OR. IPARAMID == 263000 ) THEN
 
-            IF (LLNOTREAD(IVAR)) THEN 
+            IF (.NOT.LICETH) THEN
+!             SKIP SEA ICE THICKNESS INFORMATION AS IT IS NOT NEEDED
+              GOTO 2002
+            ELSEIF (LLNOTREAD(IVAR)) THEN 
               DO J = NYS, NYE
                 JSN = NGY-J+1
                 DO I = NXS, MIN(NLONRGG_LOC(JSN), NXE)
@@ -407,10 +410,6 @@ SUBROUTINE READWIND (CDTWIR, FILNM, LLNOTOPENED, IREAD,   &
                 ENDDO
               ENDDO
               LLNOTREAD(IVAR)=.FALSE.
-            ELSEIF (.NOT.LICETH .AND.                                   &
-     &              (IPARAM == 92 .OR. IPARAMID == 263000) ) THEN
-!             SKIP SEA ICE THICKNESS INFORMATION AS IT IS NOT NEEDED
-              GOTO 2002
             ELSE
               LLABORT=.TRUE.
             ENDIF
