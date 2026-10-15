@@ -93,7 +93,7 @@
 
       LSTREAM = .TRUE.   !!! See also *READFL* It is a much more efficient way than sequential access 
 
-      LFILE=0
+      LFILE = 0
       IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
       IF (LOUNIT) THEN
         IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'w', 'u', 0, 'READWRITE', LSTREAM=LSTREAM)

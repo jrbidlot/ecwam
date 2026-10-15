@@ -78,15 +78,15 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
-      LOGICAL :: LSTREAM
 
+      LOGICAL :: LSTREAM
       LOGICAL :: LLEXIST
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('READFL',0,ZHOOK_HANDLE)
 
-      LFILE=0
+      LFILE = 0
       IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
 
       LSTREAM = .TRUE.  !! See also *WRITEFL*  It is a much more efficient way than sequential access
