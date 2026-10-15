@@ -68,12 +68,15 @@
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP) :: RFIELD_G 
 
       LOGICAL :: LLEXIST
+      LOGICAL :: LSTREAM
 
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('READSTRESS',0,ZHOOK_HANDLE)
 
-      LFILE=0
+      LSTREAM = .TRUE.   !!! See also *WRITESTRESS* It is a much more efficient way than sequential access
+
+      LFILE = 0
       IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
       LLEXIST=.FALSE.
       INQUIRE(FILE=FILENAME(1:LFILE),EXIST=LLEXIST)
@@ -94,31 +97,40 @@
         WRITE (*,*) '*************************************'
         CALL ABORT1
       ENDIF
-      IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0, 'READWRITE')
+      IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE) , 'r', 'u', 0, 'READWRITE', LSTREAM=LSTREAM)
 
-      READ(IUNIT) CDTPRO,CDATEWO,CDAWIFL,CDATEFL
+      READ(IUNIT) CDTPRO, CDATEWO, CDAWIFL, CDATEFL
 
 
       IF (LLUNSTR .AND. .NOT.LRSTPARAL) THEN
 #ifdef WAM_HAVE_UNWAM
-        DO IFLD=1,NREAL
-          READ(IUNIT)(RFIELD_G(IJ),IJ=IJINF,IJSUP)
+        DO IFLD = 1, NREAL
+          READ(IUNIT) RFIELD_G(IJINF:IJSUP)
+
           CALL UNBLKRORD(-1,IJINF,IJSUP,1,1,1,1,RFIELD(1,IFLD),RFIELD_G(1))
         ENDDO
 #else
         CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
 #endif
+
       ELSEIF (LRSTPARAL .OR. LL1D .OR. NPROC == 1) THEN
 !     ALL PE'S READ OR 1D DECOMPOSITION 
-        DO IFLD=1,NREAL
-          READ(IUNIT)(RFIELD(IJ,IFLD),IJ=IJINF,IJSUP)
+        DO IFLD = 1, NREAL
+          READ(IUNIT) RFIELD(IJINF:IJSUP, IFLD)
         ENDDO
+
       ELSE
 !     WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE
 !     RE-LABELLED BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
-        DO IFLD=1,NREAL
-          READ(IUNIT)(RFIELD(IJ2NEWIJ(IJ),IFLD),IJ=IJINF,IJSUP)
+
+        DO IFLD = 1, NREAL
+          READ(IUNIT) RFIELD_G(IJINF:IJSUP)
+
+          DO IJ = IJINF, IJSUP
+            RFIELD(IJ2NEWIJ(IJ),IFLD) = RFIELD_G(IJ) 
+          ENDDO
         ENDDO
+
       ENDIF
 
       CLOSE(IUNIT)
