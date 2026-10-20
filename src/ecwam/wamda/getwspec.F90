@@ -4,7 +4,7 @@ SUBROUTINE GETWSPEC(IJSG, IJLG, BLK2GLO, FF_NOW, FL1, NW1D)
 
 !     PURPOSE
 !     -------
-!     TO COLLECT THE MODEL SPECTRA INFLUENCED BY SAR DATA POINTS 
+!     TO COLLECT THE MODEL SPECTRA INFLUENCED BY SAR DATA POINTS
 !     AND ORGANIZE THEM IN A ONE DIMENSIONAL ARRAY.
 
 !     AUTHOR
@@ -66,7 +66,9 @@ SUBROUTINE GETWSPEC(IJSG, IJLG, BLK2GLO, FF_NOW, FL1, NW1D)
      &                      MAXJPSIW, LLAT, NSIW1D0
       INTEGER(KIND=JWIM) :: ICOUNTOLD, IC, ICC
       INTEGER(KIND=JWIM) :: IP, IK
-      INTEGER(KIND=JWIM), DIMENSION(NSPEC) :: IS, KS 
+      INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL, NPROMA, MTHREADS
+!$    INTEGER,EXTERNAL :: OMP_GET_MAX_THREADS
+      INTEGER(KIND=JWIM), DIMENSION(NSPEC) :: IS, KS
       INTEGER(KIND=JWIM), ALLOCATABLE :: INDEX(:)
 
       REAL(KIND=JWRB) :: DELLON, XI
@@ -74,7 +76,7 @@ SUBROUTINE GETWSPEC(IJSG, IJLG, BLK2GLO, FF_NOW, FL1, NW1D)
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE, DIMENSION(:) :: ADS
      
-      LOGICAL, ALLOCATABLE, DIMENSION(:) :: LOSAR 
+      LOGICAL, ALLOCATABLE, DIMENSION(:) :: LOSAR
 !--------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('GETWSPEC',0,ZHOOK_HANDLE)
@@ -100,11 +102,11 @@ IF (LHOOK) CALL DR_HOOK('GETWSPEC',0,ZHOOK_HANDLE)
       ALLOCATE(DIST(NSPECW,JPSIW))
 
              
-!     2.0 LABEL WAM SPECTRA THAT ARE INFLUENCED BY THE SAR 
-!         OBSERVATIONS AND ASSOCIATE THEM TO SAR WITHIN A 
+!     2.0 LABEL WAM SPECTRA THAT ARE INFLUENCED BY THE SAR
+!         OBSERVATIONS AND ASSOCIATE THEM TO SAR WITHIN A
 !         XMAX DISTANCE (in radian).
 
-!     MAXIMUN EXTEND OF XMAX IN NUMBER OF GRID POINTS 
+!     MAXIMUN EXTEND OF XMAX IN NUMBER OF GRID POINTS
       XMAX=PPSARCF*SARCORDIA/R
 
       LLAT = NINT(DEG*XMAX/XDELLA)+1
@@ -148,19 +150,28 @@ IF (LHOOK) CALL DR_HOOK('GETWSPEC',0,ZHOOK_HANDLE)
      &        KS(JSAR) <= KXLTMAX(IRANK)+LLAT .AND.                     &
      &        IS(JSAR) > 0 .AND. KS(JSAR) > 0) THEN
 
-            DO JP = IJSG, IJLG
-              IK = ICHNKFROMIJ(JP)
-              IP = IPRMFROMIJ(JP)
-              IF (FF_NOW%CICOVER(IP, IK) <= CITHRSH .AND. ABS(KS(JSAR)-BLK2GLO%KXLT(JP)) <= LLAT) THEN
+            MTHREADS=1
+!$          MTHREADS=OMP_GET_MAX_THREADS()
+            NPROMA = (IJLG-IJSG+1)/MTHREADS + 1
+!$OMP       PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO,KIJS,KIJL,JP,IK,IP,XI,DELLON)
+            DO JKGLO = IJSG, IJLG, NPROMA
+              KIJS = JKGLO
+              KIJL = MIN(KIJS+NPROMA-1,IJLG)
 
-                XI = AMOWEP + REAL(BLK2GLO%IXLG(JP)-1)*ZDELLO(BLK2GLO%KXLT(JP))
-                DELLON=RAD*(LONG(JSAR,2) - XI)
-                ADS(JP)=COS(DELLON)*COSSARLAT(JSAR)*COSPH(BLK2GLO%KXLT(JP))+ SINSARLAT(JSAR)*SINPH(BLK2GLO%KXLT(JP))
-                ADS(JP)=ACOS(MAX(MIN(ADS(JP),1.0_JWRB),-1.0_JWRB))
-              ELSE
-                ADS(JP)=DEFAULT_DIST
-              ENDIF
+              DO JP = KIJS, KIJL
+                IK = ICHNKFROMIJ(JP)
+                IP = IPRMFROMIJ(JP)
+                IF (FF_NOW%CICOVER(IP, IK) <= CITHRSH .AND. ABS(KS(JSAR)-BLK2GLO%KXLT(JP)) <= LLAT) THEN
+                  XI = AMOWEP + REAL(BLK2GLO%IXLG(JP)-1)*ZDELLO(BLK2GLO%KXLT(JP))
+                  DELLON=RAD*(LONG(JSAR,2) - XI)
+                  ADS(JP)=COS(DELLON)*COSSARLAT(JSAR)*COSPH(BLK2GLO%KXLT(JP))+ SINSARLAT(JSAR)*SINPH(BLK2GLO%KXLT(JP))
+                  ADS(JP)=ACOS(MAX(MIN(ADS(JP),1.0_JWRB),-1.0_JWRB))
+                ELSE
+                  ADS(JP)=DEFAULT_DIST
+                ENDIF
+              ENDDO
             ENDDO
+!$OMP       END PARALLEL DO
 
 !           the point is already influences by an observation,
 !           increment its number by 1.
@@ -193,7 +204,7 @@ IF (LHOOK) CALL DR_HOOK('GETWSPEC',0,ZHOOK_HANDLE)
 
             ICOUNTOLD=ICOUNT
             ICOUNT=ICOUNTOLD+IC
-            IF (ICOUNT > NSPECW) CALL RESIZE_GETWSPEC(ICOUNT, JPSIW, DEFAULT_DIST, NSIW1D0) 
+            IF (ICOUNT > NSPECW) CALL RESIZE_GETWSPEC(ICOUNT, JPSIW, DEFAULT_DIST, NSIW1D0)
             DO ICC=1,IC
               JP=INDEX(ICC)
               LOSAR(JP)=.TRUE.
@@ -238,40 +249,48 @@ IF (LHOOK) CALL DR_HOOK('GETWSPEC',0,ZHOOK_HANDLE)
 
 
 !      3. COLLECTING THE WAM SPECTRA INFLUENCED BY SAR DATA POINTS.
+!         U10 WINDS AND DEFINE U10 AND THW FROM WAM SPECTRA
 !      ------------------------------------------------------------
 
       IF (NSPECW > 0 ) THEN
         ALLOCATE(SPECW(0:NSPECW,NANG,NFRE))
         SPECW(:,:,:)=0.0_JWRB
 
-        DO JFRE=1,NFRE
-          DO JANG=1,NANG
-            DO JP = IJSG, IJLG
-              IF (NW1D(JP) > 0) THEN
-                IK = ICHNKFROMIJ(JP)
-                IP = IPRMFROMIJ(JP)
-                SPECW(NW1D(JP),JANG,JFRE) = FL1(IP, JANG, JFRE, IK)
-              ENDIF
-            ENDDO
-          ENDDO
-        ENDDO
-
-!       4. READ U10 WINDS AND DEFINE U10 AND THW FROM WAM SPECTRA
-!       --------------------------------------------------------
-
         ALLOCATE(UW10(NSPECW))
         ALLOCATE(USW(NSPECW))
         ALLOCATE(THWW(NSPECW))
 
-        DO JP = IJSG, IJLG
-          IF (NW1D(JP) > 0) THEN
-            IK = ICHNKFROMIJ(JP)
-            IP = IPRMFROMIJ(JP)
-            UW10(NW1D(JP)) = FF_NOW%WSWAVE(IP, IK)
-            USW(NW1D(JP)) = FF_NOW%UFRIC(IP, IK)
-            THWW(NW1D(JP)) = FF_NOW%WDWAVE(IP, IK)
-          ENDIF
+        MTHREADS=1
+!$      MTHREADS=OMP_GET_MAX_THREADS()
+        NPROMA = (IJLG-IJSG+1)/MTHREADS + 1
+!$OMP   PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO,KIJS,KIJL,JFRE,JANG,JP,IK,IP)
+        DO JKGLO = IJSG, IJLG, NPROMA
+          KIJS = JKGLO
+          KIJL = MIN(KIJS+NPROMA-1,IJLG)
+
+          DO JFRE=1,NFRE
+            DO JANG=1,NANG
+              DO JP = KIJS, KIJL
+                IF (NW1D(JP) > 0) THEN
+                  IK = ICHNKFROMIJ(JP)
+                  IP = IPRMFROMIJ(JP)
+                  SPECW(NW1D(JP),JANG,JFRE) = FL1(IP, JANG, JFRE, IK)
+                ENDIF
+              ENDDO
+            ENDDO
+          ENDDO
+
+          DO JP = KIJS, KIJL
+            IF (NW1D(JP) > 0) THEN
+              IK = ICHNKFROMIJ(JP)
+              IP = IPRMFROMIJ(JP)
+              UW10(NW1D(JP)) = FF_NOW%WSWAVE(IP, IK)
+              USW(NW1D(JP)) = FF_NOW%UFRIC(IP, IK)
+              THWW(NW1D(JP)) = FF_NOW%WDWAVE(IP, IK)
+            ENDIF
+          ENDDO
         ENDDO
+!$OMP   END PARALLEL DO
 
       ENDIF
 

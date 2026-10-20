@@ -20,7 +20,7 @@ SUBROUTINE WAMASSI(LDSTOP, LDWRRE, BLK2GLO, WVENVI,   &
 !     ----------                                                        
 
 !     *CALL* *WAMASSI(LDSTOP, LDWRRE, BLK2GLO,
-!                     WVENVI, WVPRPT, FF_NOW, INTFLDS, 
+!                     WVENVI, WVPRPT, FF_NOW, INTFLDS,
 !                     WAM2NEMO, NEMO2WAM, FL1)
 !        *LDSTOP*    SET .TRUE. IF STOP SIGNAL RECEIVED.
 !        *LDWRRE*    SET .TRUE. IF RESTART SIGNAL RECEIVED.
@@ -46,12 +46,13 @@ SUBROUTINE WAMASSI(LDSTOP, LDWRRE, BLK2GLO, WVENVI,   &
      &                         INTGT_PARAM_FIELDS, WAVE2OCEAN, OCEAN2WAVE
 
       USE YOWABORT,  ONLY : WAM_ABORT
+      USE YOWALTAS , ONLY : LSARASDIAG
       USE YOWCOUP  , ONLY : LWCOU    ,LWNEMOCOUSTRN
       USE YOWCOUT  , ONLY : FFLAG20  ,GFLAG20  ,LFDB     ,LOUTINT  ,             &
      &                      LWAMANOUT, NGOUT   ,NIPRMOUT ,LRSTPARALW
       USE YOWCURR  , ONLY : CDTCUR
       USE YOWFRED  , ONLY : FR       ,TH
-      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, IJFROMCHNK, KIJL4CHNK 
+      USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, IJFROMCHNK, KIJL4CHNK
       USE YOWMESPAS, ONLY : LFDBIOOUT, LGRIBOUT
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -103,14 +104,23 @@ SUBROUTINE WAMASSI(LDSTOP, LDWRRE, BLK2GLO, WVENVI,   &
       INTEGER(KIND=JWIM) :: IFIL, IJ, K, M
       INTEGER(KIND=JWIM) :: IU04
       INTEGER(KIND=JWIM) :: IJSG, IJLG
+      INTEGER(KIND=JWIM) :: ILOOP, ILOOP_START, ILOOP_END
       INTEGER(KIND=JWIM), DIMENSION(NPROMA_WAM, NCHNK) :: MIJ
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, MAX(NIPRMOUT,1), NCHNK) :: BOUT
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK) :: XLLWS
 
+      CHARACTER(LEN=2) :: COUT
+
       LOGICAL :: LLFLUSH
       LOGICAL :: LSV, LOUT
+      LOGICAL :: LACT
+
+!     DIAGNOSTIC OUTPUT MODE FOR SARAS FOR FIRST GUESS, NO OUTPUT, ANALYSIS
+      CHARACTER(LEN=2), DIMENSION(3) :: COUTS = (/ 'FG', 'NA', 'AN' /)
+!     ACTION MODE FOR SARAS: TRUE IF MODEL IS UPDATED. SHOULD BE USED WITH COUTS='NA' OPTION
+      LOGICAL, DIMENSION(3) :: LACTS = (/ .FALSE., .TRUE., .FALSE. /)
 
 ! ----------------------------------------------------------------------
 
@@ -119,29 +129,16 @@ IF (LHOOK) CALL DR_HOOK('WAMASSI',0,ZHOOK_HANDLE)
 
       WRITE (IU06,*) '  '
       WRITE (IU06,*) '  '
-      WRITE (IU06,*) ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO 
+      WRITE (IU06,*) ' START OF DATA ASSIMILATION: DATE IS CDTPRO: ', CDTPRO
       WRITE (IU06,*) '  '
       LLFLUSH = .TRUE.
 
 !     1. CALLING THE MAIN DATA ASSIMILATION ROUTINE
 !        ------------------------------------------
 
-      IF (LSARINV) THEN
-!!!!!!!!!!!!! inversion of SAR spectra has not happened since ENVISAT (2002-2012).
-!!!!!!!!!!!!! This part of the code has not been tested recently
-!!!!!!!        CALL SARINVERT(BLK2GLO%IXLG, BLK2GLO%KXLT, FF_NOW%WSWAVE, FF_NOW%WDWAVE, FF_NOW%CICOVER, FL1)
-
-        CALL WAM_ABORT("WAMASSI: CALL TO SARINVERT HAS BEEN DISABLED",__FILENAME__,__LINE__)
-
-        WRITE(IU06,*) '   SUB. WAMASSI: SARINVERT DONE'
-      ENDIF
-
-      IF (LSARAS) THEN
-!!!!!!!!!!!!! assimilation SAR spectra has not happened since ENVISAT (2002-2012).
-!!!!!!!!!!!!! This part of the code has not been tested recently
-        CALL SARAS(BLK2GLO, FF_NOW, FL1)
-        WRITE(IU06,*) '   SUB. WAMASSI: SARAS DONE'
-      ENDIF
+      !~~~~~~~~~~~~~~~~~~~~~~~~
+      !  ALTIMETER ASSIMILATION
+      !~~~~~~~~~~~~~~~~~~~~~~~~
 
       IF (LALTAS) THEN
         IJSG = IJFROMCHNK(1,1)
@@ -155,6 +152,44 @@ IF (LHOOK) CALL DR_HOOK('WAMASSI',0,ZHOOK_HANDLE)
          MIJ(:,:)=NFRE
          XLLWS(:,:,:,:) = 0.0_JWRB
       ENDIF
+
+      !~~~~~~~~~~~~~~~~~~
+      !  SAR ASSIMILATION
+      !~~~~~~~~~~~~~~~~~~
+
+      IF ( LSARASDIAG ) THEN
+        ! 3 PASSES FOR DIAGNOSTIC OUPUT ON FIRST AND ANALYSIS
+        ILOOP_START = 1
+        ILOOP_END = 3
+      ELSE
+        ! ONLY DATA ASSIMILATION NO EXTRA DIAGNOSTICS
+        ILOOP_START = 2
+        ILOOP_END = 2
+      ENDIF
+
+      DO ILOOP = ILOOP_START, ILOOP_END 
+
+        ! CALL TO SAR ASSIMILATION (PASS NUMBER = ILOOP)
+        COUT = COUTS(ILOOP)
+        LACT = LACTS(ILOOP)
+
+        ! SAR INVERSION (CREATE BEST-GUESS SPECTRUM)
+        IF (LSARINV) THEN
+          !!!!!!!!!!!!! This part of the code has not been tested recently and is not provided
+          !!!!!!!!!!!!! CALL SARINVERT(BLK2GLO%IXLG, BLK2GLO%KXLT, FF_NOW%WSWAVE, FF_NOW%WDWAVE, FF_NOW%CICOVER, FL1)
+          CALL WAM_ABORT("WAMASSI: CALL TO SARINVERT HAS BEEN DISABLED",__FILENAME__,__LINE__)
+          WRITE(IU06,*) '   SUB. WAMASSI: SARINVERT', ILOOP, ' DONE'
+        ENDIF
+
+        ! SAR ASSIMILATION (ASSIMILATE INTEGRAL PARAMETERS)
+        IF (LSARAS) THEN
+          CALL SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
+          WRITE(IU06,*) '   SUB. WAMASSI: SARAS ', ILOOP, ' DONE'
+        ENDIF
+
+      ENDDO
+
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 !*    2. PREPARING OUTPUT AND UPDATE TO CHARNOCK PARAMETER

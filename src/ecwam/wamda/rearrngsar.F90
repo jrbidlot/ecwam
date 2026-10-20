@@ -84,7 +84,7 @@ IF (LHOOK) CALL DR_HOOK('REARRNGSAR',0,ZHOOK_HANDLE)
           KC  = K  - INC
           IF (KC < 1) KC  = KC + NANG
           KC1 = KC - 1
-          IF (KC1 < 1) KC1 = KC1+ NANG
+          IF (KC1 < 1) KC1 = KC1 + NANG
           DO M=1,NFRE
             FL(K,M) = BDIF*SPEC(ISPEC,KC,M,2)+ADIF*SPEC(ISPEC,KC1,M,2)
           ENDDO
@@ -115,7 +115,7 @@ IF (LHOOK) CALL DR_HOOK('REARRNGSAR',0,ZHOOK_HANDLE)
 
 !     READ FIRST BLOCK
           DO ISPEC = 1, NSPEC 
-            JP=IJSAR(ISPEC)
+            JP = IJSAR(ISPEC)
             IF (JP /= 0) THEN
 
                 IK = ICHNKFROMIJ(JP)
@@ -127,9 +127,8 @@ IF (LHOOK) CALL DR_HOOK('REARRNGSAR',0,ZHOOK_HANDLE)
                       SPEC(ISPEC,JANG,JFRE,1)=FL1(IP,JANG,JFRE,IK)
                     ENDDO
                   ENDDO
-                  LAT(ISPEC,1)=AMOSOP+REAL(BLK2GLO%KXLT(JP)-1)*XDELLA
-                  LONG(ISPEC,1)=AMOWEP+                                 &
-     &                        REAL(BLK2GLO%IXLG(JP)-1)*ZDELLO(BLK2GLO%KXLT(JP))
+                  LAT(ISPEC,1) = AMOSOP + REAL(BLK2GLO%KXLT(JP)-1)*XDELLA
+                  LONG(ISPEC,1) = AMOWEP + REAL(BLK2GLO%IXLG(JP)-1)*ZDELLO(BLK2GLO%KXLT(JP))
                 ELSE
                   DO JFRE=1,NFRE
                     DO JANG=1,NANG
@@ -160,7 +159,7 @@ IF (LHOOK) CALL DR_HOOK('REARRNGSAR',0,ZHOOK_HANDLE)
       ALLOCATE(THW(NSPEC))
 
         DO ISPEC = 1, NSPEC 
-          JP=IJSAR(ISPEC)
+          JP = IJSAR(ISPEC)
           IF (JP /= 0) THEN
             IK = ICHNKFROMIJ(JP)
             IP = IPRMFROMIJ(JP) 

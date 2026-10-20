@@ -47,6 +47,7 @@
      &            ALTGRTHRSH, HSALTCUT, LALTGRDOUT, LALTPAS,            &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
      &            LODBRALT , LECWAMDA, LRALTPREPROC, LRALTASCII,        &
+     &            LSARASDIAG,                                           &
      &            LRALTAVERAGE, CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
      &            LWCOUAST,                                             &
@@ -143,7 +144,7 @@
       INTEGER(KIND=JWIM) :: IU05, LFILE
       INTEGER(KIND=JWIM) :: ISAT, IC, II, ILEN
 
-      REAL(KIND=JWRU) :: R8_DEPTHA, R8_DEPTHD 
+      REAL(KIND=JWRU) :: R8_DEPTHA, R8_DEPTHD
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       CHARACTER(LEN=14), PARAMETER :: ZERO = ' '
@@ -152,7 +153,7 @@
       CHARACTER(LEN=70) :: CLHEADER
       CHARACTER(LEN=:), ALLOCATABLE :: NAMELIST_FILENAME
 
-      LOGICAL :: LLEOF 
+      LOGICAL :: LLEOF
       LOGICAL :: LLEXIST
 
 #ifndef WAM_HAVE_UNWAM
@@ -209,6 +210,7 @@
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
      &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LECWAMDA, LRALTPREPROC,    &
      &   LRALTASCII, LRALTAVERAGE,                                      &
+     &   LSARASDIAG,                                                    &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
@@ -265,7 +267,7 @@
 
 !     NAMELIST NALINE : 
 !     ===============
-!     CLDOMAIN:  CHARACTER DEFINES THE DOMAIN OF THE MODEL 
+!     CLDOMAIN:  CHARACTER DEFINES THE DOMAIN OF THE MODEL
 !     CBPLTDT: USER INPUT START DATE OF RUN.
 !     CEPLTDT: USER INPUT END DATE OF RUN.
 !     CDATEF: BEGIN DATE OF FORECAST.
@@ -293,7 +295,7 @@
 !              (if output times are not specified by namelist NAOT).
 !     IDELRES: OUTPUT TIME STEP for RESTART SPECTRA (if output times
 !              are not specified by namelist NAOS).
-!     IDELCUR: CURRENTS INPUT TIME STEP IN SECONDS. 
+!     IDELCUR: CURRENTS INPUT TIME STEP IN SECONDS.
 !     CDATECURA: FIRST DATE FOR THE CURRENT INPUT.
 !     LLCFLCUROFF: IF TRUE PREVENT CFL CRITERIA FAILURE DUE TO SURFACE CURRENTS
 !                  IT RESETS THE CURRENT REFRACTION TERMS TO 0 FOR THOSE POINTS
@@ -398,13 +400,14 @@
 !     LODBRALT: IF TRUE THEN THE ALTIMETER DATA WILL BE READ AND PASSED 
 !               THROUGH OBSERVATION DATABASE (ODB)
 !     LECWAMDA CONTROLS ECMWF SPECIFC OPTIONS IN THE WAVE DATA ANALYIS SYSTEM
+!     LSARASDIAG CONTROLS WHETHER EXTRA FIRST GUESS AND ANALYSIS DIAGNOSTICS IN SARAS WILL BE PRODUCED
 !     LRALTPREPROC CONTROLS WHETHER RADAR ALTIMETER OBS ARE PREPROCESSED BY RFL4WAM (true)
 !     LRALTASCII CONTROLS WHETHER RADAR ALTIMETER OBS INPUT IS IN ASCII TEXT RATHER THAN BINARY WHEN NOT USING ODB
 !     LRALTAVERAGE CONTROLS WHETHER RADAR ALTIMETER OBS INPUT HAS BEEN AVERAGED ALONG TRACK OR NOT 
 !     LALTCOR: IF TRUE THEN THE ALTIMETER DATA WILL BE CORRECTED
 !              SEE GRFIELD(but this is different than the bias correction scheme)
 !              It was implemented when the ERS altimeters were used in operation.
-!              We has since then gone for an overall bias correction scheme and so by default this will not be used.. 
+!              We has since then gone for an overall bias correction scheme and so by default this will not be used..
 !     L4VTYPE: IF TRUE THEN MARS TYPE 4V IS USED INSTEAD OF FG.
 !     LFRSTFLD: IF TRUE THEN INITIAL INTEGRATED PARAMETER FIELDS WILL
 !               OUTPUT PROVIDED THEY WERE NOT INPUT.
@@ -437,13 +440,13 @@
 !     HSALTCUT: USER INPUT OF THE MINIMUM WAVE HEIGHT ALLOWED IN ALTAS
 !              (SEE GRFIELD). 
 !     ISTREAM: STREAM NUMBER USED WHEN GRIBBING THE DATA 
-!                     IT MUST BE SPECIFIED EXCEPT IF LGRHDIFS IS TRUE ! 
+!                     IT MUST BE SPECIFIED EXCEPT IF LGRHDIFS IS TRUE !
 !     LALTGRDOUT: FLAG USED TO CONTROL THE OUTPUT OF GRIDDED ALTIMETER
-!                 PRODUCTS OF SPECIFIC INSTRUMENT (TRUE TO OUTPUT) 
+!                 PRODUCTS OF SPECIFIC INSTRUMENT (TRUE TO OUTPUT)
+!                (SEE GRFIELD).
+!     LALTPAS: FLAG USED TO CONTROL FEED THROUGH ALT DATA PASSIVELY.
 !                (SEE GRFIELD). 
-!     LALTPAS: FLAG USED TO CONTROL FEED THROUGH ALT DATA PASSIVELY. 
-!                (SEE GRFIELD). 
-!     LGUST:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO GUSTINESS 
+!     LGUST:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO GUSTINESS
 !     LADEN:   FLAG USED TO ACTIVATE COMPUTATIONS RELATED TO AIR DENSITY
 !     LRELWIND: IF TRUE THEN RELATIVE WINDS ARE USED WITH RESPECT TO SURFACE CURRENTS.
 !     RWFAC     REDUCTION FACTOR OF THE SURFACE CURRENTS
@@ -468,7 +471,7 @@
 !     NPROMA_WAM: NUMBER OF THE GRID POINTS PER LOOP WHEN CUT INTO CHUNKS
 !     LL1D: IF TRUE THEN THE DOMAIN IS ONLY DIVIDED INTO LATITUDINAL BANDS
 !     LWCOUNORMS : FLAG THAT CONTROLS WHETHER OR NOT GLOBAL NORMS
-!                  ARE PRODUCED FOR THE DIFFERENT FIELDS EXCHANGED 
+!                  ARE PRODUCED FOR THE DIFFERENT FIELDS EXCHANGED
 !                  BETWEEN WAM AND THE COUPLED ATMOSPHERIC MODEL.
 !                  IT IS FALSE BY DEFAULT.
 !     LLNORMIFS2WAM : IF TRUE NORMS FOR FIELDS PASSED FROM IFS TO WAM WILL BE PRODUCED
@@ -501,7 +504,7 @@
 
 !     LICETH  : FLAG CONTROLLING WHETHER OR NOT SEA ICE THICKNESS FILEDS
 !               ARE PROVIDED WITH THE WIND FIELDS (FALSE BY DEFAULT). 
-!     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION 
+!     LLSOURCE : FLAG CONTROLLING WHETHER OR NOT THE SOURCE TERM CONTRIBUTION
 !                IS COMPUTED.
 !     LNSESTART : FLAG CONTROLLING WHETHER OR NOT THE INITIAL SPECTRA ARE
 !                 RESET TO NOISE LEVEL.
@@ -514,7 +517,7 @@
 !     IMDLGRBID_G: GLOBAL MODEL IDENTIFICATION FOR GRIB CODING
 !     IMDLGRBID_M: LAW MODEL IDENTIFICATION FOR GRIB CODING
 ! 
-! The generating process identification numbers (model numbers IMDLGRBID_G/IMDLGRBID_M) 
+! The generating process identification numbers (model numbers IMDLGRBID_G/IMDLGRBID_M)
 ! for GRIB headers are allocated in pre-defined ranges for ECMWF GRIB coded
 ! fields. The field in the GRIB code for this number is 1 octet and with
 ! the value 255 indicating 'missing value', only numbers 1-254 are
@@ -529,23 +532,23 @@
 ! hard-coded model numbers. 
     
 
-!     NAMELIST NAOT : 
+!     NAMELIST NAOT :
 !     ===============
 !     CLOUT : LIST OF OUTPUT TIME FOR INTEGRATED PARAMETERS.
       
-!     NAMELIST NAOS : 
+!     NAMELIST NAOS :
 !     ===============
-!     CLSOUT : LIST OF OUTPUT TIME FOR SPECTRA. 
+!     CLSOUT : LIST OF OUTPUT TIME FOR SPECTRA.
 
-!     NAMELIST NAAT : 
+!     NAMELIST NAAT :
 !     ===============
-!     CLAOUT : LIST OF TIME FOR ALTIMETER DATA ASSIMILATION. 
+!     CLAOUT : LIST OF TIME FOR ALTIMETER DATA ASSIMILATION.
 
-!     NAMELIST NAWI (only meaningful for uncoupled runs): 
+!     NAMELIST NAWI (only meaningful for uncoupled runs):
 !     ===============
 !     IDWI : LIST OF IDELWI
 !     IDWO : LIST OF IDELWO
-!     CLWOUT : LIST OF TIME UNTIL WHICH IDWI AND IDWO ARE VALID. 
+!     CLWOUT : LIST OF TIME UNTIL WHICH IDWI AND IDWO ARE VALID.
 
 ! ----------------------------------------------------------------------
 
@@ -574,7 +577,7 @@
       IDELT     =  0
       IDELWO    =  0
       IDELWI    =  0
-      IDELALT   =  21600 
+      IDELALT   =  21600
       IDELINT   =  0
       IDELRES   =  0
 
@@ -583,53 +586,54 @@
       LLCFLCUROFF = .TRUE.
       CDATER    = ZERO
       CDATES    = ZERO
-      FFLAG(:)  = .FALSE. 
+      FFLAG(:)  = .FALSE.
 !     note: if IREST>0 then GFLAG(IR) for IR=IRWDIR, IRCD, IRU10 will always be reset
 !     true if grib restart files are requested (LGRIBOUT=.true.).
 !     see below.
       GFLAG(:)  = .FALSE.
-      NFLAG(:)  = .FALSE. 
+      NFLAG(:)  = .FALSE.
 !     patial initialisation of the output table
       CALL MPCRTBL
-      NFLAG(1)  = .TRUE. 
-      NFLAG(6)  = .TRUE. 
-      NFLAG(IRWDIR)= .TRUE. 
-      NFLAG(IRCD)  = .TRUE. 
-      NFLAG(IRU10) = .TRUE. 
+      NFLAG(1)  = .TRUE.
+      NFLAG(6)  = .TRUE.
+      NFLAG(IRWDIR)= .TRUE.
+      NFLAG(IRCD)  = .TRUE.
+      NFLAG(IRU10) = .TRUE.
 
       XKMSS_CUTOFF = 0.0_JWRB
 
       LSECONDORDER = .FALSE.
 
-      LFDB      = .TRUE. 
-      LGRIBIN   = .TRUE. 
-      LGRIBOUT  = .TRUE. 
-      LFDBIOOUT = .TRUE. 
+      LFDB      = .TRUE.
+      LGRIBIN   = .TRUE.
+      LGRIBOUT  = .TRUE.
+      LFDBIOOUT = .TRUE.
       NWRTOUTWAM= 1
       LRSTPARALW= .TRUE.
       LRSTPARALR= .TRUE.
       LRSTINFDAT= .FALSE.
       LODBRALT  = .FALSE.
       LECWAMDA = .TRUE.
+      LSARASDIAG = .FALSE.
       LRALTPREPROC = .TRUE.
       LRALTASCII = .FALSE.
-      LRALTAVERAGE = .TRUE. 
+      LRALTAVERAGE = .TRUE.
       ICASE     = 1 
-      ISHALLO   = 0   !! depricated 
+      ISHALLO   = 0   !! depricated
       IPHYS     = 1
-      ISNONLIN  = 0 
-      IDAMPING  = 1 
-      IPROPAGS  = 0 
-      IREFRA    = 0 
-      ITEST     = 0 
-      ITESTB    = 0 
-      IREST     = 0 
-      IASSI     = 0 
+      ISNONLIN  = 0
+      IDAMPING  = 1
+      IPROPAGS  = 0
+      IREFRA    = 0
+      ITEST     = 0
+      ITESTB    = 0
+      IREST     = 0
+      IASSI     = 0
       NDEPTH    = 74
       R8_DEPTHA = 1.0_JWRU
       R8_DEPTHD = 1.1_JWRU
-      IBOUNC    = 0 
-      IBOUNF    = 0 
+      IBOUNC    = 0
+      IBOUNF    = 0
       IDELBC    = 0
       DO II=1,GBOUNC_MAX
         WRITE(C2,'(I2.2)') II
@@ -648,13 +652,13 @@
 
       NOUTT     = 0
 
-      LNOCDIN   = .FALSE. 
+      LNOCDIN   = .FALSE.
 
       DO ISAT=1,NUMALT
         IBUFRSAT(ISAT) = 0
         CSATNAME(ISAT) = 'SATELLITE NAME MISSING'
-        LALTPAS(ISAT)   = .FALSE. 
-        LALTCOR(ISAT)   = .FALSE. 
+        LALTPAS(ISAT)   = .FALSE.
+        LALTCOR(ISAT)   = .FALSE.
         XKAPPA2(ISAT)   = 0.0700_JWRB
         LALTLRGR(ISAT)  = .FALSE.
         HSCOEFCOR(ISAT) = 1.0_JWRB
@@ -699,13 +703,13 @@
       IBUFRSAT(12) = 67
       CSATNAME(12) = 'Sentinel-6B'
 
-      L4VTYPE   = .FALSE. 
+      L4VTYPE   = .FALSE.
 
       LFRSTFLD  = .FALSE.
 
-      LALTAS    = .FALSE. 
-      LSARAS    = .FALSE. 
-      LSARINV   = .FALSE. 
+      LALTAS    = .FALSE.
+      LSARAS    = .FALSE.
+      LSARINV   = .FALSE.
 
       LWAMANOUT = .TRUE.
 
@@ -810,9 +814,9 @@
 
       LCIWA2 = .FALSE.
 
-      LCIWA3 = .TRUE.    
+      LCIWA3 = .TRUE.
 
-      LCISCAL = .FALSE.      
+      LCISCAL = .FALSE.
 
       ZALPFACB = 1.0_JWRB
       
@@ -866,7 +870,7 @@
       ROWATER = 1000.0_JWRB
       GAM_SURF = 0.0717_JWRB
 
-      IMDLGRBID_G = 108 
+      IMDLGRBID_G = 108
       IMDLGRBID_M = 208
 ! ----------------------------------------------------------------------
 
@@ -895,7 +899,7 @@
         WRITE(IU06,*)'++++++++++++++++++++++++++++++++++++++++++++'
         WRITE(IU06,*)'+                                          +'
         WRITE(IU06,*)'+ SUBROUTINE MPUSERIN :                    +'
-        WRITE(IU06,*)'+ READ NAMELIST FAILED                     +' 
+        WRITE(IU06,*)'+ READ NAMELIST FAILED                     +'
         WRITE(IU06,*)'+ NAMELIST FILENAME: ',NAMELIST_FILENAME
         WRITE(IU06,*)'+ PROGRAM WILL ABORT                       +'
         WRITE(IU06,*)'+                                          +'
@@ -970,7 +974,7 @@
 1901  CONTINUE
       REWIND(IU05)
       IF ( NOUTS > 0) THEN
-        IF (.NOT.ALLOCATED(COUTS)) ALLOCATE(COUTS(NOUTS)) 
+        IF (.NOT.ALLOCATED(COUTS)) ALLOCATE(COUTS(NOUTS))
       ENDIF
       SPS: DO IC=1,NOUTS
         CALL WPOSNAM (IU05, 'NAOS', LLEOF)
@@ -1008,7 +1012,7 @@
           CALL WPOSNAM (IU05, 'NAWI', LLEOF)
           IF (LLEOF) EXIT SPWI
           READ (IU05, NAWI, END=1903)
-          NDELW_LST = NDELW_LST + 1 
+          NDELW_LST = NDELW_LST + 1
         ENDDO SPWI
 1903    CONTINUE
         REWIND(IU05)
@@ -1021,8 +1025,8 @@
           CALL WPOSNAM (IU05, 'NAWI', LLEOF)
           IF (LLEOF) EXIT SPW
                   READ (IU05, NAWI, END=1913)
-                  IDELWI_LST(IC) = IDWI 
-                  IDELWO_LST(IC) = IDWO 
+                  IDELWI_LST(IC) = IDWI
+                  IDELWO_LST(IC) = IDWO
                   CDTW_LST(IC) = CLWOUT
                 ENDDO SPW
         1913    CONTINUE
@@ -1048,7 +1052,7 @@
         IF (LLEOF) EXIT SPOUS
         READ (IU05, NAOUTP, END=1914)
         OUTLAT(IC) = ZOUTLAT 
-        OUTLONG(IC) = ZOUTLONG 
+        OUTLONG(IC) = ZOUTLONG
       ENDDO SPOUS
 1914  CONTINUE
 
@@ -1133,8 +1137,9 @@
         WRITE(6,*) '*** LLUNSTR= ',LLUNSTR
         WRITE(6,*) '*** IASSI= ', IASSI
         WRITE(6,*) '*** IDELALT= ', IDELALT
-        WRITE(6,*) '*** LALTAS= ', LALTAS 
-        WRITE(6,*) '*** LSARAS= ', LSARAS 
+        WRITE(6,*) '*** LALTAS= ', LALTAS
+        WRITE(6,*) '*** LSARAS= ', LSARAS
+        WRITE(6,*) '*** LSARASDIAG= ', LSARASDIAG
         WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
         WRITE(6,*) '*** LLNORMIFS2WAM= ',LLNORMIFS2WAM
         WRITE(6,*) '*** LLNORMWAM2IFS= ',LLNORMWAM2IFS
