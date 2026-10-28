@@ -34,6 +34,7 @@ SUBROUTINE SINFLX (ICALL, NCALL, KIJS, KIJL,  &
       USE YOWPCONS , ONLY : G        ,ZPI
       USE YOWMAP   , ONLY : CLDOMAIN
       USE YOWPHYS  , ONLY : DTHRN_A  ,DTHRN_U 
+      USE YOWSTAT  , ONLY : IDAMPING
       USE YOWWNDG  , ONLY : ICODE    ,ICODE_CPL
 
       USE YOMHOOK  , ONLY : LHOOK    ,DR_HOOK, JPHOOK
@@ -168,6 +169,9 @@ ELSE
   LLPHIWA = .TRUE.
   LLSNEG = .TRUE.
 ENDIF
+
+! If the negative input is not needed: 
+IF (IDAMPING == 0 ) LLSNEG = .FALSE.
 
 !$loki inline
 CALL SINPUT (NGST, LLSNEG, KIJS, KIJL, FL1,      &
