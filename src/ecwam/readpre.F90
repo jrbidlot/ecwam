@@ -59,14 +59,13 @@ SUBROUTINE READPRE (LLBATHY)
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWABORT , ONLY : WAM_ABORT
-      USE YOWGRIBHD, ONLY : IMDLGRBID_G
       USE YOWGRIBINFO, ONLY : WVGETGRIDINFO
       USE YOWMAP   , ONLY : NGX      ,NGY      ,                        &
      &            IPER     ,IRGG     ,IQGAUSS  ,NLONRGG  ,              &
      &            AMOWEP ,  AMOSOP,  AMOEAP,  AMONOP,  XDELLA,  XDELLO, &
      &            DAMOWEP,  DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG     ,NPRECI
-      USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR
+      USE YOWPARAM , ONLY : LLR8TOR4 ,LLUNSTR  ,KWAMVER
       USE YOWSHAL  , ONLY : BATHY
       USE YOWTEST  , ONLY : IU06
       USE YOWPCONS , ONLY : ZMISS
@@ -94,7 +93,7 @@ SUBROUTINE READPRE (LLBATHY)
       INTEGER(KIND=JWIM) :: IREAD, IU07, KGRIB_HANDLE
       INTEGER(KIND=JWIM) :: IP, I, K, J, L, JSN
       INTEGER(KIND=JWIM) :: NUMBEROFVALUES
-      INTEGER(KIND=JWIM) :: KMDLGRDID
+      INTEGER(KIND=JWIM) :: KMDLID
       INTEGER(KIND=JWIM) :: NKIND ! Numerical precision of input binary file
       INTEGER(KIND=JWIM), DIMENSION(:), ALLOCATABLE :: KLONRGG
 
@@ -208,17 +207,18 @@ SUBROUTINE READPRE (LLBATHY)
 
 !         READ MODEL IDENTIFIERS
           CALL READREC(1)
-          IF (KMDLGRDID /= IMDLGRBID_G) THEN
+          IF (KMDLID /= KWAMVER) THEN
             WRITE(IU06,*) '*****************************************'
             WRITE(IU06,*) '*  FATAL ERROR(S) IN SUB. READPRE       *'
             WRITE(IU06,*) '*  ==============================       *'
             WRITE(IU06,*) '* THE PROGRAM HAS DETECTED DIFFERENT    *'
-            WRITE(IU06,*) '* MODEL GRIB IDENTIFIER.                *' 
+            WRITE(IU06,*) '* MODEL VERSION IDENTIFIER.             *' 
             WRITE(IU06,*) '* MAKE SURE YOU HAVE RUN PREPROC !!!!   *'
-            WRITE(IU06,*)    KMDLGRDID, IMDLGRBID_G 
+            WRITE(IU06,*)    KMDLID, KWAMVER
             WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
             WRITE(IU06,*) '* ---------------   --------------      *'
             WRITE(IU06,*) '*****************************************'
+            CALL FLUSH(IU06)
             CALL ABORT1
           ENDIF
           IF (NKIND /= KIND(AMOSOP)) THEN
@@ -231,6 +231,7 @@ SUBROUTINE READPRE (LLBATHY)
             WRITE(IU06,*) '* PROGRAM ABORTS.   PROGRAM ABORTS.     *'
             WRITE(IU06,*) '* ---------------   --------------      *'
             WRITE(IU06,*) '*****************************************'
+            CALL FLUSH(IU06)
             CALL ABORT1
           ENDIF
 
@@ -312,7 +313,7 @@ SUBROUTINE READPRE (LLBATHY)
       SELECT CASE(KREC)
       CASE(1)
          LLR8TOR4 = .FALSE.
-         READ(IU07,IOSTAT=ISTAT) NKIND, KMDLGRDID
+         READ(IU07,IOSTAT=ISTAT) NKIND, KMDLID
          IF (ISTAT /= 0) GOTO 1000
 
          IF (KIND(AMOSOP) == 4 .AND. NKIND /= 4) THEN

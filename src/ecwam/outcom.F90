@@ -58,8 +58,8 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWCOUT  , ONLY : LFDB, FFLAG, GFLAG, NFLAG, IRBATHY, INFOBOUT
-      USE YOWGRIBHD, ONLY : CDATECLIM,IMDLGRBID_G
-      USE YOWPARAM , ONLY : LLUNSTR
+      USE YOWGRIBHD, ONLY : CDATECLIM
+      USE YOWPARAM , ONLY : LLUNSTR  ,KWAMVER
       USE YOWMAP   , ONLY : NGX      ,NGY      , IPER     ,IRGG    ,    &
      &                      AMOWEP   ,AMOSOP   ,AMOEAP    ,AMONOP  ,    &
      &                      XDELLA   ,XDELLO   ,NLONRGG
@@ -137,7 +137,7 @@
 !       WRITE IDENTIFIERS (MAKE SURE TO UPDATE THE VALUES IF YOU CHANGE
 !       ANYTHING TO THE MODEL). 
         NKIND = KIND(AMOSOP)
-        WRITE(IU07) NKIND, IMDLGRBID_G
+        WRITE(IU07) NKIND, KWAMVER 
 
         WRITE(IU07) NGX, NGY
 
@@ -151,7 +151,7 @@
 
 ! ----------------------------------------------------------------------
 
-!*    WRITE NAMELIST PARWAM.
+!*    WRITE NAMELIST PARWAM
 !     ----------------------
       
       CALL OUTNAM  (NGX, NGY)
