@@ -116,6 +116,7 @@
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWICE   , ONLY : FLMIN
+      USE YOWFCT   , ONLY : M10CONST
       USE YOWTEST  , ONLY : IU06
 
 !-----------------------------------------------------------------------
@@ -247,6 +248,7 @@
 !                   DIMENSIONS
      &                NSPEC , MPART , NPART , NANG , NFRE ,             &
 !                   INPUT
+     &                M10CONST,                                         &
      &                SPEC , PART ,                                     &
 !                   OUTPUT
      &                MEANE , MEANANG , MEANFRE , PKFRE ,               &

@@ -33,8 +33,9 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWGAP   , ONLY : GAPVAL
       USE YOWABORT,  ONLY : WAM_ABORT
+      USE YOWGAP   , ONLY : GAPVAL
+      USE YOWLSQ,    ONLY : LSQ
 
 !-------------------------------------------------------------------
 
@@ -58,10 +59,12 @@
      &                      HFRE(ISPECS:ISPECE,MGAP)
 !                 LOWER LEFT AND UPPER RIGHT CORNER OF GAP.
       INTEGER(KIND=JWIM) :: IU06
-!                 STANDARD OUTPUT UNIT
+!                 STANDARD OUTPUT /UNIT
 
 !     LOCAL VARIABLES:
 !     ----------------
+
+      INTEGER(KIND=JWIM) :: KERR 
 
       INTEGER(KIND=JWIM) :: ISPEC, IGAP, IANG, IFRE, I12, I, J
 !                 LOOP INDICES.
@@ -69,13 +72,9 @@
 !                 CORNERS OF FRAMES FOR TEMPORARILY USE
       REAL(KIND=JWRB) :: X, Y
 !                 FREQUENCY VALUES IN CARTHESIAN COORDINATES
-      REAL(KIND=JWRB) :: Z_REAL
-      REAL(KIND=JWRU) :: DL_DOUBLE
-!                 USED TO CHOOSE BETWEEN SGELSS OR DGELSS (LAPACK)
-      REAL(KIND=JWRB) :: A(6,6), B(6), T(6), S(6), WORK(1000), RCOND
-      INTEGER(KIND=JWIM) :: IRANK, INFO
-!                 INFO CONTAINS AN ERROR FLAG AFTER CALLING THE
-!                 LAPACK ROUTINE SGELSS
+
+      REAL(KIND=JWRB), PARAMETER :: RCOND = 5.E-4_JWRB
+      REAL(KIND=JWRB) :: A(6,6), B(6), T(6), ZB(6)
 
 !-------------------------------------------------------------------
 
@@ -153,37 +152,13 @@
 
 !      1.3 SOLVE SYSTEM OF EQUATIONS WITH RESPECT TO COEFFICIENTS 
 !          FOR 2D PARABOLA FIT.
-!          (TRY TO BE SMART AND DETECT COMPILER-FLAG PROMOTION OF REALS.
-!           THIS ASSUMES THAT DOUBLE PRECISION IS NOT ALSO PROMOTED.)
 !      ------------------------------------------------------------
 
 
-          INFO  = 0
-          RCOND = 5.E-4_JWRB
-#ifdef WAM_HAVE_LAPACK
-          IF (KIND(Z_REAL) == KIND(DL_DOUBLE)) THEN
-            CALL DGELSS(6, 6, 1, A, 6, B, 6, S, RCOND, IRANK, WORK,     &
-     &                  SIZE(WORK), INFO)
-          ELSE
-            CALL SGELSS(6, 6, 1, A, 6, B, 6, S, RCOND, IRANK, WORK,     &
-     &                  SIZE(WORK), INFO)
-          ENDIF
-#else
-          CALL WAM_ABORT("GAPINTERPOL:DGELSS or SGELSS is a LAPACK routine, and WAM is not compiled with LAPACK",&
-                        &"gapinterpol.F90",__LINE__)
-#endif
+          CALL LSQ(A, B, RCOND, ZB, KERR)
 
-          IF (INFO < 0) THEN
-            WRITE(IU06,*) 'ERROR! SUBROUTINE GAPINTERPOL:'
-            WRITE(IU06,*) 'SGELSS RETURNED EXIT CODE INFO=',INFO
-            WRITE(IU06,*) 'INFO<0 MEANS INFO''TH ARGUMENT IS INVALID'
-            WRITE(IU06,*) 'SEE DOCUMENTATION FOR LAPACK LIBRARY'
-            WRITE(IU06,*) 'FOR MORE INFORMATION.'
-            CALL ABORT1
-          END IF
-
-          IF (INFO.EQ.0) THEN
-            B(1) = MAX(B(1),0.)
+          IF (KERR == 0) THEN
+            ZB(1) = MAX(ZB(1),0.0_JWRB)
             DO I12 = 1,2
               DO IANG = LANG0(I12),HANG0(I12)
                 DO IFRE = LFRE0,HFRE0
@@ -191,7 +166,7 @@
                     X = FX(IANG,IFRE)
                     Y = FY(IANG,IFRE)
                     SPEC(ISPEC,IANG,IFRE) = MAX(0.0_JWRB ,              &
-     &                B(1)+B(2)*X+B(3)*Y+B(4)*X*X+B(5)*Y*Y+B(6)*X*Y)
+     &                ZB(1)+ZB(2)*X+ZB(3)*Y+ZB(4)*X*X+ZB(5)*Y*Y+ZB(6)*X*Y)
                   END IF
                 END DO
               END DO

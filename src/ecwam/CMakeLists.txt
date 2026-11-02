@@ -40,6 +40,7 @@ list( APPEND wamda_srcs
   wamda/crossw.F90
   wamda/dev.F90
   wamda/docombine.F90
+  wamda/fcut_interpolate.F90
   wamda/fdur.F90
   wamda/fillgaps.F90
   wamda/fustar.F90
@@ -53,6 +54,7 @@ list( APPEND wamda_srcs
   wamda/lasttwobins.F90
   wamda/lowenergy.F90
   wamda/makeframes.F90
+  wamda/means.F90
   wamda/mergesarcor.F90
   wamda/mpbcastsarin.F90
   wamda/mpexchngsarin.F90
@@ -62,6 +64,9 @@ list( APPEND wamda_srcs
   wamda/onestepapart.F90
   wamda/optint.F90
   wamda/partitioning.F90
+  wamda/readecsarspec.F90
+  wamda/readmfsarspec.F90
+  wamda/readsarfct.F90
   wamda/readsarspec.F90
   wamda/readsat.F90
   wamda/rearrngsar.F90
@@ -85,8 +90,13 @@ list( APPEND wamda_srcs
   wamda/wam_setup_assi.F90
   wamda/wam_syminv.F90
   wamda/windsea.F90
+  wamda/writeprtout.F90
+  wamda/writesasout.F90
+  wamda/writediaout.F90
   wamda/yowcmdlo.F90
+  wamda/yowfct.F90
   wamda/yowgap.F90
+  wamda/yowlsq.F90
   wamda/yowsaras.F90
 )
 
@@ -188,7 +198,6 @@ list( APPEND ecwam_srcs
   mboxb.F90
   mchunk.F90
   mcout.F90
-  means.F90
   meansqs.F90
   meansqs_gc.F90
   meansqs_lf.F90

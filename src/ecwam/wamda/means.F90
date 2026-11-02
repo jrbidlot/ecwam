@@ -11,9 +11,11 @@
 !                   DIMENSIONS
      &                NSPEC , MPART , NPART , NANG, NFRE ,              &
 !                   INPUT
+     &                MFRCUT,                                           &
      &                SPEC , PART ,                                     &
+     &                MEANE ,                                           &
 !                   OUTPUT
-     &                MEANE , MEANANG , MEANFRE , PKFRE ,               &
+     &                MEANANG , MEANFRE , PKFRE ,                       &
 !                   WORK SPACE.
      &                SUM0 , SUMX0 , SUMY0 )
 
@@ -25,6 +27,9 @@
 !     COMPUTES MEAN DIRECTION AND MEAN FREQUENCY OF 2D SPECTRA.
 !     AND THE PEAK FREQUENCY
 !     FOR THE CALCULATION OF THE SPECTRAL PARTITIONING.
+!     FOR A GIVEN MEANE
+
+!     A HIGH FREQUENCY TAIL CONTRIBUTION IS ONLY ADDED IF MFRCUT = NFRE
 
 !-----------------------------------------------------------------------
 
@@ -45,6 +50,8 @@
 
       INTEGER(KIND=JWIM) :: NSPEC, MPART, NPART(NSPEC), NANG, NFRE
 !                 ARRAY DIMENSIONS.
+      INTEGER(KIND=JWIM) :: MFRCUT
+!                 INDEX OF THE LAST FREQUENCY FOR THE INTEGRATION
       REAL(KIND=JWRB) :: SPEC(0:NSPEC,NANG,NFRE)
 !                 2D SPECTRA.
       INTEGER(KIND=JWIM) :: PART(NSPEC,NANG,NFRE)
@@ -83,7 +90,7 @@
             SUM0(ISPEC,IPART) = 0.0_JWRB
           ENDDO
         ENDDO
-        DO IFRE=1,NFRE
+        DO IFRE = 1, MFRCUT
           DO ISPEC=1,NSPEC
             SUM0(ISPEC,PART(ISPEC,IANG,IFRE))                           &
      &          = SUM0(ISPEC,PART(ISPEC,IANG,IFRE))                     &
@@ -118,7 +125,7 @@
         ENDDO
       ENDDO
 
-      DO IFRE = 1,NFRE
+      DO IFRE = 1, MFRCUT
         DO IPART = 1,MPART
           DO ISPEC = 1,NSPEC
             SUM0(ISPEC,IPART) = 0.0_JWRB
@@ -139,9 +146,11 @@
         ENDDO
       ENDDO
 
-!     ADD TAIL CONTRIBUTION.
-
-      FACTOR_TAIL = FRTAIL*DELTH
+      IF ( MFRCUT < NFRE ) THEN
+        FACTOR_TAIL = 0.0_JWRB
+      ELSE
+        FACTOR_TAIL = FRTAIL*DELTH
+      ENDIF
 
       DO IPART = 1,MPART
         DO ISPEC = 1,NSPEC
@@ -164,18 +173,18 @@
 
       DO IPART = 1,MPART
         DO ISPEC = 1,NSPEC
-          PKFRE(ISPEC,IPART) = FR(NFRE) 
+          PKFRE(ISPEC,IPART) = FR(NFRE)
           SUM0(ISPEC,IPART) = 0.0_JWRB
         ENDDO
       ENDDO
 
-      DO IFRE = 1,NFRE
+      DO IFRE = 1, MFRCUT
         DO IANG = 1,NANG
           DO ISPEC = 1,NSPEC
             IPART=PART(ISPEC,IANG,IFRE)
-            IF (SPEC(ISPEC,IANG,IFRE) .GT. SUM0(ISPEC,IPART)) THEN 
+            IF (SPEC(ISPEC,IANG,IFRE) .GT. SUM0(ISPEC,IPART)) THEN
               PKFRE(ISPEC,IPART) = FR(IFRE) 
-              SUM0(ISPEC,IPART) = SPEC(ISPEC,IANG,IFRE) 
+              SUM0(ISPEC,IPART) = SPEC(ISPEC,IANG,IFRE)
             ENDIF
           ENDDO
         ENDDO

@@ -1,4 +1,4 @@
-      SUBROUTINE RESIZE_SARINPUT(KSPEC)
+      SUBROUTINE RESIZE_SARINPUT(KSPEC, FCUTOBS)
 
 ! ----------------------------------------------------------------------
 
@@ -38,6 +38,7 @@
       USE YOWSARAS , ONLY : NSPEC   ,SPEC     ,LONG    ,LAT     ,       &
      &            XKLOW    ,XKUP    ,XKCUTOFF
       USE YOWTEST  , ONLY : IU06    ,ITEST
+      USE YOWDES   , ONLY : JPTSAR
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -46,9 +47,13 @@
       REAL(KIND=JWRB), ALLOCATABLE :: R2DUM(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: R1DUM(:)
 
+      REAL, ALLOCATABLE :: FCUTDUM(:,:)
+
       INTEGER(KIND=JWIM) :: KSPEC
 !                FUTURE DIMENSION OF RESIZABLE ARRAYS  
       INTEGER(KIND=JWIM) :: I,ISPEC, IANG, IFRE, NEWNSPEC
+
+      REAL, ALLOCATABLE, INTENT(INOUT) :: FCUTOBS(:,:)
 
 ! ----------------------------------------------------------------------
 !     NEW DIMENSION
@@ -108,6 +113,19 @@
       ENDDO
 
       DEALLOCATE(R2DUM)
+
+      ALLOCATE(FCUTDUM(JPTSAR,NEWNSPEC))
+
+      FCUTDUM=FCUTOBS
+      DEALLOCATE(FCUTOBS)
+      ALLOCATE(FCUTOBS(JPTSAR, NEWNSPEC))
+      DO I = 1,JPTSAR
+        DO ISPEC=1,MIN(NSPEC,NEWNSPEC)
+          FCUTOBS(I,ISPEC)=FCUTDUM(I, ISPEC)
+        ENDDO
+      ENDDO
+
+      DEALLOCATE(FCUTDUM)
 
       ALLOCATE(R1DUM(NSPEC))
 

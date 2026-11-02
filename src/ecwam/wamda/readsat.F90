@@ -68,7 +68,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWALTAS , ONLY : LECWAMDA
+      USE YOWALTAS , ONLY : LECALTDA
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 ! ----------------------------------------------------------------------
@@ -119,7 +119,7 @@
 !        -----------------------------------------------------
 
       IF (LLEOFD) THEN
-        IF (LECWAMDA) THEN
+        IF (LECALTDA) THEN
           LLTEST=.TRUE.
           CALL CONFILE (IU06, IUME, CDTGE1, YOFID, IFAIL, LLTEST, LLASCII=LLRAWA)
           IF (IFAIL /= 0) THEN
@@ -167,7 +167,7 @@
 
       IF (LLRAWA) THEN
 
-        IF (LECWAMDA) THEN
+        IF (LECALTDA) THEN
 !         ASCII INPUT (TAILOR TO YOUR NEED. IT CURRENLT MIRRORS WHAT IS DONE IN BINARY INPUT)
           READ(IUME,1111,END=4000,IOSTAT=IRS) CDATE, IDENTI, ISENSOR, RLAT, RLON, IDES_WS, WS, IDES_HS, SWH
 1111      FORMAT(A14,2(1X,I5),2(1X,F7.2),2(1X,I5,1X,F7.3))

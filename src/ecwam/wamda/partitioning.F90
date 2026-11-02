@@ -38,8 +38,12 @@
 !-----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWFCT      , ONLY : M10CONST
+
+      USE EC_LUN   , ONLY : NULERR
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 
 !     INTERFACE:
@@ -92,11 +96,11 @@
       DO ISPEC = 1,NSPEC
         NPART(ISPEC) = 0
         DO IANG = 1,NANG
-          DO IFRE = 1,NFRE
+          DO IFRE = 1,M10CONST
             PART(ISPEC,IANG,IFRE) = 0
           END DO
         END DO
-        DO IPART = 1,NANG*NFRE/2
+        DO IPART = 1,NANG*M10CONST/2
           EQUIPART(ISPEC,IPART) = 0
           PEAKANG(ISPEC,IPART) = 0
           PEAKFRE(ISPEC,IPART) = 0
@@ -110,30 +114,28 @@
       DO IANG = 1,NANG
         IFREINF = 1
         DO ISPEC = 1,NSPEC
-          DO WHILE(SPEC(ISPEC,IANG,IFREINF(ISPEC)).LE.FLMIN .AND.       &
-     &             IFREINF(ISPEC).LT.NFRE)
+          DO WHILE(SPEC(ISPEC,IANG,IFREINF(ISPEC)).LE.FLMIN .AND. IFREINF(ISPEC).LT.M10CONST)
             IFREINF(ISPEC)=IFREINF(ISPEC)+1 
           ENDDO
         ENDDO
-        IFRESUP = NFRE
+        IFRESUP = M10CONST
         DO ISPEC = 1,NSPEC
-          IF(IFREINF(ISPEC).LT.NFRE) THEN
-            DO WHILE(SPEC(ISPEC,IANG,IFRESUP(ISPEC)).LE.FLMIN .AND.     &
-     &               IFRESUP(ISPEC).GE.1)
-              IFRESUP(ISPEC)=IFRESUP(ISPEC)-1 
+          IF(IFREINF(ISPEC).LT.M10CONST) THEN
+            DO WHILE(SPEC(ISPEC,IANG,IFRESUP(ISPEC)).LE.FLMIN .AND. IFRESUP(ISPEC).GE.1)
+              IFRESUP(ISPEC)=IFRESUP(ISPEC)-1
             ENDDO
           ENDIF
         ENDDO
         DO ISPEC = 1,NSPEC
-          IF(IFREINF(ISPEC).EQ.NFRE) THEN
-            DO IFRE = 1,NFRE
+          IF(IFREINF(ISPEC).EQ.M10CONST) THEN
+            DO IFRE = 1,M10CONST
               SPEC(ISPEC,IANG,IFRE)=FSMALL
             ENDDO
           ELSE
             DO IFRE = IFREINF(ISPEC)-1,1,-1
               SPEC(ISPEC,IANG,IFRE)=FLMIN/(1+IFREINF(ISPEC)-IFRE)
             ENDDO
-            DO IFRE = IFRESUP(ISPEC)+1,NFRE
+            DO IFRE = IFRESUP(ISPEC)+1,M10CONST
               SPEC(ISPEC,IANG,IFRE)=FLMIN/(IFRE-IFREINF(ISPEC)+1)
             ENDDO
           ENDIF
@@ -143,7 +145,7 @@
 !     PARTITIONING
 
       DO IANG = 1,NANG
-        DO IFRE = 1,NFRE
+        DO IFRE = 1,M10CONST
           DO ISPEC = 1,NSPEC
 
             IF( SPEC(ISPEC,IANG,IFRE).LE.FSMALL )THEN
@@ -176,7 +178,7 @@
                 HFRE = IFRE
                 HSPEC = HSPEC0
               END IF
-              IF( IFRE.NE.NFRE )THEN
+              IF( IFRE.NE.M10CONST )THEN
                 HSPEC0 = SPEC(ISPEC,IANG,IFRE+1)
                 IF( HSPEC0.GE.HSPEC )THEN
                   HANG = IANG
@@ -211,10 +213,8 @@
 !               POINT IS NO PEAK
                 IF( PART(ISPEC,IANG,IFRE).NE.0 )THEN
                   IF( PART(ISPEC,HANG,HFRE).NE.0 )THEN
-                    IF(PART(ISPEC,IANG,IFRE).NE.                        &
-     &                 PART(ISPEC,HANG,HFRE)) THEN
-                      EQUIPART(ISPEC,PART(ISPEC,IANG,IFRE))             &
-     &                  = PART(ISPEC,HANG,HFRE)
+                    IF(PART(ISPEC,IANG,IFRE).NE. PART(ISPEC,HANG,HFRE)) THEN
+                      EQUIPART(ISPEC,PART(ISPEC,IANG,IFRE)) = PART(ISPEC,HANG,HFRE)
                     ELSE
                       PEAKANG(ISPEC,PART(ISPEC,IANG,IFRE)) = HANG
                       PEAKFRE(ISPEC,PART(ISPEC,IANG,IFRE)) = HFRE
@@ -275,23 +275,27 @@
 !       AND THE LIST EQUIPART( , ) ENDS WITH THE FIRST 0.
 
         IPART = 1
-        DO WHILE( EQUIPART(ISPEC,IPART).NE.0.AND.IPART.LE.NANG*NFRE/2 ) 
+        DO WHILE( EQUIPART(ISPEC,IPART).NE.0.AND.IPART.LE.NANG*M10CONST/2 )
           JPART = IPART
           DO WHILE( JPART.GE.0 )
-            IF(JPART.eq.0 .or. (JPART.eq.EQUIPART(ISPEC,JPART)) ) then
-              WRITE(IU06,*) ' '
-              WRITE(IU06,*) '  SUBROUTING PARTITIONING :'
-              WRITE(IU06,*) ' '
-              WRITE(IU06,*) ' !!! problem !!! '
-              WRITE(IU06,*) ' ISPEC = ', ISPEC
-              WRITE(IU06,*) ' JPART = ', JPART
-              WRITE(IU06,*) ' EQUIPART(ISPEC,JPART) = ',                &
-     &                        EQUIPART(ISPEC,JPART)
-              WRITE(IU06,*) ' '
-              CALL FLUSH(IU06)
+            IF(JPART.LE.NANG*M10CONST/2 ) THEN 
+              IF(JPART.EQ.0 .OR. (JPART.EQ.EQUIPART(ISPEC,JPART)) ) then
+                WRITE(IU06,*) ' '
+                WRITE(IU06,*) '  SUBROUTING PARTITIONING :'
+                WRITE(IU06,*) ' '
+                WRITE(IU06,*) ' !!! problem !!! '
+                WRITE(IU06,*) ' ISPEC = ', ISPEC
+                WRITE(IU06,*) ' JPART = ', JPART
+                WRITE(IU06,*) ' EQUIPART(ISPEC,JPART) = ', EQUIPART(ISPEC,JPART)
+                WRITE(IU06,*) ' '
+                CALL FLUSH(IU06)
+                JPART=-1
+              ELSE
+                JPART = EQUIPART(ISPEC,JPART)
+              ENDIF
+            ELSE
               JPART=-1
             ENDIF
-            JPART = EQUIPART(ISPEC,JPART)
           END DO
           EQUIPART(ISPEC,IPART) = JPART
           IPART = IPART + 1
@@ -318,10 +322,8 @@
 
       WRITE(IU06,*) ' '
       WRITE(IU06,*) '  SUBROUTING PARTITIONING :'
-      WRITE(IU06,*) '  THE MAXIMUM NUMBER OF PARTITIONING IS: ',        &
-     &                 MAXJPART
-      WRITE(IU06,*) '  FOR A TOTAL NUMBER OF PARTITIONING OF: ',        &
-     &                 MAXMPART
+      WRITE(IU06,*) '  THE MAXIMUM NUMBER OF PARTITIONING IS: ', MAXJPART
+      WRITE(IU06,*) '  FOR A TOTAL NUMBER OF PARTITIONING OF: ', MAXMPART
       WRITE(IU06,*) ' '
       CALL FLUSH(IU06)
 
@@ -335,6 +337,14 @@
         WRITE(IU06,*) 'CHANGE PARAMETER MPARTSW'
         WRITE(IU06,*) 'IN MODULE YOWSARAS'
         WRITE(IU06,*) '************************************************'
+        WRITE(NULERR,*) '************************************************'
+        WRITE(NULERR,*) 'ERROR! SUBROUTINE PARTITIONING:'
+        WRITE(NULERR,*) 'DIMENSION MPART IS TOO SMALL'
+        WRITE(NULERR,*) 'FOR THE PARTITIONING OF SPECTRA '
+        WRITE(NULERR,*) 'IT MUST BE MPART >= ',MAXJPART
+        WRITE(NULERR,*) 'CHANGE PARAMETER MPARTSW'
+        WRITE(NULERR,*) 'IN MODULE YOWSARAS'
+        WRITE(NULERR,*) '************************************************'
         CALL ABORT1 
       ENDIF
 
@@ -342,19 +352,17 @@
 !     THEN: ASSIGN TO EVERY POINT THIS UNIQUE PART NUMBER
 
       DO IANG = 1,NANG
-        DO IFRE = 1,NFRE
+        DO IFRE = 1,M10CONST
           DO ISPEC =1,NSPEC
-            PART(ISPEC,IANG,IFRE)                                       &
-     &         = MAX( 1 , -EQUIPART(ISPEC,PART(ISPEC,IANG,IFRE)) )
-            PART(ISPEC,IANG,IFRE)                                       &
-     &         = MIN( MPART , PART(ISPEC,IANG,IFRE) )
+            PART(ISPEC,IANG,IFRE) = MAX( 1 , -EQUIPART(ISPEC,PART(ISPEC,IANG,IFRE)) )
+            PART(ISPEC,IANG,IFRE) = MIN( MPART , PART(ISPEC,IANG,IFRE) )
           END DO
         END DO
       END DO
 
 !     restore noise level 
       DO IANG = 1,NANG
-        DO IFRE = 1,NFRE
+        DO IFRE = 1,M10CONST
           DO ISPEC = 1,NSPEC
             SPEC(ISPEC,IANG,IFRE)=MAX(SPEC(ISPEC,IANG,IFRE),FLMIN)
           END DO

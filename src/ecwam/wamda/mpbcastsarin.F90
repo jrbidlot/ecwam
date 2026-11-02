@@ -36,6 +36,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWFCT   , ONLY : FCUT, M10
       USE YOWICE   , ONLY : FLMIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC
       USE YOWPARAM , ONLY : NANG     ,NFRE
@@ -117,7 +118,24 @@
                 ZCOMBUF(KCOUNT)=SPEC(ISPEC,IANG,IFRE,2)
               ENDDO 
             ENDDO 
-          ENDDO 
+          ENDDO
+
+          ! Add FCUT
+          DO IANG = 1, NANG
+            DO ISPEC = 1, NSPEC
+              KCOUNT = KCOUNT + 1
+              ZCOMBUF(KCOUNT) = FCUT(IANG, ISPEC)
+            END DO
+          END DO
+
+          ! Add M10
+          DO IANG = 1, NANG
+            DO ISPEC = 1, NSPEC
+              KCOUNT = KCOUNT + 1
+              ZCOMBUF(KCOUNT) = M10(IANG, ISPEC)
+            END DO
+          END DO
+
         ENDIF
 
         CALL MPL_BROADCAST(ZCOMBUF(1:MZC),KROOT=ISEND,KTAG=ITAG,        &
@@ -134,13 +152,15 @@
                 SPEC(ISPEC,IANG,IFRE,1)=0.25_JWRB*FLMIN
               ENDDO 
             ENDDO 
-          ENDDO 
+          ENDDO
+
           ALLOCATE(LONG(NSPEC,2))
           ALLOCATE(LAT(NSPEC,2))
           ALLOCATE(XKLOW(NSPEC))
           ALLOCATE(XKUP(NSPEC))
           ALLOCATE(XKCUTOFF(NSPEC))
-
+          ALLOCATE(FCUT(NANG, NSPEC))
+          ALLOCATE(M10(NANG, NSPEC))
 
           KCOUNT=0
           DO ISPEC = 1,NSPEC
@@ -170,24 +190,40 @@
                 SPEC(ISPEC,IANG,IFRE,2)=ZCOMBUF(KCOUNT)
               ENDDO 
             ENDDO 
-          ENDDO 
+          ENDDO
+
+          DO IANG = 1, NANG
+            DO ISPEC = 1, NSPEC
+              KCOUNT = KCOUNT + 1
+              FCUT(IANG, ISPEC) = ZCOMBUF(KCOUNT)
+            END DO
+          END DO
+
+          DO IANG = 1, NANG
+            DO ISPEC = 1, NSPEC
+              KCOUNT = KCOUNT + 1
+              M10(IANG, ISPEC) = ZCOMBUF(KCOUNT)
+            END DO
+          END DO
+
         ENDIF
 
         DEALLOCATE(ZCOMBUF)
       ENDIF
-
 
 5000  CONTINUE
       RETURN
 
       CONTAINS
 
-      INTEGER(KIND=JWIM) FUNCTION BUFFER_SIZE_BCSARIN (NSPEC,NANG,NFRE)
+      INTEGER(KIND=JWIM) FUNCTION BUFFER_SIZE_BCSARIN(NSPEC, NANG, NFRE)
         IMPLICIT NONE
+        INTEGER, INTENT(IN) :: NSPEC, NANG, NFRE
 
-        INTEGER, INTENT(IN) :: NSPEC,NANG,NFRE
-
-        BUFFER_SIZE_BCSARIN = 1+5*NSPEC+(NSPEC+1)*NANG*NFRE
+        ! 5*NSPEC for LONG, LAT, XKLOW, XKUP, XKCUTOFF
+        ! (NSPEC+1)*NANG*NFRE for SPEC
+        ! 2*NANG*NSPEC for FCUT and M10
+        BUFFER_SIZE_BCSARIN = 1 + 5*NSPEC + (NSPEC+1)*NANG*NFRE + 2*NANG*NSPEC
       END FUNCTION BUFFER_SIZE_BCSARIN
 
       END SUBROUTINE MPBCASTSARIN

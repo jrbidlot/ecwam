@@ -34,6 +34,8 @@
       USE YOWFRED  , ONLY : DELTH
       USE YOWGAP   , ONLY : GAPVAL 
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, ICHNKFROMIJ, IPRMFROMIJ
+      USE YOWFCT   , ONLY : M10CONST
+
 
 !-------------------------------------------------------------------
 
@@ -53,7 +55,7 @@
       INTEGER(KIND=JWIM) :: NW1D(IJSG:IJLG)
 
       INTEGER(KIND=JWIM) :: PARTW(NSPEC,NANG,NFRE)
-!                   ASSIGNMENT OF A PARTITIONING NUMBER TO EACH 
+!                   ASSIGNMENT OF A PARTITIONING NUMBER TO EACH
 !                   DIRECTIONAL-FREQUENCY BIN.
       INTEGER(KIND=JWIM) :: CORRELTAW(NSPEC,MPART)
 !                   CROSSASSIGNMENT OF WAM PARTITIONINGS TO SAR
@@ -94,7 +96,7 @@
 !                    THE NUMBER OF GRIDPOINTS THE PARTITIONING 
 !                    MUST BE ROTATED
       REAL(KIND=JWRB) :: COPO(NFRE+1), COPODIFF(NFRE+1)
-!                   POWERS OF FRATIO AND DIFFERENCES OF POWERS OF 
+!                   POWERS OF FRATIO AND DIFFERENCES OF POWERS OF
 !                   FRATIO, ONLY USED IN SUBROUTINE TRANSFORM.
       REAL(KIND=JWRB) :: LOGCO, ENERGY, STRETCHFAC
 
@@ -107,9 +109,9 @@
 !     ---------------
 
       LOGCO = LOG(FRATIO)
-      COPO(1) = FRATIO 
+      COPO(1) = FRATIO
       DO IFRE = 2,NFRE+1
-        COPO(IFRE) = COPO(IFRE-1) * FRATIO 
+        COPO(IFRE) = COPO(IFRE-1) * FRATIO
         COPODIFF(IFRE) = COPO(IFRE) - COPO(IFRE-1)
       END DO
 
@@ -155,7 +157,7 @@
             IK = ICHNKFROMIJ(JP)
             IP = IPRMFROMIJ(JP)
             DO JANG = 1,NANG
-              DO JFRE = 1,NFRE
+              DO JFRE = 1,M10CONST
                 SPECW(NW1D(JP),JANG,JFRE) = FL1(IP, JANG, JFRE, IK)
               ENDDO
             ENDDO
@@ -166,7 +168,7 @@
 
 
       DO JANG = 1,NANG
-        DO JFRE = 1,NFRE+1
+        DO JFRE = 1,M10CONST+1
           DO ISPEC = 1,NSPEC
             SPECT(ISPEC,JANG,JFRE) = GAPVAL
           END DO
@@ -174,9 +176,9 @@
       END DO
 
       DO IANG = 1,NANG
-        DO IFRE = 1,NFRE
+        DO IFRE = 1,M10CONST
           DO ISPEC = 1,NSPEC
-            IPARTW = PARTW(ISPEC,IANG,IFRE)           
+            IPARTW = PARTW(ISPEC,IANG,IFRE)
 
             JANG = IANG + INTROTATE(ISPEC,IPARTW)
             IF ( JANG > NANG ) JANG = JANG - NANG
@@ -193,22 +195,22 @@
             IF (JFRE < 1) THEN
 !!!!              JFRE=1
 !!! it will artificially put energy in the lowest bins otherwise
-              STRETCHFAC=1.
+              STRETCHFAC=1.0_JWRB
             ELSE
               STRETCHFAC=STRETCH(ISPEC,IPARTW)
             ENDIF
             JFREP1 = JFRE + 1
 
-            IF ( JFRE >= 1 .AND. JFRE <= NFRE )THEN
+            IF ( JFRE >= 1 .AND. JFRE <= M10CONST )THEN
               BANG = ABS(FRACROTATE(ISPEC,IPARTW))
-              AANG = 1 - BANG
+              AANG = 1.0_JWRB - BANG
               AFRE = ( COPO(JFREP1) - COPO(IFRE) * STRETCHFAC ) / COPODIFF(JFREP1)
-              BFRE = 1 - AFRE
+              BFRE = 1.0_JWRB - AFRE
               ENERGY = SPECW(ISPEC,IANG,IFRE) * ADJUST(ISPEC,IPARTW)
-              SPECT(ISPEC,JANG  ,JFRE  ) = SPECT(ISPEC,JANG  ,JFRE  ) + ENERGY * AANG * AFRE 
+              SPECT(ISPEC,JANG  ,JFRE  ) = SPECT(ISPEC,JANG  ,JFRE  ) + ENERGY * AANG * AFRE
               SPECT(ISPEC,JANG  ,JFREP1) = SPECT(ISPEC,JANG  ,JFREP1) + ENERGY * AANG * BFRE
               SPECT(ISPEC,JANGP1,JFRE  ) = SPECT(ISPEC,JANGP1,JFRE  ) + ENERGY * BANG * AFRE
-              SPECT(ISPEC,JANGP1,JFREP1) = SPECT(ISPEC,JANGP1,JFREP1) + ENERGY * BANG * BFRE 
+              SPECT(ISPEC,JANGP1,JFREP1) = SPECT(ISPEC,JANGP1,JFREP1) + ENERGY * BANG * BFRE
             END IF 
           END DO
         END DO
@@ -218,7 +220,7 @@
 !     -----------------------
 
       DO IANG = 1,NANG
-        DO IFRE = 1,NFRE
+        DO IFRE = 1,M10CONST
           DO ISPEC = 1,NSPEC
             SPECW(ISPEC,IANG,IFRE) = SPECT(ISPEC,IANG,IFRE)
           END DO

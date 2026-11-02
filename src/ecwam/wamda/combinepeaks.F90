@@ -34,6 +34,8 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWFCT      , ONLY : M10CONST
+
       IMPLICIT NONE
 #include "halfspread.intfb.h"
 #include "lasttwobins.intfb.h"
@@ -132,6 +134,7 @@
 !               DIMENSIONS
      &            NSPEC , MPART , NPART , NANG , NFRE ,                 &
 !               INPUT
+     &            M10CONST,                                             &
      &            SPEC , PART ,                                         &
 !               OUTPUT
      &            MEANE , SPREAD , SUMX , SUMY , SUMXX , SUMYY ,        &
@@ -143,9 +146,11 @@
 !               DIMENSIONS
      &            NSPEC , MPART , NPART , NANG , NFRE ,                 &
 !                   INPUT
+     &            M10CONST,                                             &
      &            SPEC , PART ,                                         &
+     &            MEANE ,                                               &
 !               OUTPUT
-     &            MEANE , MEANANG, MEANFRE , PKFRE ,                    &
+     &            MEANANG, MEANFRE , PKFRE ,                            &
 !               WORKSPACE
      &            SUM0 , SUMX0 , SUMY0 )
 

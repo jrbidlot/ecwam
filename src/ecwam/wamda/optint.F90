@@ -44,13 +44,15 @@
       USE YOWSARAS , ONLY : NSPEC    ,NSPECW   ,JPSIW    ,MPARTSW  ,    &
      &            MAXMPART ,LONG     ,LAT      ,COSSARLAT,SINSARLAT,    &
      &            NTOSIW1D ,NSIW1D   ,SPECW    ,DIST     ,SARCORDIA
-      USE YOWTEST  , ONLY : IU06
+      USE EC_LUN   , ONLY : NULERR
 
    
 !     INTERFACE
 !     ---------
 
       IMPLICIT NONE
+
+#include "abort1.intfb.h"
 #include "wam_syminv.intfb.h"
 
 !     INTEGERS WAM - SAR INDICES
@@ -64,7 +66,7 @@
       REAL(KIND=JWRB) ::                                                &
      &      SARCORLEN,                                                  &
 !              CORRELATION LENGTHS (in radian) !!!
-     &      WEIGHT(NSPECW,MPARTSW,JPSIW),                               &
+     &      WEIGHT(NSPECW,MPARTSW,JPSIW), WEIGHTX(NSPECW,MPARTSW,JPSIW),&
 !              INTERPOLATION WEIGHTS,
      &      EW(NSPECW,MPARTSW),                                         &
      &      XKW(NSPECW,MPARTSW),                                        &
@@ -84,7 +86,7 @@
      &                   YKA(NSPECW,MPARTSW), XANGA(NSPECW,MPARTSW),    &
      &                   XFREA(NSPECW,MPARTSW)
 !              CORRECTION PARAMETERS FOR WAM WAVE SYSTEMS.
-      REAL(KIND=JWRB) :: PHI(NSPECW,MPARTSW,JPSIW)
+      REAL(KIND=JWRB) :: PHI(NSPECW,MPARTSW,JPSIW), PHIX(NSPECW,MPARTSW,JPSIW)
 !              CROSS CORRELATION BETWEEN  MODEL AND DATA ERROR.
 
 !!!! in the long run more arrays will have to be allocatable
@@ -96,7 +98,7 @@
       INTEGER(KIND=JWIM) :: CORRELTAS(NSPECW,MPARTSW,JPSIW),            &
      &                      PARTS(NSPEC,NANG,NFRE)
 
-      REAL(KIND=JWRB) :: WSUME, COND
+      REAL(KIND=JWRB) :: WSUME, WSUMEX, COND
 !            SUMS OF ERRORS.
       REAL(KIND=JWRB) :: SIGMASAR(NSPEC,NSPEC)
 !     CORRELATION FUNCTION BETWEEN SAR OBS.
@@ -120,13 +122,13 @@
       DO ISPEC=1,NSPECW
         NJSAR=MAX(NJSAR,NTOSIW1D(ISPEC))
       ENDDO
-      IF (NJSAR.GT.JPSIW) THEN
-        WRITE(IU06,*)'ERROR: NUMBER OF SAR POINTS INFLUENCING WAM'
-        WRITE(IU06,*)'POINTS, NJSAR: ',NJSAR
-        WRITE(IU06,*)'LARGER THEN DIMENSION OF INVERSE MATRIX.'
-        WRITE(IU06,*)'JPSIW: ',JPSIW
-        CALL EXIT(10)
-      END IF
+      IF (NJSAR > JPSIW) THEN
+        WRITE(NULERR,*)'OPTINT ERROR: NUMBER OF SAR POINTS INFLUENCING WAM'
+        WRITE(NULERR,*)'POINTS, NJSAR: ',NJSAR
+        WRITE(NULERR,*)'LARGER THEN DIMENSION OF INVERSE MATRIX.'
+        WRITE(NULERR,*)'JPSIW: ',JPSIW
+        CALL ABORT1
+      ENDIF
 
 !------------------------------------------------------------------
 
@@ -144,7 +146,7 @@
         DO IPARTS=1,MAXMPARTPE
           DO ISPEC=1,NSPECW
             IF (IPARTS.LE.NPARTW(ISPEC).AND.JSAR.LE.NTOSIW1D(ISPEC))THEN
-              STRETCHCOR=1.
+              STRETCHCOR=1.0_JWRB
               IPARTSAR = NPASC2W(ISPEC,IPARTS,JSAR)
               IF (IPARTSAR.GT.0 ) THEN
                 YY=XMEANEW(NSIW1D(ISPEC,JSAR),IPARTSAR)
@@ -154,7 +156,8 @@
                 ENDIF
               ENDIF
               CORDIST=STRETCHCOR*SARCORLEN
-              PHI(ISPEC,IPARTS,JSAR) = EXP(-DIST(ISPEC,JSAR)/CORDIST)
+              PHI(ISPEC,IPARTS,JSAR) =0.9_JWRB*EXP(-(DIST(ISPEC,JSAR)/CORDIST)**0.9_JWRB)
+              PHIX(ISPEC,IPARTS,JSAR)=0.8_JWRB*EXP(-(DIST(ISPEC,JSAR)/CORDIST)**0.9_JWRB)
             ENDIF
           ENDDO
         ENDDO
@@ -175,13 +178,24 @@
      &                      COSSARLAT(J)*COSSARLAT(K) +                 &
      &                      SINSARLAT(J)*SINSARLAT(K)
           SIGMASAR(K,J) = MAX(MIN(SIGMASAR(K,J),1.0_JWRB),-1.0_JWRB) 
-          SIGMASAR(K,J) = EXP(-ACOS(SIGMASAR(K,J))/SARCORLEN)
+
+          ! MF ADDITION: GEOGRAPHIC CORELLATION LENGTH DEPENDENCE
+          IF (ABS(LAT(K,2)) <= 20._JWRB) THEN
+            SARCORLEN = 3.0_JWRB*SARCORDIA/R
+          ELSEIF (ABS(LAT(K,2)) <= 50._JWRB) THEN
+            SARCORLEN = 1.6_JWRB*SARCORDIA/R
+          ELSE
+            SARCORLEN = 0.8_JWRB*SARCORDIA/R
+          ENDIF
+          SIGMASAR(K,J) = EXP(-(ACOS(SIGMASAR(K,J))/SARCORLEN))
+
           SIGMASAR(J,K) = SIGMASAR(K,J)
         ENDDO
         SIGMASAR(K,K) = 1.0_JWRB
       ENDDO
 
-      WEIGHT = 0.0_JWRB
+      WEIGHT(:,:,:) = 0.0_JWRB
+      WEIGHTX(:,:,:) = 0.0_JWRB
 
       DO ISPEC=1,NSPECW
 
@@ -212,7 +226,7 @@
 !         INVERT MATRIX SIGMA.
 
           IF (NJS.GT.1) THEN
-            COND=0.
+            COND=0.0_JWRB
             CALL WAM_SYMINV(SIGMA,NJSAR,NJS,COND)
           ELSE IF (NJS.EQ.1) THEN
             SIGMA(1,1)=1.0_JWRB/SIGMA(1,1)
@@ -230,16 +244,19 @@
             IF (JPARTSAR.GT.0) THEN
               JSAR=JSAR+1
               WSUME=0.0_JWRB
+              WSUMEX=0.0_JWRB
               KSAR=0
               DO KK = 1,NTOSIW1D(ISPEC)
                 K=NSIW1D(ISPEC,KK)
                 IPARTSAR = NPASC2W(ISPEC,IPARTS,KK)
                 IF (IPARTSAR.GT.0) THEN
                   KSAR=KSAR+1
-                  WSUME = WSUME + SIGMA(JSAR,KSAR)*PHI(ISPEC,IPARTS,KK) 
+                  WSUME = WSUME + SIGMA(JSAR,KSAR)*PHI(ISPEC,IPARTS,KK)
+                  WSUMEX=WSUMEX+SIGMA(JSAR,KSAR)*PHIX(ISPEC,IPARTS,KK)
                 ENDIF
               ENDDO
               WEIGHT(ISPEC,IPARTS,JJ) = WSUME
+              WEIGHTX(ISPEC,IPARTS,JJ)=WSUMEX
             ENDIF
           ENDDO
         ENDDO
@@ -253,9 +270,9 @@
 !         INFLUENCING WAM POINT.
 !     -----------------------------------------------------------
 
-      EA = 0.0_JWRB
-      XKA = 0.0_JWRB
-      YKA = 0.0_JWRB
+      EA(:,:) = 0.0_JWRB
+      XKA(:,:) = 0.0_JWRB
+      YKA(:,:) = 0.0_JWRB
 
       DO JSAR=1,JPSIW
         DO IPARTS=1,MAXMPARTPE
@@ -268,10 +285,10 @@
      &                             WEIGHT(ISPEC,IPARTS,JSAR)*           &
      &                             ED(NSIW1D(ISPEC,JSAR),IPARTSAR)
                 XKA(ISPEC,IPARTS) = XKA(ISPEC,IPARTS)+                  &
-     &                              WEIGHT(ISPEC,IPARTS,JSAR)*          &
+     &                              WEIGHTX(ISPEC,IPARTS,JSAR)*         &
      &                              XKD(NSIW1D(ISPEC,JSAR),IPARTSAR)
                 YKA(ISPEC,IPARTS) = YKA(ISPEC,IPARTS)+                  &
-     &                              WEIGHT(ISPEC,IPARTS,JSAR)*          &
+     &                              WEIGHTX(ISPEC,IPARTS,JSAR)*         &
      &                              YKD(NSIW1D(ISPEC,JSAR),IPARTSAR)
               ENDIF
             ENDIF

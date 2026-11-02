@@ -1,4 +1,4 @@
-SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1)
+SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
 
 !-------------------------------------------------------------------
 
@@ -132,13 +132,17 @@ SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1)
      &            USSAR    ,THW      ,                                  &
      &            NW1D     ,NTOSIW1D ,NSIW1D   ,SPECW    ,DIST     ,    &
      &            SARCORDIA,                                            &
-     &            UW10     ,USW      ,THWW     ,COSSARLAT,SINSARLAT
+     &            UW10     ,USW      ,THWW     ,COSSARLAT,SINSARLAT,    &
+     &            LECSARDA
 
       USE YOWSTAT  , ONLY : CDTPRO
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
       USE MPL_MODULE
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+      USE YOWICE   , ONLY : FLMIN
+      USE YOWFCT    ,ONLY : FCUT, M10, FCUTCONST, M10CONST, INIT_YOWFCT
 
 ! -------------------------------------------------------------------
 
@@ -152,16 +156,20 @@ SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1)
 #include "mnintw.intfb.h"
 #include "mpbcastsarin.intfb.h"
 #include "optint.intfb.h"
-#include "readsarspec.intfb.h"
+#include "readecsarspec.intfb.h"
+#include "readmfsarspec.intfb.h"
 #include "rearrngsar.intfb.h"
 #include "smoothsarspec.intfb.h"
 #include "swellsep.intfb.h"
 #include "tustreas.intfb.h"
+#include "writesasout.intfb.h"
 
 
       TYPE(WVGRIDGLO), INTENT(IN) :: BLK2GLO
       TYPE(FORCING_FIELDS), INTENT(INOUT) :: FF_NOW
       REAL(KIND=JWRB), DIMENSION(NPROMA_WAM, NANG, NFRE, NCHNK), INTENT(INOUT) :: FL1
+      CHARACTER(LEN=2), INTENT(IN) :: COUT
+      LOGICAL, INTENT(IN) :: LACT
 
 
       INTEGER(KIND=JWIM) :: IJSG, IJLG, M, K
@@ -236,6 +244,10 @@ SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1)
 !     NUMBER OF PARTIONING IN SAR-SPECTRUM JPSIW INFLUENCING
 !     PARTIONING NPARTW OF FIRST GUESS SPECTRUM NSPECW.
 
+      ! FCUT-ASSOCIATED VARIABLES
+      INTEGER :: MI        ! For checking NSPEC and NSPEC+1
+      REAL :: FC, FRVAL        ! Cutoff frequency from FCUT
+
 !--------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
@@ -253,16 +265,26 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
       IU14 = 14
       IU12 = 12
 
-      LCONTROL=.FALSE.
+      LCONTROL=.TRUE.
       IF (ITEST.GT.0) LCONTROL=.TRUE.
 
       FRE1=FR(1)
       TH0=TH(1)
 
-      IF (XDELLA < 0.3_JWRB) THEN
-        SARCORDIA = 200000.0_JWRB
+      IF (LECSARDA ) THEN
+        IF (XDELLA < 0.3_JWRB) THEN
+          SARCORDIA = 200000.0_JWRB
+        ELSE
+          SARCORDIA = 300000.0_JWRB
+        ENDIF
       ELSE
-        SARCORDIA = 300000.0_JWRB
+!       METEOFRANCE CHOICE (to review)
+        IF (XDELLA < 0.3_JWRB) THEN
+          SARCORDIA = 110000.0_JWRB
+        ELSE
+          SARCORDIA = 200000.0_JWRB
+        ENDIF
+
       ENDIF
 
       MAXMPART=0
@@ -278,8 +300,14 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 
       IREAD=1
 
+      CALL INIT_YOWFCT() ! Initialise FCUTCONST and M10CONST
+
       IF (IRANK == IREAD) THEN
-        CALL READSARSPEC(LNODATA)
+        IF (LECSARDA ) THEN
+          CALL READECSARSPEC(LNODATA)
+        ELSE
+          CALL READMFSARSPEC(LNODATA)
+        ENDIF
       ENDIF
  
       IF (LCONTROL) THEN
@@ -290,8 +318,7 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 !     BROADCAST INPUT SAR TO ALL PE'S
 !     No attempt is yet made to distribute them per PE's (ie by only 
 !     providing what each PE needs)
-        IF (LCONTROL)                                                    &
-     &  WRITE(IU06,*)'----------BROADCAST SAR SPECTRA BEGINS-----------'
+      IF (LCONTROL) WRITE(IU06,*)'----------BROADCAST SAR SPECTRA BEGINS-----------'
         CALL MPBCASTSARIN(IREAD, KTAG, LNODATA)
         IF (LCONTROL) THEN
           WRITE(IU06,*)'----------BROADCAST SAR SPECTRA DONE-----------'
@@ -336,15 +363,95 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
         SINSARLAT(ISPEC) = SIN(RAD*LAT(ISPEC,2))
       ENDDO
 
+!     1.15 CHECK THAT FCUT IS READY TO BE USED
+!     ----------------------------------------
+
+      IF (LCONTROL) THEN
+        IF (M10CONST > 1 .AND. M10CONST <= SIZE(FR)) THEN
+          WRITE(IU06,*) 'Checking FCUTCONST consistency with FR array...'
+          WRITE(IU06,'(A,F8.5,A,I4,A,F8.5,A,F8.5)')                            &
+                   '  FCUTCONST = ', FCUTCONST,                               &
+                   ', M10CONST = ', M10CONST,                                 &
+                   ', FR(M10CONST) = ', FR(M10CONST),                         &
+                   ', FR(M10CONST-1) = ', FR(M10CONST-1)
+
+          IF (FCUTCONST < FR(M10CONST-1) .OR. FCUTCONST >= FR(M10CONST)) THEN
+            WRITE(IU06,*) 'WARNING: FCUTCONST is NOT between FR(M10CONST-1) and FR(M10CONST)'
+          ELSE
+            WRITE(IU06,*) 'FCUTCONST is within the expected frequency bin bounds.'
+          END IF
+
+        ELSE
+          WRITE(IU06,*) 'M10CONST out of valid range for FR array: ', M10CONST
+        END IF
+
+        WRITE(IU06,*) 'Checking FCUT and M10 arrays...'
+
+        WRITE(IU06,*) 'SIZE(FCUT)  = ', SIZE(FCUT)
+        WRITE(IU06,*) 'SHAPE(FCUT) = ', SHAPE(FCUT)
+        WRITE(IU06,*) 'SHAPE(M10)  = ', SHAPE(M10)
+        WRITE(IU06,*) 'SHAPE(FR)   = ', SHAPE(FR)
+
+        IF (ANY(SHAPE(FCUT) /= SHAPE(M10))) THEN
+          WRITE(IU06,*) 'WARNING: FCUT and M10 shapes do not match!'
+        END IF
+
+        WRITE(IU06,*) 'Checking FCUT = FR(M10) for a few sample points...'
+        DO ISPEC = 1, MIN(NSPEC, 5)
+          DO K = 1, MIN(NANG, 5)
+            MI = M10(K, ISPEC)
+
+            IF (MI >= 1 .AND. MI <= SIZE(FR)) THEN
+              FC = FCUT(K, ISPEC)
+              FRVAL = FR(MI)
+              WRITE(IU06,'(A,I3,A,I3,A,F8.5,A,F8.5,A,F8.5)')             &
+             '  ISPEC=', ISPEC, ' K=', K,                                &
+             ' FCUT=', FC, ' FR(M10)=', FRVAL,                           &
+             ' DIFF=', ABS(FC - FRVAL)
+            ELSE
+              WRITE(IU06,'(A,I3,A,I3,A,I5,A)')                           &
+             '  ISPEC=', ISPEC, ' K=', K,                                &
+             ' INVALID M10 index: ', MI, ' (outside FR bounds)'
+            END IF
+          END DO
+        END DO
+
+        WRITE(IU06,*) 'FCUT/M10 validation check complete.'
+        WRITE(IU06,*)
+      END IF
+
+!     1.1.2 REMOVED INVALID SPECTRAL VALUES (BEYOND FCUT)
+!     --------------------------------
+
+      DO ISPEC=1,NSPEC
+        DO K=1,NANG
+          DO M = M10(K,ISPEC)-1, NFRE
+            ! IF USER HAS SPECIFIED THAT THE CALL TO SARAS IS
+            ! PASSIVE, THEN WE CUT BOTH MODEL AND OBSERVATION
+            ! SPECTRA AT THE CUT-OFF IN ORDER TO GET ACCURATE
+            ! PARTITION DEPARTURES
+            IF (.NOT. LACT) THEN
+              SPEC(ISPEC,K,M,2) = FLMIN
+              SPEC(ISPEC,K,M,1) = FLMIN
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDDO
+
+      ! SAVE SAS* OUTPUT FILES (DIAGNOSTIC ONLY)
+      ! DO THIS BEFORE FCUT AND M10 GET OVERWRITTEN
+!     -------------------------------------------------------
+      IF (IRANK == IREAD .AND. COUT .NE. "NA") THEN
+        CALL WRITESASOUT(COUT)
+      END IF
 
 !     1.2 PARTITIONING OF WAM SPECTRA.
 !     --------------------------------
 
-      IF (LCONTROL)                                                      &
-     &WRITE(IU06,*)'-------------- PARTITIONING OF WAM BEGINS ---'
+      IF (LCONTROL) WRITE(IU06,*)'-------------- PARTITIONING OF WAM BEGINS ---'
 
-      LOWEST=0.1_JWRB
-      ALEVEL=0.75_JWRB
+      LOWEST=0.3_JWRB
+      ALEVEL=0.5_JWRB
 
       IF (NANG > 12) THEN
         CALL SMOOTHSARSPEC(0,NSPEC,NANG,NFRE,SPEC(0,1,1,1))
@@ -368,7 +475,7 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 
       IF (LCONTROL)                                                      &
      &WRITE(IU06,*)'-------------- PARTITIONING OF SAR BEGINS ---'
-      ALEVEL=0.75_JWRB
+      ALEVEL=0.5_JWRB
 
       IF (NANG > 12) THEN
         CALL SMOOTHSARSPEC(0,NSPEC,NANG,NFRE,SPEC(0,1,1,2))
@@ -389,16 +496,15 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 !     1.5 CROSS ASSIGN WAM AND SAR WAVE SYSTEMS.
 !     ------------------------------------------
 
-      DISMIN=1.5_JWRB
+      DISMIN=0.5_JWRB
 
-      IF (LCONTROL)                                                      &
-     &WRITE(IU06,*)'------CROSSAS BEGINS -------------------------'
+      IF (LCONTROL) WRITE(IU06,*)'------CROSSAS BEGINS -------------------------'
 
       CALL CROSSAS(                                                     &
      &          NSPEC , MPARTSW , NPART(1,1) , NPART(1,2) ,             &
      &          DISMIN,                                                 &
-     &          MEANANG(1,1,1) , MEANFRE(1,1,1) ,                       &
-     &          MEANANG(1,1,2) , MEANFRE(1,1,2) ,                       &
+     &          MEANE(1,1,1), MEANANG(1,1,1) , MEANFRE(1,1,1) ,         &
+     &          MEANE(1,1,2), MEANANG(1,1,2) , MEANFRE(1,1,2) ,         &
      &          LCONTROL,                                               &
      &          CORRELTAB)
 
@@ -419,13 +525,14 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 !             DIMENSIONS
      &          NSPEC , MPARTSW ,                                       &
      &          NPART(1,1), NPART(1,2) ,                                &
+     &          IREAD,                                                  &
 !             INPUT
      &          CORRELTAB, XKLOW, XKUP, XKCUTOFF,                       &
      &          MEANE(1,1,1) , MEANANG(1,1,1) , MEANFRE(1,1,1) ,        &
      &          PKFRE(1,1,1) ,PARTINFO(1,1,1) ,                         &
      &          MEANE(1,1,2) , MEANANG(1,1,2) , MEANFRE(1,1,2) ,        &
      &          PKFRE(1,1,2) , PARTINFO(1,1,2),                         &
-     &          LCONTROL,                                               &
+     &          LCONTROL, COUT,                                         &
 !             OUTPUT
      &          ED,XKD,YKD)
 
@@ -496,14 +603,13 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 !     2.2 PARTITION WAM SPECTRA AT INFLUENCE POINTS OF OBSERVATIONS.
 !     -------------------------------------------------------------
 
-      IF (LCONTROL)                                                      &
-     &WRITE(IU06,*)'-------PARTITIONING OF WAM SPECTRA BEGINS --'
+      IF (LCONTROL) WRITE(IU06,*)'-------PARTITIONING OF WAM SPECTRA BEGINS --' 
 
       IF (NANG > 12) THEN
         CALL SMOOTHSARSPEC(0,NSPECW,NANG,NFRE,SPECW)
       ENDIF
 
-      ALEVEL=0.75_JWRB
+      ALEVEL=0.5_JWRB
       CALL SWELLSEP(                                                    &
      &         NSPECW , MPARTSW ,  NANG , NFRE ,                        &
      &         SPECW, USW, THWW, TH0 ,  FR , COSTH , SINTH,             &
@@ -532,8 +638,7 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 !        PARTITIONINGS.
 !    ---------------------------------------------------------
 
-      IF (LCONTROL)                                                      &
-     &WRITE(IU06,*)'------CROSSASSIGNMENT OF WAM AND SAR BEGINS-'
+      IF (LCONTROL) WRITE(IU06,*)'------CROSSASSIGNMENT OF WAM AND SAR BEGINS-'
 
       CALL CROSSW(                                                      &
 !             DIMENSIONS
@@ -542,7 +647,7 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 !             INPUT
      &          DISMIN,                                                 &
      &          NSIW1D, NTOSIW1D,                                       &
-     &          MEANANG(1,1,2), MEANFRE(1,1,2) ,                        &
+     &          MEANE(1,1,2), MEANANG(1,1,2), MEANFRE(1,1,2) ,          &
      &          XMEANEW , XMEANANGW, XMEANFREW ,                        &
      &          LCONTROL,                                               &
 !             OUTPUT
@@ -585,8 +690,7 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
         ENDDO
       ENDDO
 
-      IF (LCONTROL)                                                      &
-     &WRITE(IU06,*)'---------------TUSTREAS BEGINS---------------'
+      IF (LCONTROL) WRITE(IU06,*)'---------------TUSTREAS BEGINS---------------' 
 
       CALL TUSTREAS(                                                    &
      &            IJSG, IJLG, FL1,                                      &
@@ -605,28 +709,28 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 
 !--------------------------------------------------------------------
 
-!     3. CORRECTION OF LOCAL USTAR FROM WINDSEA PARTITIONINGS.
-!     -------------------------------------------------------
-
-!     no longer used !!!
-
 !     4. MERGE ANALYSED SPECTRA INTO BLOCKED FIELDS.
 !     -----------------------------------------------
 
 4000  CONTINUE
-      CALL MERGESARCOR(IJSG, IJLG, FL1, NW1D)
 
-      IF ( KIJL4CHNK(NCHNK) < NPROMA_WAM ) THEN
-        ! update fictitious points
-         DO M = 1, NFRE
-           DO K = 1, NANG
-             FL1(KIJL4CHNK(NCHNK)+1:NPROMA_WAM,K,M,NCHNK) =  FL1(1,K,M,NCHNK)
+      ! ONLY UPDATE THE GLOBAL WAVE FIELDS IF THE USER HAS SET
+      ! THIS CALL TO SARAS AS ACTIVE
+      IF (LACT) THEN
+        CALL MERGESARCOR(IJSG, IJLG, FL1, NW1D)
+
+        IF ( KIJL4CHNK(NCHNK) < NPROMA_WAM ) THEN
+          ! update fictitious points
+           DO M = 1, NFRE
+             DO K = 1, NANG
+               FL1(KIJL4CHNK(NCHNK)+1:NPROMA_WAM,K,M,NCHNK) =  FL1(1,K,M,NCHNK)
+             ENDDO
            ENDDO
-         ENDDO
+        ENDIF
       ENDIF
 
 
-!     5. DEALLOCATION OF ARRAYS
+!     5. DEALLOCATE ARRAYS
 !     -------------------------
 !!! note it might be possible to deallocate some of the arrays some time
 !!! before that.
@@ -686,6 +790,9 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
       IF (ALLOCATED(YKW)) DEALLOCATE(YKW)
       IF (ALLOCATED(NPASC2W)) DEALLOCATE(NPASC2W)
       IF (ALLOCATED(CORRELTAS)) DEALLOCATE(CORRELTAS)
+
+      IF (ALLOCATED(FCUT)) DEALLOCATE(FCUT)
+      IF (ALLOCATED(M10)) DEALLOCATE(M10)
 
 
       WRITE(IU06,*) '  SARAS ENDS NORMALLY'

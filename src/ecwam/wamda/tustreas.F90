@@ -18,6 +18,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
+      USE YOWFCT,    ONLY : M10CONST, FCUTCONST
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK
 
 !-------------------------------------------------------------------
@@ -214,9 +215,6 @@
 !                       TABLE OF FREQUENCY-DIRECTIONAL 
 !                       POLAR COORDINATES.
 !                       USED IN SUBROUTINE GAPINTERPOL AND TRANSMEANS
-      REAL(KIND=JWRB) :: SUM0(NSPEC), SUMX0(NSPEC), SUMY0(NSPEC)
-!                       TEMPORARILY STORAGE, ONLY USED IN 
-!                       SUBROUTINE TRANSMEANS.
       INTEGER(KIND=JWIM) :: IANG, IFRE
 
 !-------------------------------------------------------------------
@@ -291,11 +289,12 @@
 !                  DIMENSIONS
      &                   NSPEC ,  NANG , NFRE ,                         &
 !                  INPUT 
+!!!!!     &                   M10CONST, FCUTCONST,                           &
+!!! JB I think it should be over the full spectrum
+     &                   NFRE, FR(NFRE),                                &
      &                   SPECW ,                                        &
 !                  OUTPUT
-     &                   MEANTE , MEANTANG , MEANTFRE ,                 &
-!                  WORK ARRAYS
-     &                   SUM0 , SUMX0 , SUMY0 )
+     &                   MEANTE , MEANTANG , MEANTFRE)
 
       IF( CONTROL ) THEN
         WRITE(IU06,*) 'END OF SUBROUTINE TUSTREAS'

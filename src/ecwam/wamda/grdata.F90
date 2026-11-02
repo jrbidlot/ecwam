@@ -694,7 +694,7 @@
      &           SENSOR(IBL) == ISENSOR .AND.                           &
      &           CDATESTART(IBL) <= CDATE(1:12) .AND.                   &
      &           CDATEEND(IBL) >= CDATE(1:12) .AND.                     &
-!             BLACKLISTING OF WAVE HEIGHT ONLY !!
+!             BLOCKLISTING OF WAVE HEIGHT ONLY !!
      &           PARAM(IBL) == IDES_HS .AND.                            &
      &           LATMI(IBL) <= RLAT .AND.                               &
      &           LATMA(IBL) >= RLAT .AND.                               &
@@ -714,7 +714,7 @@
           IF (LAVERAGE) THEN
 !           the superobservation is assigned to the closest grid point.
             IF (SWH >= 0.0_JWRB) THEN
-!             if blacklisted, mark the grid box for that satellite as blacklisted
+!             if blocklisted, mark the grid box for that satellite as blacklisted
               IF (LBLKLIST_SWH) IFLAG(ICUNQ(KSAT),KSAT) = 0
               WHME(ICUNQ(KSAT),KSAT) = WHME(ICUNQ(KSAT),KSAT) + SWH
               NUMBWH(ICUNQ(KSAT),KSAT) = NUMBWH(ICUNQ(KSAT),KSAT) + 1
@@ -741,7 +741,7 @@
             ENDIF
 
             IF (SWH >= 0._JWRB) THEN
-!             if blacklisted, mark the grid box for that satellite as blacklisted
+!             if blocklisted, mark the grid box for that satellite as blocklisted
               IF (LBLKLIST_SWH) IFLAG(ICUNQ(KSAT),KSAT) = 0
               WHME(ICUNQ(KSAT),KSAT) = WHME(ICUNQ(KSAT),KSAT) + SWH
               WHSE (ICUNQ(KSAT),KSAT) = WHSE(ICUNQ(KSAT),KSAT) + SWH**2
@@ -837,10 +837,10 @@
               ELSEIF (WHME(IC,ISAT) < HSMIN) THEN
 !               HS BELOW MINIMUM
                 IFLAG(IC,ISAT) = -2
-                NWH = NWH+1
+                NWH = NWH + 1
               ELSE
                 IF ( IFLAG(IC,ISAT) /= 0 ) IFLAG(IC,ISAT) = 1 
-                NWH = NWH+1
+                NWH = NWH + 1
               ENDIF
             ENDDO
           ELSE
@@ -853,7 +853,7 @@
               ELSEIF (NN > 0 .AND. NN < NNMIN) THEN
 !               IF THERE ARE FEW MEASUREMENTS.
                 IFLAG(IC,ISAT) = -3
-                NWH = NWH+1
+                NWH = NWH + 1
               ELSEIF (NN >= NNMIN) THEN
 !               IF THE VARIANCE IS TOO LARGE.
 !               OR SWH IS TOO SMALL  OR THERE ARE TOO MANY SPIKES
@@ -863,9 +863,9 @@
      &              WHME(IC,ISAT) < HSMIN .OR.                         &
      &              XX > 0.1_JWRB) THEN
                   IFLAG(IC,ISAT) = -4
-                  NWH = NWH+1
+                  NWH = NWH + 1
                 ELSE
-                  NWH = NWH+1
+                  NWH = NWH + 1
                 ENDIF
               ENDIF
             ENDDO

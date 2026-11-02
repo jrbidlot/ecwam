@@ -5,7 +5,7 @@
 !             INPUT
      &          DISMIN,                                                 &
      &          NSIW1D, NTOSIW1D,                                       &
-     &          XMEANANGS, XMEANFRES ,                                  &
+     &          XMEANES , XMEANANGS, XMEANFRES ,                        &
      &          XMEANEW , XMEANANGW, XMEANFREW ,                        &
      &          CONTROL,                                                &
 !             OUTPUT
@@ -46,6 +46,8 @@
 
       IMPLICIT NONE
 
+#include "abort1.intfb.h"
+
       INTEGER(KIND=JWIM) ::                                             &
      &             NSPECW,NSPECS,                                       &
 !                      NUMBER OF WAM-SAR SPECTRA.
@@ -60,7 +62,7 @@
       INTEGER(KIND=JWIM) :: MAXMPART
 !                      MAXIMUM NUMBER OF PARTITIONINGS USED
       REAL(KIND=JWRB) ::                                                &
-     &             XMEANEW(NSPECW,MPART),                               &
+     &             XMEANEW(NSPECW,MPART), XMEANES(NSPECS,MPART),        &
 !                      MEAN ENERGIES OF PARTITIONINGS IN WAM SPECTRA.
      &             XMEANANGW(NSPECW,MPART),XMEANANGS(NSPECS,MPART),     &
 !                      MEAN DIRECTIONS 
@@ -105,6 +107,9 @@
      &             FSX(NSPECS,MPART), FSY(NSPECS,MPART)
 !                     MEAN WAVE NUMBERS OF SAR PARTITIONINGS.
       REAL(KIND=JWRB) :: AKABS
+
+      REAL(KIND=JWRB)            :: EFAC
+      REAL(KIND=JWRB), PARAMETER :: MAXEFAC = 200.0_JWRB
 
 !---------------------------------------------------------------------
 
@@ -191,15 +196,23 @@
           NPASC2W(JSPEC,JPARTW,JSAR)=0
           MINDIST=100.0_JWRB
           DO JPARTS = 1,NPARTS(IDSAR)
-            IF (DIST(JPARTW,JPARTS).LT.DISMIN) THEN
-              IF (DIST(JPARTW,JPARTS).LT.MINDIST) THEN
-                IF (CORRELTAS(JSPEC,JPARTS,JSAR).LT.0) THEN
-                  IF (NPASC2W(JSPEC,JPARTW,JSAR).GT.0) THEN
-                    CORRELTAS(JSPEC,NPASC2W(JSPEC,JPARTW,JSAR),         &
-     &                        JSAR)=-1
-                    MINDIS(NPASC2W(JSPEC,JPARTW,JSAR))=100.0_JWRB
-                  END IF
-                  MINDIST=DIST(JPARTW,JPARTS)
+            IF (XMEANEW(JSPEC,JPARTW).EQ.0.0_JWRB .OR. XMEANES(IDSAR,JPARTS).EQ.0.0_JWRB ) THEN
+              WRITE(IU06,*) 'ERROR IN CROSSW:'
+              WRITE(IU06,*) JSPEC, JPARTW, JPARTS, XMEANEW(JSPEC,JPARTW), XMEANES(IDSAR,JPARTS) 
+!!! Jean: is this safe in an operational code?
+              CALL ABORT1
+            ENDIF
+              EFAC = MAX(XMEANEW(JSPEC,JPARTW)/XMEANES(IDSAR,JPARTS), &
+              XMEANES(IDSAR,JPARTS)/XMEANEW(JSPEC,JPARTW))
+              IF( DIST(JPARTW,JPARTS).LT.DISMIN .AND. EFAC .LT. MAXEFAC) THEN
+                IF(DIST(JPARTW,JPARTS).LT.MINDIST) THEN
+                  IF(CORRELTAS(JSPEC,JPARTS,JSAR).LT.0_JWIM ) THEN
+                    IF(NPASC2W(JSPEC,JPARTW,JSAR).GT.0_JWIM) THEN
+                      CORRELTAS(JSPEC,NPASC2W(JSPEC,JPARTW,JSAR), &
+                      JSAR)=-1
+                      MINDIS(NPASC2W(JSPEC,JPARTW,JSAR))=100.0_JWRB
+                    END IF
+                    MINDIST=DIST(JPARTW,JPARTS)
                   NPASC2W(JSPEC,JPARTW,JSAR) = JPARTS
                   CORRELTAS(JSPEC,JPARTS,JSAR)=JPARTW
                   MINDIS(JPARTS)=MINDIST

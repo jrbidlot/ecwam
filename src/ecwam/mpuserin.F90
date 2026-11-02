@@ -46,8 +46,7 @@
       USE YOWALTAS , ONLY : NUMALT   ,IBUFRSAT  ,ALTSDTHRSH,ALTBGTHRSH, &
      &            ALTGRTHRSH, HSALTCUT, LALTGRDOUT, LALTPAS,            &
      &            XKAPPA2  ,HSCOEFCOR,HSCONSCOR ,LALTCOR   ,LALTLRGR,   &
-     &            LODBRALT , LECWAMDA, LRALTPREPROC, LRALTASCII,        &
-     &            LSARASDIAG,                                           &
+     &            LODBRALT , LECALTDA, LRALTPREPROC, LRALTASCII,        &
      &            LRALTAVERAGE, CSATNAME
       USE YOWCOUP  , ONLY : LWCOU    ,KCOUSTEP  ,LWFLUX ,LWVFLX_SNL,    &
      &            LWCOUAST,                                             &
@@ -94,7 +93,7 @@
       USE YOWPCONS , ONLY : ROAIR    ,ROWATER  ,GAM_SURF
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
-
+      USE YOWSARAS , ONLY : LECSARDA ,LSARASDIAG
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT  ,IDELWI   ,    &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
@@ -208,7 +207,7 @@
      &   USERID, RUNID,  PATH, YCLASS, YEXPVER, CPATH,                  &
      &   NGRIB_VERSION,                                                 &
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
-     &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LECWAMDA, LRALTPREPROC,    &
+     &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LECALTDA, LRALTPREPROC,    &
      &   LRALTASCII, LRALTAVERAGE,                                      &
      &   LSARASDIAG,                                                    &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
@@ -399,7 +398,7 @@
 !              NOT REQUIRED.  
 !     LODBRALT: IF TRUE THEN THE ALTIMETER DATA WILL BE READ AND PASSED 
 !               THROUGH OBSERVATION DATABASE (ODB)
-!     LECWAMDA CONTROLS ECMWF SPECIFC OPTIONS IN THE WAVE DATA ANALYIS SYSTEM
+!     LECALTDA CONTROLS ECMWF SPECIFC OPTIONS IN THE WAVE DATA ANALYIS SYSTEM
 !     LSARASDIAG CONTROLS WHETHER EXTRA FIRST GUESS AND ANALYSIS DIAGNOSTICS IN SARAS WILL BE PRODUCED
 !     LRALTPREPROC CONTROLS WHETHER RADAR ALTIMETER OBS ARE PREPROCESSED BY RFL4WAM (true)
 !     LRALTASCII CONTROLS WHETHER RADAR ALTIMETER OBS INPUT IS IN ASCII TEXT RATHER THAN BINARY WHEN NOT USING ODB
@@ -613,7 +612,8 @@
       LRSTPARALR= .TRUE.
       LRSTINFDAT= .FALSE.
       LODBRALT  = .FALSE.
-      LECWAMDA = .TRUE.
+      LECALTDA = .TRUE.
+      LECSARDA = .TRUE.
       LSARASDIAG = .FALSE.
       LRALTPREPROC = .TRUE.
       LRALTASCII = .FALSE.
@@ -1108,7 +1108,8 @@
       IF (IRANK == 1) THEN
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
-        WRITE(6,*) '*** LECWAMDA =', LECWAMDA
+        WRITE(6,*) '*** LECALTDA =', LECALTDA
+        WRITE(6,*) '*** LECSARDA =', LECSARDA
         WRITE(6,*) '*** NANG=',NANG
         WRITE(6,*) '*** NFRE=',NFRE
         WRITE(6,*) '*** NFRE_RED=',NFRE_RED

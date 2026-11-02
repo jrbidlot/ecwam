@@ -27,6 +27,7 @@
 !-----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWFCT      , ONLY : M10CONST
 
       IMPLICIT NONE
 #include "docombine.intfb.h"
@@ -77,7 +78,7 @@
       DO ISPEC = 1,NSPEC
         DO IPART = 1,NPART(ISPEC)
           KPART = -1
-          DO WHILE( PEAKFRE(ISPEC,IPART).GT.NFRE-NBINEXC                &
+          DO WHILE( PEAKFRE(ISPEC,IPART).GT.M10CONST-NBINEXC                &
      &        .AND. PARTINFO(ISPEC,IPART).EQ.0                          &
      &        .AND. IPART.LE.NPART(ISPEC) .AND. KPART.NE.0 )
 !           COMBINE WITH NEAREST NOT WINDSEA PEAK
@@ -86,7 +87,7 @@
             DIST = 0
             DO JPART = 1,NPART(ISPEC)
               IF (JPART.NE.IPART .AND. PARTINFO(ISPEC,JPART).EQ.0       &
-     &            .AND. PEAKFRE(ISPEC,JPART).LE.NFRE-NBINEXC )THEN
+     &            .AND. PEAKFRE(ISPEC,JPART).LE.M10CONST-NBINEXC )THEN
                 DIST0 = (FX(ISPEC,IPART)-FX(ISPEC,JPART))**2            &
      &              + (FY(ISPEC,IPART)-FY(ISPEC,JPART))**2
                 IF (KPART.EQ.0 .OR. DIST0.LT.DIST )THEN

@@ -20,6 +20,7 @@
 !----------------------------------------------------------------------
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+      USE YOWFCT      , ONLY : M10CONST
 
       IMPLICIT NONE
 
@@ -71,7 +72,7 @@
 !     -----------------------------------------------
 
       DO IANG = 1,NANG
-        DO IFRE = 1,NFRE
+        DO IFRE = 1,M10CONST
           IF( PART(ISPEC,IANG,IFRE).EQ.HPART )THEN
             PART(ISPEC,IANG,IFRE) =LPART
           ELSE IF( PART(ISPEC,IANG,IFRE).EQ.NPART(ISPEC) )THEN

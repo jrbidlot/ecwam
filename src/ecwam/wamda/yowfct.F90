@@ -1,0 +1,42 @@
+MODULE YOWFCT
+
+      USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
+
+      USE YOWFRED,  ONLY : FR
+      USE YOWPARAM, ONLY : NFRE
+
+      IMPLICIT NONE
+
+      INTEGER(KIND=JWIM) :: M10CONST
+      INTEGER(KIND=JWIM), ALLOCATABLE :: M10(:,:)
+
+      REAL(KIND=JWRB) :: FCUTCONST = 0.121_JWRB ! 0.121 is the MF value
+      REAL(KIND=JWRB), ALLOCATABLE    :: FCUT(:,:)
+
+!     VARIABLE   TYPE     PURPOSE
+!     --------   ----     -------
+!     *M10CONST* INT.     INDEX OF THE CONSTANT CUT OF FREQUENCY
+!     *M10*      INT.     MODEL INDEX OF THE CUT OF FREQUENCY
+!     *FCUTCONST*REAL     CONSTANT CUT-OFF FREQUENCY
+!     *FCUT*     REAL     CUT-OFF FREQUENCY INTERPOLATED ONTO MODEL GRID
+! ----------------------------------------------------------------------
+
+      ! LOOP THROUGH FR AND FIND THE INDEX WHICH CORRESPONDS TO FCUTCONST
+
+      CONTAINS
+
+      SUBROUTINE INIT_YOWFCT()
+        INTEGER(KIND=JWIM) :: M
+
+        M10CONST = NFRE
+
+        DO M = NFRE, 1, -1
+          IF (FR(M) < FCUTCONST) THEN
+            M10CONST = M
+            EXIT
+          END IF
+        END DO
+
+      END SUBROUTINE INIT_YOWFCT
+
+END MODULE YOWFCT

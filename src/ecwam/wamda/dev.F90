@@ -1,14 +1,15 @@
       SUBROUTINE DEV(                                                  &
 !             DIMENSIONS
      &          NSPEC , MPART,                                         &
-     &          NPARTW, NPARTS ,                                       &
+     &          NPARTW, NPARTS,                                        &
+     &          IREAD,                                                 &
 !             INPUT
      &          NCORRELTAB, XKLOW, XKUP, XKCUTOFF,                     &
      &          XMEANEW , XMEANANGW, XMEANFREW ,                       &
      &          PKFREW, PARTINFOW,                                     &
      &          XMEANES , XMEANANGS, XMEANFRES ,                       &
      &          PKFRES, PARTINFOS,                                     &
-     &          CONTROL,                                               &
+     &          CONTROL, COUT,                                         &
 !             OUTPUT
      &          ED,XKD,YKD) 
 
@@ -44,6 +45,8 @@
 !     ----------
 
       IMPLICIT NONE
+
+#include "writeprtout.intfb.h"
 
       INTEGER(KIND=JWIM) ::                                             &
      &          NSPEC,                                                  &
@@ -83,6 +86,9 @@
 !                  DIFFERENCES IN ENERGY AND MEAN WAVE NUMBERS KX,KY 
 !                  OF WAM AND SAR WAVE SYSTEMS AT DATA POINTS FOR SAR 
 !                  PSRTITIONING INDEX MPART.
+
+     CHARACTER(2) :: COUT
+     INTEGER :: IREAD
 
 !     VARIABLES:
 !     ----------
@@ -125,6 +131,22 @@
 
 !-------------------------------------------------------------------
 
+!     1.5. OUTPUT PARTITION INFORMATION TO FILE (INCLUDED BY J. STEER).
+!     -----------------------
+      IF (COUT .NE. "NA") THEN
+        CALL WRITEPRTOUT( &
+        !   DIMENSIONS
+        &  NSPEC , MPART,        &
+        !   INPUTS (all of DEV's)
+        &  NCORRELTAB, XKLOW, XKUP, XKCUTOFF,               &
+        &  XMEANEW , XMEANANGW, XMEANFREW , PKFREW, PARTINFOW, &
+        &  XMEANES , XMEANANGS, XMEANFRES , PKFRES, PARTINFOS, &
+        &  NPARTW, NPARTS,                                  &
+        &  CONTROL, COUT, IREAD)
+      ENDIF
+
+!-------------------------------------------------------------------
+
 !     2. COMPUTES DEVIATIONS.
 !     -----------------------
       DO JSPEC=1,NSPEC 
@@ -145,18 +167,18 @@
 !!!! and peak wave number less than upper SAR wave number 
 !!!! and peak wave number greater than lower SAR wave number 
 
-            IF( PARTINFOW(JSPEC,JJPARTW).EQ.0          .AND.           &
-     &          PARTINFOS(JSPEC,IDSAR).EQ.0            .AND.           &
-     &          AKAS(JSPEC,IDSAR).LT.XKCUTOFF(JSPEC)   .AND.           &
-     &          AKAS(JSPEC,IDSAR).LT.XKUP(JSPEC)       .AND.           &
-     &          AKAS(JSPEC,IDSAR).GT.XKLOW(JSPEC)   ) THEN 
+!           IF( PARTINFOW(JSPEC,JJPARTW).EQ.0          .AND.           &
+!    &          PARTINFOS(JSPEC,IDSAR).EQ.0            .AND.           &
+!    &          AKAS(JSPEC,IDSAR).LT.XKCUTOFF(JSPEC)   .AND.           &
+!    &          AKAS(JSPEC,IDSAR).LT.XKUP(JSPEC)       .AND.           &
+!    &          AKAS(JSPEC,IDSAR).GT.XKLOW(JSPEC)   ) THEN
               ED(JSPEC,IDSAR)=                                         &
      &          XMEANES(JSPEC,IDSAR)-XMEANEW(JSPEC,JJPARTW)
               XKD(JSPEC,IDSAR)=                                        &
      &          FSX(IDSAR,JSPEC)-FWX(JJPARTW,JSPEC)
               YKD(JSPEC,IDSAR)=                                        &
      &          FSY(IDSAR,JSPEC)-FWY(JJPARTW,JSPEC)
-            ENDIF
+!            ENDIF
           END IF
         END DO
       END DO

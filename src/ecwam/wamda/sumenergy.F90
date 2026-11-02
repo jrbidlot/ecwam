@@ -2,6 +2,7 @@
 !                  DIMENSIONS
      &               NSPEC , MPART , NPART , NANG , NFRE ,              &
 !                  INPUT
+     &               MFRCUT,                                            &
      &               SPEC , PART ,                                      &
 !                  OUTPUT
      &               MEANE , SPREAD ,                                   &
@@ -23,7 +24,7 @@
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
-      USE YOWFRED  , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    ,    &
+      USE YOWFRED     , ONLY : FR       ,DFIM     ,DELTH    ,COSTH    , &
      &           SINTH     ,WETAIL
 
 !-----------------------------------------------------------------------
@@ -35,10 +36,12 @@
 
       INTEGER(KIND=JWIM) :: NSPEC, MPART, NPART(NSPEC), NANG, NFRE
 !                    ARRAY DIMENSIONS.
+      INTEGER(KIND=JWIM) :: MFRCUT
+!                 INDEX OF THE LAST FREQUENCY FOR THE INTEGRATION
       REAL(KIND=JWRB) :: SPEC(0:NSPEC,NANG,NFRE)
 !                    2D SPECTRA.
       INTEGER(KIND=JWIM) :: PART(NSPEC,NANG,NFRE)
-!                    PART(..) GIVES NUMBER OF PARTITIONING FOR EACH 
+!                    PART(..) GIVES NUMBER OF PARTITIONING FOR EACH
 !                    SPECTRAL BIN.
       REAL(KIND=JWRB) :: MEANE(NSPEC,MPART),                            &
      &     SPREAD(NSPEC,MPART),                                         &
@@ -58,7 +61,7 @@
 !                  LOOP INDEXES.
       REAL(KIND=JWRB) :: FX, FY
 !                  WAVE NUMBERS.
-      REAL(KIND=JWRB) :: FACTOR 
+      REAL(KIND=JWRB) :: FACTOR
 
 !-----------------------------------------------------------------------
 
@@ -75,15 +78,15 @@
         END DO
       END DO
 
-      DO IFRE = 1,NFRE
+      DO IFRE = 1, MFRCUT
 
         DO IPART = 1,MPART
           DO ISPEC = 1,NSPEC
             SUM0(ISPEC,IPART) = 0.0_JWRB
-            SUMX0(ISPEC,IPART) = 0.0_JWRB 
-            SUMY0(ISPEC,IPART) = 0.0_JWRB 
-            SUMXX0(ISPEC,IPART) = 0.0_JWRB 
-            SUMYY0(ISPEC,IPART) = 0.0_JWRB 
+            SUMX0(ISPEC,IPART) = 0.0_JWRB
+            SUMY0(ISPEC,IPART) = 0.0_JWRB
+            SUMXX0(ISPEC,IPART) = 0.0_JWRB
+            SUMYY0(ISPEC,IPART) = 0.0_JWRB
           END DO
         END DO
 
@@ -106,8 +109,8 @@
 
         DO IPART = 1,MPART
           DO ISPEC = 1,NSPEC
-            MEANE(ISPEC,IPART) = MEANE(ISPEC,IPART) + DFIM(IFRE) * SUM0(ISPEC,IPART) 
-            SUMX(ISPEC,IPART)  = SUMX(ISPEC,IPART)  + DFIM(IFRE) * SUMX0(ISPEC,IPART) 
+            MEANE(ISPEC,IPART) = MEANE(ISPEC,IPART) + DFIM(IFRE) * SUM0(ISPEC,IPART)
+            SUMX(ISPEC,IPART)  = SUMX(ISPEC,IPART)  + DFIM(IFRE) * SUMX0(ISPEC,IPART)
             SUMY(ISPEC,IPART)  = SUMY(ISPEC,IPART)  + DFIM(IFRE) * SUMY0(ISPEC,IPART)
             SUMXX(ISPEC,IPART) = SUMXX(ISPEC,IPART) + DFIM(IFRE) * SUMXX0(ISPEC,IPART)
             SUMYY(ISPEC,IPART) = SUMYY(ISPEC,IPART) + DFIM(IFRE) * SUMYY0(ISPEC,IPART)
@@ -115,16 +118,17 @@
         END DO
       END DO
 
-!     ADD TAIL ENERGY
+!     ADD TAIL ENERGY (if needed)
 !     ---------------
 
-      FACTOR = WETAIL*FR(NFRE)*DELTH
-
-      DO IPART = 1,MPART
-        DO ISPEC = 1,NSPEC
-          MEANE(ISPEC,IPART) = MEANE(ISPEC,IPART) + FACTOR * SUM0(ISPEC,IPART)
+      IF ( MFRCUT ==  NFRE ) THEN
+        FACTOR = WETAIL*FR(NFRE)*DELTH
+        DO IPART = 1,MPART
+          DO ISPEC = 1,NSPEC
+            MEANE(ISPEC,IPART) = MEANE(ISPEC,IPART) + FACTOR * SUM0(ISPEC,IPART)
+          END DO
         END DO
-      END DO
+      ENDIF
 
 !     COMPUTE SPREAD
 !     --------------

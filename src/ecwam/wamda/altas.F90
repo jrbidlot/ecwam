@@ -45,7 +45,7 @@ SUBROUTINE ALTAS(IJSG, IJLG, MIJ, BLK2GLO,           &
       USE YOWALTAS , ONLY : INTLMAX  ,KMINLMAX ,KMAXLMAX  ,NOBSPE,     &
      &                      IJALT    ,DIFFALTFG,LODBRALT  ,ALTDATA,    &
      &                      ALTEXDATA,ALTUNDATA,NIJALT    ,CDATEOBS,   &
-     &                      LECWAMDA
+     &                      LECALTDA
       USE YOWGRID  , ONLY : COSPH    ,NPROMA_WAM, NCHNK, IJFROMCHNK, KIJL4CHNK,   &
      &                      ICHNKFROMIJ, IPRMFROMIJ
       USE YOWMAP   , ONLY : XDELLA   ,AMOSOP   ,NIBLO
@@ -123,7 +123,7 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
 !!! for now, we will disactivate the geographically varying DIST
 !!! by setting XLMAX to 0 and XLMIN to maximum required value.
 
-      IF ( LECWAMDA ) THEN
+      IF ( LECALTDA ) THEN
         XLMIN = 150000._JWRB
         XLMAX = 0.0_JWRB
       ELSE

@@ -3,8 +3,8 @@
      &          NSPEC , MPART , NPARTW, NPARTS ,                        &
 !             INPUT
      &          DISMIN,                                                 &
-     &          MEANWANG, MEANWFRE ,                                    &
-     &          MEANSANG, MEANSFRE ,                                    &
+     &          MEANWE, MEANWANG, MEANWFRE ,                                    &
+     &          MEANSE, MEANSANG, MEANSFRE ,                                    &
      &          CONTROL,                                                &
 !             OUTPUT
      &          CORRELTAB)
@@ -73,14 +73,18 @@
       INTEGER(KIND=JWIM):: FLAG(MPART)
 !                        >0 = CORRELTAB
 !                        <0 NO CROSSASSIGNMENT TO A WAM-PARTITIONING.
+      REAL(KIND=JWRB) :: MEANWE(NSPEC,MPART)
+!                        MEAN ENERGIES OF PARTITIONS OF WAM FIRST GUESS SPECTRA.
       REAL(KIND=JWRB):: MEANWANG(NSPEC,MPART)
-!                        MEAN DIRECTIONS IN RADIANCE
+!                        MEAN DIRECTIONS IN RADIANT
 !                        OF PARTITIONINGS OF WAM FIRST GUESS SPECTRA.
       REAL(KIND=JWRB):: MEANWFRE(NSPEC,MPART)
 !                        MEAN FREQUENCIES OF PARTITIONINGS
 !                        OF WAM FIRST GUESS SPECTRA.
+      REAL(KIND=JWRB) :: MEANSE(NSPEC,MPART)
+!                        MEAN ENERGIES OF PARTITIONS OF INVERTED SAR SPECTRAS.
       REAL(KIND=JWRB):: MEANSANG(NSPEC,MPART)
-!                        MEAN DIRECTIONS IN RADIANCE
+!                        MEAN DIRECTIONS IN RADIANT
 !                        OF PARTITIONINGS OF INVERTED SAR SPECTRA.
       REAL(KIND=JWRB):: MEANSFRE(NSPEC,MPART)
 !                        MEAN FREQUENCIES OF PARTITIONINGS
@@ -109,6 +113,10 @@
       REAL(KIND=JWRB)::  AKABS
       INTEGER(KIND=JWIM):: IPARWH,IPARWH1,IPARSH,IPSH
       REAL(KIND=JWRB)::  MINDIS(MPART),MINDISH
+
+      REAL(KIND=JWRB)           :: EFAC
+      REAL(KIND=JWRB), PARAMETER :: MAXEFAC = 20.0_JWRB
+
 
 !---------------------------------------------------------------------
 
@@ -164,7 +172,7 @@
       DO IPARTS = 1,NPARTSMAX
         DO IPARTW = 1,NPARTWMAX
           DO ISPEC = 1,NSPEC
-            AKABS=(0.5*(FWX(ISPEC,IPARTW)**2+FSX(ISPEC,IPARTS)**2+      &
+            AKABS=(0.5_JWRB*(FWX(ISPEC,IPARTW)**2+FSX(ISPEC,IPARTS)**2+      &
      &           FWY(ISPEC,IPARTW)**2+FSY(ISPEC,IPARTS)**2))
             AKABS=MAX(AKABS,0.1E-10_JWRB)
             DIST(ISPEC,IPARTW,IPARTS)                                   &
@@ -187,7 +195,8 @@
           CORRELTAB(ISPEC,IPARTW)=0
           MINDIST=100.0_JWRB
           DO IPARTS = 1,NPARTS(ISPEC)
-            IF( DIST(ISPEC,IPARTW,IPARTS).LT.DISMIN )THEN
+            EFAC = MAX(MEANWE(ISPEC,IPARTW)/MEANSE(ISPEC,IPARTS), MEANSE(ISPEC,IPARTS)/MEANWE(ISPEC,IPARTW))
+            IF( DIST(ISPEC,IPARTW,IPARTS).LT.DISMIN .AND. EFAC .LT. MAXEFAC ) THEN
               IF(DIST(ISPEC,IPARTW,IPARTS).LT.MINDIST) THEN
                 IF( FLAG (IPARTS).LT.0 ) THEN
                   IF(CORRELTAB(ISPEC,IPARTW).GT.0) THEN
@@ -202,8 +211,7 @@
                   MINDIST=DIST(ISPEC,IPARTW,IPARTS)
                   CORRELTAB(ISPEC,IPARTW) = IPARTS
 
-                  IF ( FLAG(IPARTS) .NE. IPARTW .AND.                   &
-     &              FLAG (IPARTS) .GT. 0) THEN
+                  IF ( FLAG(IPARTS) .NE. IPARTW .AND. FLAG (IPARTS) .GT. 0) THEN
                     CORRELTAB(ISPEC, FLAG(IPARTS)) = 0
                     MINDISH=DISMIN
                     IPARWH= FLAG(IPARTS)
@@ -211,9 +219,8 @@
                     IPARWH1=-1
 
                     DO IPARSH=1,NPARTS(ISPEC)
-                      IF ( FLAG(IPARSH) .LT. 0 .AND.                    &
-     &                   DIST(ISPEC,IPARWH,IPARSH) .LT. MINDISH .AND.   &
-     &                   IPARSH .NE. IPARTS) THEN
+                      IF ( FLAG(IPARSH) .LT. 0 .AND. DIST(ISPEC,IPARWH,IPARSH) .LT.  &
+                        MINDISH .AND. IPARSH .NE. IPARTS) THEN
                         MINDISH=DIST(ISPEC,IPARWH,IPARSH)
                         IPSH=IPARSH
                         IPARWH1=IPARWH
@@ -229,16 +236,16 @@
 
                   FLAG(IPARTS)=IPARTW
 
-!               ELSE
-!                 CORRELTAB(ISPEC,IPARTW) = 0
+    !               ELSE
+    !                 CORRELTAB(ISPEC,IPARTW) = 0
                 END IF
               END IF
-            ELSEIF(MINDIST.EQ.100.0_JWRB) THEN
+              ELSEIF(MINDIST.EQ.100.0_JWRB) THEN
                 CORRELTAB(ISPEC,IPARTW) = 0
-            END IF
+              END IF
+            END DO
           END DO
         END DO
-       END DO
 
       DEALLOCATE(FWX)
       DEALLOCATE(FWY)

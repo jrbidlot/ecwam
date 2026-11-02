@@ -1,4 +1,4 @@
-      SUBROUTINE READSARSPEC(LNODATA)
+      SUBROUTINE READSARSPEC(LNODATA,FCUTALL,FCUTOBS)
 
 !------------------------------------------------------------------
 
@@ -28,16 +28,22 @@
       USE YOWPCONS , ONLY : ZPI     ,RAD
       USE YOWSARAS , ONLY : NSPEC   ,SPEC     ,LONG     ,LAT      ,     &
      &            XKLOW    ,XKUP    ,XKCUTOFF ,NSARINVI ,NSARINVR ,     &
-     &            NSAR     ,ISARINV ,RSARINV  
+     &            NSAR     ,ISARINV ,RSARINV
+      USE YOWDES   , ONLY : JPTSAR
       USE YOWSTAT  , ONLY : CDTPRO  ,LSARINV
       USE YOWTEST  , ONLY : IU06
 
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
+
 #include "abort1.intfb.h"
 #include "confile.intfb.h"
 #include "resize_sarinput.intfb.h"
+
+      LOGICAL, INTENT(OUT) :: LNODATA
+      REAL, ALLOCATABLE, INTENT(OUT) :: FCUTOBS(:,:)
+      REAL, ALLOCATABLE, INTENT(INOUT) :: FCUTALL(:,:)
 
       INTEGER(KIND=JWIM) :: INUNIT, IFL300, INOSPEC
       INTEGER(KIND=JWIM) :: ISPEC, IANG, IFRE, IC, IDOUBLE, ISAR, KCOUNT, ISS
@@ -50,13 +56,13 @@
       CHARACTER(LEN=3) :: YOFID
       CHARACTER(LEN=12) :: CDT
 
-      LOGICAL :: LLOPENED, LNODATA, LLTEST
+      LOGICAL :: LLOPENED, LLTEST
 
       DATA YOFID /'INV'/
  
 !------------------------------------------------------------------
  
-      NSPEC = 1000
+      NSPEC = 3000
 
 !     note that in parallel run spec, long and lat will be allocated
 !     for the other PE's in mpbcastsarin.
@@ -67,6 +73,15 @@
       ALLOCATE(XKUP(NSPEC))
       ALLOCATE(XKCUTOFF(NSPEC))
 
+      ! INITIALISE FCUTOBS
+      ALLOCATE(FCUTOBS(JPTSAR,NSPEC))
+
+      DO IANG=1, JPTSAR
+        DO ISS=1, NSPEC
+          FCUTOBS(IANG,ISS) = -999.0
+        ENDDO
+      ENDDO
+
       ISPEC = 1
       INOSPEC = 0
       IDOUBLE = 0
@@ -74,7 +89,7 @@
         DO IANG=1,NANG
           DO IFRE=1,NFRE
             DO ISS=0,NSPEC
-            SPEC(ISS,IANG,IFRE,IC) = 0.25_JWRB*FLMIN
+              SPEC(ISS,IANG,IFRE,IC) = 0.25_JWRB*FLMIN
             ENDDO
           ENDDO
         ENDDO
@@ -103,8 +118,8 @@
           WRITE(IU06,*) ' +                                        +'
           WRITE(IU06,*) ' + ERROR IN --READSARSPEC--               +'
           WRITE(IU06,*) ' + =========================              +'
-          WRITE(IU06,*) ' + RUN OUT OF UNIT TO OPEN SAR DATA INPUT +' 
-          WRITE(IU06,*) ' + PROGRAM WILL ABORT                     +' 
+          WRITE(IU06,*) ' + RUN OUT OF UNIT TO OPEN SAR DATA INPUT +'
+          WRITE(IU06,*) ' + PROGRAM WILL ABORT                     +'
           WRITE(IU06,*) ' +                                        +'
           WRITE(IU06,*) ' ++++++++++++++++++++++++++++++++++++++++++'
           CALL ABORT1
@@ -131,17 +146,16 @@
       ENDIF
 
 
-!     READ INPUT FROM SAR INVERSION PROGRAM UNTIL END OF FILE IS 
-!     REACHED.
+!     READ INPUT FROM SAR INVERSION PROGRAM UNTIL END OF FILE IS REACHED
 
       IF(.NOT.LSARINV) THEN
-        READ(INUNIT,END=1) CDT 
-        NSAR=99999999
+        READ(INUNIT,END=1) CDT
+        NSAR=99999
       ENDIF
 
-      DO ISAR = 1, NSAR 
+      DO ISAR = 1, NSAR
         IF(LSARINV) THEN
-          JQUAL = ISARINV(1,ISAR) 
+          JQUAL = ISARINV(1,ISAR)
           IFL300 = ISARINV(2,ISAR)
 
           LONG(ISPEC,2) = RSARINV(1,ISAR)
@@ -150,7 +164,7 @@
           ZCORWA = RSARINV(4,ISAR)
           ZCORFG = RSARINV(5,ISAR)
           ZCORBE = RSARINV(6,ISAR)
-          SCLWSI = RSARINV(7,ISAR)
+          SCLWSI = 100.0_JWRB ! [STEER: SET TO 100M FOR L2 SHORTCUT]
           XLLOW  = RSARINV(8,ISAR)
           XLUP   = RSARINV(9,ISAR)
           XHSW   = RSARINV(10,ISAR)
@@ -164,8 +178,12 @@
             ENDDO
           ENDDO
 
+          DO IANG=1, JPTSAR
+            FCUTOBS(IANG,ISPEC) = FCUTALL(IANG,ISAR)
+          ENDDO
+
         ELSE
-          READ(INUNIT,END=1) DUMMY 
+          READ(INUNIT,END=1) DUMMY
           READ(INUNIT) XHSW
           READ(INUNIT) LONG(ISPEC,2),LAT(ISPEC,2)
           READ(INUNIT) XHSS
@@ -178,7 +196,7 @@
           READ(INUNIT)                                                  &
      &        ((SPEC(ISPEC,IANG,IFRE,2),IANG=1,NANG),IFRE=1,NFRE)
           READ(INUNIT) DUMMY 
-!!!the SAR boundary wave numbers are not yet part of the file input !!! 
+!!!the SAR boundary wave numbers are not yet part of the file input !!!
           XLLOW  = 1.0_JWRB/658.0_JWRB
           XLUP   = 1.0_JWRB/65.8_JWRB
 !!! the cut off wave length is not yet part of the file input !!! 
@@ -191,20 +209,25 @@
 !          CHECK)
 !       OR FOR WHICH THE CUT OFF WAVE LENGTH COULD NOT BE DETERMINED.
 !       -------------------------------------------------------------
-        IF(IFL300.LT.10 .AND. ZCOST.LE.0.5_JWRB .AND.                   &
-     &     (JQUAL.NE.3 .OR. (JQUAL.EQ.3 .AND. ZCOST.LT.0.1_JWRB)) .AND. &
-     &     ZCORFG.GE.0.5_JWRB .AND. ZCORBE.GE.0.8_JWRB .AND.            &
-     &     ZCORWA.LE.0.99_JWRB .AND.                                    &
-     &     ABS(XHSW-XHSS).LT.1.0_JWRB .AND.                             &
-     &     JQUAL.NE. 7 ) THEN
-          LONG(ISPEC,2) = MOD(LONG(ISPEC,2),360.)
+
+        ! [STEER: REMOVED ALL CHECKS FOR BAD SPECTRA FOR THE L2 SHORTCUT: BEWARE!]
+        IF (ZCOST.LE.0.5_JWRB) THEN
+
+!           (IFL300.LT.10 .AND. ZCOST.LE.0.5_JWRB .AND.                   &
+!     &     (JQUAL.NE.3 .OR. (JQUAL.EQ.3 .AND. ZCOST.LT.0.1_JWRB)) .AND. &
+!     &     ZCORFG.GE.0.5_JWRB .AND. ZCORBE.GE.0.8_JWRB .AND.            &
+!     &     ZCORWA.LE.0.99_JWRB .AND.                                    &
+!     &     ABS(XHSW-XHSS).LT.1.0_JWRB .AND.                             &
+!     &     JQUAL.NE. 7 ) THEN
+
+          LONG(ISPEC,2) = MOD(LONG(ISPEC,2),360.0_JWRB)
           IF( LONG(ISPEC,2).LT.0 ) LONG(ISPEC,2) = LONG(ISPEC,2) +      &
      &                                                     360.0_JWRB
 
           XKLOW(ISPEC) = XLLOW
           XKUP(ISPEC) = XLUP
 !!!
-!!!          WRITE(IU06,'(A21,1x,2(1X,F8.3),1X,I4)') 
+!!!          WRITE(IU06,'(A21,1x,2(1X,F8.3),1X,I4)')
 !!!     &               'CUT_OFF_WAVE_LENGTH= ',
 !!!     &               LONG(ISPEC,2),LAT(ISPEC,2),
 !!!     &               NINT(SCLWSI)
@@ -226,13 +249,13 @@
           INOSPEC = INOSPEC + 1
         ENDIF
 
-        IF( ISPEC.GT.NSPEC ) CALL RESIZE_SARINPUT(ISPEC)
+        IF( ISPEC.GT.NSPEC ) CALL RESIZE_SARINPUT(ISPEC, FCUTOBS)
 
       END DO
 
 1     CONTINUE 
       IF( ISPEC.GT.1 ) THEN
-        CALL RESIZE_SARINPUT(ISPEC-1)
+        CALL RESIZE_SARINPUT(ISPEC-1, FCUTOBS)
 
         WRITE(IU06,*) '  NUMBER OF VALID SPECTRA READ IN , NSPEC = ',   &
      &  NSPEC
@@ -259,11 +282,10 @@
 
       IF(ALLOCATED(ISARINV)) DEALLOCATE(ISARINV)
       IF(ALLOCATED(RSARINV)) DEALLOCATE(RSARINV)
+      IF(ALLOCATED(FCUTALL)) DEALLOCATE(FCUTALL)
 
       IF(.NOT.LSARINV) CLOSE(INUNIT)
 
 5000  CONTINUE
-
-      RETURN
 
       END SUBROUTINE READSARSPEC
