@@ -20,6 +20,7 @@
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
+#include "resize_sarinput.intfb.h"
 
       LOGICAL, INTENT(OUT) :: LNODATA
 
@@ -35,6 +36,8 @@
       REAL(KIND=JWRB), ALLOCATABLE :: RA(:)     !! RATIO OF SIGNAL TO NOISE
       REAL(KIND=JWRB), ALLOCATABLE :: NVI(:)    !! NORMALIZED VARIANCE OF IMAGETTES
       REAL(KIND=JWRB), ALLOCATABLE :: ANG_TR(:) !! ??
+
+      REAL, ALLOCATABLE :: FCUTOBS(:,:) !! not currently used
 
       CHARACTER(LEN=12) :: DATESAR
       CHARACTER(LEN=15) :: YONAME
@@ -124,12 +127,28 @@
 
  1500 FORMAT(A12,7F10.3)
 
-!! JB : this is very bad, all your arrays have been declare with NSPEC=15000 as in line 28
-!!! might want to adapt to using resize_sarinput !!!!
-      NSPEC=ISPEC-1
-      WRITE(*,*) 'test ispec ', NSPEC,NFRE
+      IF( ISPEC.GT.1 ) THEN
+!       ADJUST NSPEC AND ALL THE CORRESPONDING ARRAYS
+        CALL RESIZE_SARINPUT(ISPEC-1, FCUTOBS)
 
-to finish
+        WRITE(IU06,*) '  NUMBER OF SAR SPECTRA READ IN , NSPEC = ', NSPEC
+
+!       SET MINIMUM SAR SPECTRAL VALUE TO THE SAME VALUE AS IN WAM
+
+        DO IFRE = 1,NFRE
+          DO IANG = 1,NANG
+            DO ISPEC = 1,NSPEC
+             SPEC(ISPEC,IANG,IFRE,2) = MAX(SPEC(ISPEC,IANG,IFRE,2),0.25_JWRB*FLMIN)
+            END DO
+          END DO
+        END DO
+      ELSE
+        LNODATA=.TRUE.
+        WRITE(IU06,*) '  NO DATA FOR SAR ASSIMILATION !!!'
+        WRITE(IU06,*) '  NOTHING WILL BE DONE. '
+      ENDIF
+
+      CLOSE(INUNIT)
 
       IF (LHOOK) CALL DR_HOOK('READMFSARSPEC',1,ZHOOK_HANDLE)
 

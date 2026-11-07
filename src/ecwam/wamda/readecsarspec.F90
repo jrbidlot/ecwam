@@ -273,8 +273,7 @@
         DO IFRE = 1,NFRE
           DO IANG = 1,NANG
             DO ISPEC = 1,NSPEC
-             SPEC(ISPEC,IANG,IFRE,2)=                                   &
-     &            MAX(SPEC(ISPEC,IANG,IFRE,2),0.25_JWRB*FLMIN)
+             SPEC(ISPEC,IANG,IFRE,2) = MAX(SPEC(ISPEC,IANG,IFRE,2),0.25_JWRB*FLMIN)
             END DO
           END DO
         END DO
