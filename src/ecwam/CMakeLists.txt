@@ -127,7 +127,6 @@ list( APPEND ecwam_srcs
   mboxb.F90
   mchunk.F90
   mcout.F90
-  means.F90
   meansqs.F90
   meansqs_gc.F90
   meansqs_lf.F90
