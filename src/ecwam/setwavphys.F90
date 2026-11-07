@@ -75,7 +75,7 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
           IF(LLNORMAGAM) THEN
            !!! not yet fully tested !!!
-            BETAMAX = 1.32_JWRB
+            BETAMAX = 1.25_JWRB
           ELSE
             !!! untested
             BETAMAX = 1.25_JWRB

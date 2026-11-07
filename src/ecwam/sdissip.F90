@@ -75,11 +75,16 @@
 
       SELECT CASE (IPHYS)
       CASE(0)
-!$loki remove
-         CALL SDISSIP_JAN (KIJS, KIJL, FL1 ,FLD, SL,  &
-     &                     WAVNUM,                    &
-     &                     EMEAN, F1MEAN, XKMEAN)
-!$loki end remove
+!!!!!    !$loki remove
+!!!!!         CALL SDISSIP_JAN (KIJS, KIJL, FL1 ,FLD, SL,  &
+!!!!!     &                     WAVNUM,                    &
+!!!!!     &                     EMEAN, F1MEAN, XKMEAN)
+!!!!!   !$loki end remove
+!!!!!silly test
+         !$loki inline
+         CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
+     &                     WAVNUM, CGROUP, XK2CG,      &
+     &                     UFRIC, COSWDIF, RAORW)
       CASE(1) 
          !$loki inline
          CALL SDISSIP_ARD (KIJS, KIJL, FL1 ,FLD, SL,   &
