@@ -156,8 +156,7 @@ SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
 #include "mnintw.intfb.h"
 #include "mpbcastsarin.intfb.h"
 #include "optint.intfb.h"
-#include "readecsarspec.intfb.h"
-#include "readmfsarspec.intfb.h"
+#include "readsarspec.intfb.h"
 #include "rearrngsar.intfb.h"
 #include "smoothsarspec.intfb.h"
 #include "swellsep.intfb.h"
@@ -303,11 +302,7 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
       CALL INIT_YOWFCT() ! Initialise FCUTCONST and M10CONST
 
       IF (IRANK == IREAD) THEN
-        IF (LECSARDA ) THEN
-          CALL READECSARSPEC(LNODATA)
-        ELSE
-          CALL READMFSARSPEC(LNODATA)
-        ENDIF
+        CALL READSARSPEC(LNODATA)
       ENDIF
  
       IF (LCONTROL) THEN
