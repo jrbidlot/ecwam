@@ -130,6 +130,7 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
         ELSE
           XLMIN = 300000._JWRB
           XLMAX = 0.0_JWRB
+        ENDIF
       ELSE
 !       METEOFRANCE CHOICE
         IF(XDELLA < 0.05_JWRB) THEN
