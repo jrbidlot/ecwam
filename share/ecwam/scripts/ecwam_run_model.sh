@@ -353,8 +353,8 @@ cat > wam_namelist << EOF
   LSARAS                = ${lsaras}
   LECSARDA              = T,
   LSARASDIAG            = F,
-  COEFPHI               = 0.02,
   LSWIMAS               = F, 
+  COEFPHI               = 0.02,
   LFDBIOOUT             = F,
   LFDB                  = F,
   NGRIB_VERSION         = 2,
