@@ -26,6 +26,7 @@
       USE YOWGRID  , ONLY : NPROMA_WAM, NCHNK, ICHNKFROMIJ, IPRMFROMIJ
       USE YOWPARAM , ONLY : NANG     ,NFRE
       USE YOWSARAS , ONLY : SPECW    ,NSPECW
+      USE YOWFCT   , ONLY : M10CONST
 
 !-----------------------------------------------------------------------
 
@@ -50,7 +51,7 @@
 
       IF (NSPECW > 0) THEN
 
-            DO JFRE=1,NFRE
+            DO JFRE=1,M10CONST
               DO JANG=1,NANG
                 DO JP = IJSG, IJLG
                   IF (NW1D(JP) /= 0) THEN

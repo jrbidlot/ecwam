@@ -1,3 +1,12 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
        SUBROUTINE OPTINT(                                               &
 !           INPUT
      &        NPARTW,NPASC2W,                                           &
@@ -43,7 +52,10 @@
       USE YOWPCONS , ONLY : G        ,R        ,RAD      ,ZPI
       USE YOWSARAS , ONLY : NSPEC    ,NSPECW   ,JPSIW    ,MPARTSW  ,    &
      &            MAXMPART ,LONG     ,LAT      ,COSSARLAT,SINSARLAT,    &
-     &            NTOSIW1D ,NSIW1D   ,SPECW    ,DIST     ,SARCORDIA
+     &            NTOSIW1D ,NSIW1D   ,SPECW    ,DIST     ,SARCORDIA,    &
+     &            COEFPHI
+      USE YOWSTAT  , ONLY : LSARAS   , LSWIMAS
+      USE YOWTEST  , ONLY : IU06
       USE EC_LUN   , ONLY : NULERR
 
    
@@ -114,6 +126,11 @@
       INTEGER(KIND=JWIM) :: MAXMPARTPE
 !     MAXIMIUM OF PARTITIONS ON THAT PE.
 
+      REAL(KIND=JWRB) :: ZPHIEAMP, ZPHIEEXP , ZPHIXAMP, ZPHIXEXP
+!     CROSS CORRELATION BETWEEN MODEL AND DATA ERROR ARE SPECIFIED AS
+!     FOR ENERGY :      ZPHIEAMP*EXP(-(DIST(ISPEC,JSAR)/CORDIST)**ZPHIEEXP)
+!     FOR WAVE NUMBER:  ZPHIXAMP*EXP(-(DIST(ISPEC,JSAR)/CORDIST)**ZPHIXEXP)
+
 !------------------------------------------------------------------
 
 !     1. 
@@ -137,6 +154,26 @@
 
       SARCORLEN=SARCORDIA/R
 
+      IF (LSARAS) THEN
+        ZPHIEAMP = 0.9_JWRB
+        ZPHIEEXP = 0.9_JWRB
+        ZPHIXAMP = 0.8_JWRB
+        ZPHIXEXP = 0.9_JWRB
+      ELSEIF (LSWIMAS) THEN
+!     JB: this was kept from the MF implememtation but a better control of the error function PHI in OPTINT shoult be introduced !!
+        ZPHIEAMP = COEFPHI
+        ZPHIEEXP = 0.9_JWRB
+        ZPHIXAMP = 0.8_JWRB
+        ZPHIXEXP = 0.9_JWRB
+      ELSE
+        WRITE(IU06,*) ' +++++++++++++++++++++++++++++'
+        WRITE(IU06,*) ' + ERROR IN --OPTINT--       +'
+        WRITE(IU06,*) ' + UKNOWN PARAMETERS FOR PHI +'
+        WRITE(IU06,*) ' + PROGRAM WILL ABORT        +'
+        WRITE(IU06,*) ' +++++++++++++++++++++++++++++'
+        CALL ABORT1
+      ENDIF
+
       MAXMPARTPE=0
       DO ISPEC=1,NSPECW
         MAXMPARTPE=MAX(MAXMPARTPE,NPARTW(ISPEC))
@@ -156,8 +193,8 @@
                 ENDIF
               ENDIF
               CORDIST=STRETCHCOR*SARCORLEN
-              PHI(ISPEC,IPARTS,JSAR) =0.9_JWRB*EXP(-(DIST(ISPEC,JSAR)/CORDIST)**0.9_JWRB)
-              PHIX(ISPEC,IPARTS,JSAR)=0.8_JWRB*EXP(-(DIST(ISPEC,JSAR)/CORDIST)**0.9_JWRB)
+              PHI(ISPEC,IPARTS,JSAR) = ZPHIEAMP*EXP(-(DIST(ISPEC,JSAR)/CORDIST)**ZPHIEEXP)
+              PHIX(ISPEC,IPARTS,JSAR)= ZPHIXAMP*EXP(-(DIST(ISPEC,JSAR)/CORDIST)**ZPHIXEXP)
             ENDIF
           ENDDO
         ENDDO

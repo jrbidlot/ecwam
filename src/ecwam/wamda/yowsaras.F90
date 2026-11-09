@@ -1,3 +1,12 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
       MODULE YOWSARAS
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB
@@ -28,6 +37,7 @@
       INTEGER(KIND=JWIM), ALLOCATABLE :: ISARINV(:,:)
 
       REAL(KIND=JWRB)                 :: SARCORDIA
+      REAL(KIND=JWRB)                 :: COEFPHI
 
       REAL(KIND=JWRB), ALLOCATABLE    :: SPEC(:,:,:,:)
       REAL(KIND=JWRB), ALLOCATABLE    :: LONG(:,:)
@@ -90,6 +100,8 @@
 !                         FOR THE SAR ASSIMILATION OBTAINED FROM THE SAR
 !                         INVERSION FROM WITHIN WAM.
 !     *SARCORDIA*REAL     SAR MODEL MAXIMUM CORRELATION DISTANCE in m 
+!     *COEFPHI*  REAL     COEFFICIENT FOR PHI IN OPTINT INTRODUCED BY METEOFRANCE TO CONTROL SWIMM DATA ASSIMILATION
+!     JB: this was kept from the MF implememtation but a better control of the error function PHI in OPTINT shoult be introduced !!1
 !     *SPEC*     REAL     INPUT SAR SPECTRA FOR FIRST GUESS SPECTRUM = 1
 !                         SAR RETRIEVED SPECTRUM = 2.
 !     *LONG*     REAL     LONGITUDE OF SPEC (IN DEGREE).

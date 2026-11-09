@@ -1,3 +1,12 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
       SUBROUTINE TRANSMEANS(                                            &
 !                     DIMENSIONS
      &                  NSPEC ,  NANG , NFRE ,                          &
@@ -61,20 +70,20 @@
 !     INITIALIZE:
 !     -----------
       CO = FRATIO
+      CO1 = CO - 1.0_JWRB
+
+      DELTH2 = DELTH / 2.0_JWRB
+      M10P = MIN(MFRCUT + 1, NFRE)
 
 !     COMPUTE MEAN ENERGIES:
 !     ----------------------
 
       IF ( MFRCUT < NFRE ) THEN
 
-        DELTH2 = DELTH / 2.0_JWRB
-
         DO ISPEC = 1,NSPEC
           MEANTE(ISPEC) = 0.0_JWRB
         END DO
 
-        M10P = MIN(MFRCUT + 1_JWIM, NFRE)
-        CO1 = CO - 1.0_JWRB
         C10  = (FRCUT - FR(MFRCUT))*DELTH - CO1*FR(MFRCUT)*DELTH2
         D10  = (FRCUT - FR(MFRCUT))**2*DELTH2/(CO1*FR(MFRCUT))
         DO ISPEC =1, NSPEC
@@ -116,47 +125,75 @@
 !     COMPUTE MEAN ANGLES:
 !     --------------------
 
-      DO ISPEC = 1,NSPEC
-        SUMX0(ISPEC) = 0.0_JWRB
-        SUMY0(ISPEC) = 0.0_JWRB
-      END DO
-      M10P = MIN(MFRCUT + 1_JWIM, NFRE)
-      C10 = (FRCUT-FR(MFRCUT))*DELTH-(FR(M10P)-FR(MFRCUT))*DELTH2
-      D10 = (FRCUT - FR(MFRCUT))**2*DELTH2/(FR(M10P)-FR(MFRCUT))
+      IF ( MFRCUT < NFRE ) THEN
+        C10 = (FRCUT-FR(MFRCUT))*DELTH-(FR(M10P)-FR(MFRCUT))*DELTH2
+        D10 = (FRCUT - FR(MFRCUT))**2*DELTH2/(FR(M10P)-FR(MFRCUT))
 
-      DO ISPEC = 1, NSPEC
-        SUMX0(ISPEC) = 0.0_JWRB
-        SUMY0(ISPEC) = 0.0_JWRB
-        DO IANG = 1, NANG
-          SIH = SINTH(IANG)
-          COH = COSTH(IANG)
-          DO IFRE = 1, MFRCUT
-            IF (IFRE > 1) THEN
-              IF (IFRE.NE.NFRE) THEN
-                DF=(FR(IFRE+1)+FR(IFRE-1))*DELTH2
+        DO ISPEC = 1, NSPEC
+          SUMX0(ISPEC) = 0.0_JWRB
+          SUMY0(ISPEC) = 0.0_JWRB
+          DO IANG = 1, NANG
+            SIH = SINTH(IANG)
+            COH = COSTH(IANG)
+            DO IFRE = 1, MFRCUT
+              IF (IFRE > 1) THEN
+                IF (IFRE.NE.NFRE) THEN
+                  DF=(FR(IFRE+1)+FR(IFRE-1))*DELTH2
+                ELSE
+                  DF=(FR(IFRE)+FR(IFRE-1))*DELTH2
+                ENDIF
               ELSE
-                DF=(FR(IFRE)+FR(IFRE-1))*DELTH2
+                DF=(FR(IFRE+1)+FR(IFRE))*DELTH2
               ENDIF
-            ELSE
-              DF=(FR(IFRE+1)+FR(IFRE))*DELTH2
-            ENDIF
-            SUMX0(ISPEC) = SUMX0(ISPEC)+SPECW(ISPEC,IANG,IFRE)*SIH*DF
-            SUMY0(ISPEC) = SUMY0(ISPEC)+SPECW(ISPEC,IANG,IFRE)*COH*DF
+              SUMX0(ISPEC) = SUMX0(ISPEC)+SPECW(ISPEC,IANG,IFRE)*SIH*DF
+              SUMY0(ISPEC) = SUMY0(ISPEC)+SPECW(ISPEC,IANG,IFRE)*COH*DF
+            ENDDO
+            C11 = SPECW(ISPEC,IANG,M10P)-SPECW(ISPEC,IANG,MFRCUT)
+            SUMX0(ISPEC) = SUMX0(ISPEC)+C10*SPECW(ISPEC,IANG,MFRCUT)*SIH
+            SUMX0(ISPEC) = SUMX0(ISPEC)+D10*C11*SIH
+            SUMY0(ISPEC) = SUMY0(ISPEC)+C10*SPECW(ISPEC,IANG,MFRCUT)*COH
+            SUMY0(ISPEC) = SUMY0(ISPEC)+D10*C11*COH
           ENDDO
-          C11 = SPECW(ISPEC,IANG,M10P)-SPECW(ISPEC,IANG,MFRCUT)
-          SUMX0(ISPEC) = SUMX0(ISPEC)+C10*SPECW(ISPEC,IANG,MFRCUT)*SIH
-          SUMX0(ISPEC) = SUMX0(ISPEC)+D10*C11*SIH
-          SUMY0(ISPEC) = SUMY0(ISPEC)+C10*SPECW(ISPEC,IANG,MFRCUT)*COH
-          SUMY0(ISPEC) = SUMY0(ISPEC)+D10*C11*COH
-        ENDDO
 
-        IF ( (SUMY0(ISPEC) /= 0.0_JWRB) .OR. (SUMX0(ISPEC) /= 0.0_JWRB) ) THEN
-          MEANTANG(ISPEC) = ATAN2(SUMX0(ISPEC),SUMY0(ISPEC))
-        ELSE
-          MEANTANG(ISPEC) = 0.0_JWRB
-        END IF
+          IF ( (SUMY0(ISPEC) /= 0.0_JWRB) .OR. (SUMX0(ISPEC) /= 0.0_JWRB) ) THEN
+            MEANTANG(ISPEC) = ATAN2(SUMX0(ISPEC),SUMY0(ISPEC))
+          ELSE
+            MEANTANG(ISPEC) = 0.0_JWRB
+          END IF
+        END DO
 
-      END DO
+      ELSE
+
+        DO ISPEC = 1,NSPEC
+          SUMX0(ISPEC) = 0.0_JWRB
+          SUMY0(ISPEC) = 0.0_JWRB
+        END DO
+
+        DO IANG = 1,NANG
+          DO ISPEC = 1,NSPEC
+           SUM0(ISPEC) = 0.0_JWRB
+          END DO
+          DO IFRE=1,NFRE
+            DO ISPEC=1,NSPEC
+              SUM0(ISPEC) = SUM0(ISPEC) + SPECW(ISPEC,IANG,IFRE) * DFIM(IFRE)
+            END DO
+          END DO
+          DO ISPEC = 1,NSPEC
+            SUMX0(ISPEC) = SUMX0(ISPEC) + COSTH(IANG) * SUM0(ISPEC)
+            SUMY0(ISPEC) = SUMY0(ISPEC) + SINTH(IANG) * SUM0(ISPEC)
+          END DO
+        END DO
+
+        DO ISPEC = 1,NSPEC
+          IF( SUMY0(ISPEC).NE.0.0_JWRB .OR. SUMX0(ISPEC).NE.0.0_JWRB )THEN
+            MEANTANG(ISPEC) = ATAN2(SUMY0(ISPEC),SUMX0(ISPEC))
+          ELSE
+            MEANTANG(ISPEC) = 0.0_JWRB
+          END IF
+        END DO
+
+      ENDIF
+
 
 !     COMPUTE MEAN FREQUENCIES:
 !     -------------------------

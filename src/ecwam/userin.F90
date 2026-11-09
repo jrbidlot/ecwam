@@ -136,6 +136,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
+     &            LSWIMAS  ,                                            &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
      &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,              &
      &            LNSESTART,                                            &
@@ -1055,9 +1056,9 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       IF (IASSI == 1) THEN
         WRITE(IU06,*) ' '
-        IF (.NOT. LALTAS .AND. .NOT. LSARAS) THEN
+        IF (.NOT. LALTAS .AND. .NOT. LSARAS .AND. .NOT. LSWIMAS) THEN
           WRITE(IU06,*) ' WAVE DATA ASSIMILATION SHOULD BE CARRIED OUT, BUT'
-          WRITE(IU06,*) ' LALTAS AND LSARAS ARE BOTH FALSE, SO NOTHING WILL BE DONE !!'
+          WRITE(IU06,*) ' LALTAS, LSARAS AND LSWIMAS ARE ALL FALSE, SO NOTHING WILL BE DONE !!'
         ELSE
           WRITE(IU06,*) ' WAVE DATA ASSIMILATION IS CARRIED OUT'
           IF (NASS > 0) THEN
@@ -1178,6 +1179,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         IF (LSARAS) THEN
           WRITE(IU06,*) ' '
           WRITE(IU06,*) ' WITH SAR DATA IN TIME WINDOW(S) OF '
+          WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS'
+          WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
+        ENDIF
+        IF (LSWIMAS) THEN
+          WRITE(IU06,*) ' '
+          WRITE(IU06,*) ' WITH SWIM DATA IN TIME WINDOW(S) OF '
           WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS'
           WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
         ENDIF

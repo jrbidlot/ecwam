@@ -183,7 +183,7 @@
           DO ISPEC = 1,NSPEC
             IPART=PART(ISPEC,IANG,IFRE)
             IF (SPEC(ISPEC,IANG,IFRE) .GT. SUM0(ISPEC,IPART)) THEN
-              PKFRE(ISPEC,IPART) = FR(IFRE) 
+              PKFRE(ISPEC,IPART) = FR(IFRE)
               SUM0(ISPEC,IPART) = SPEC(ISPEC,IANG,IFRE)
             ENDIF
           ENDDO

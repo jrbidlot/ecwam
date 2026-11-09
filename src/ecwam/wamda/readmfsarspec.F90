@@ -1,3 +1,12 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
       SUBROUTINE READMFSARSPEC (LNODATA)
 
 !     READ OBSERVED SPECTRA FILE AS INPUT BY METEOFRANCE
@@ -10,7 +19,7 @@
       USE YOWPARAM , ONLY : NANG, NFRE
       USE YOWPCONS , ONLY : EPSMIN
       USE YOWSARAS , ONLY : NSPEC, SPEC, LAT, LONG, XKLOW, XKUP, XKCUTOFF
-      USE YOWSTAT  , ONLY : CDTPRO  ,LSARINV
+      USE YOWSTAT  , ONLY : CDTPRO, LSARAS, LSWIMAS
       USE YOWTEST  , ONLY : IU06
 
       USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -29,6 +38,7 @@
       INTEGER(KIND=JWIM) :: ISPEC, ISS, IC
       INTEGER(KIND=JWIM) :: IANG, IFRE
 
+      REAL(KIND=JWRB) :: SPECMIN
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE ! Dr HOOK
 
 !    These following variables are read in but appears to not not be used !
@@ -104,7 +114,19 @@
       ENDIF
 
 
-      YONAME(1:3) = 'SAR'
+      IF (LSARAS) THEN
+        YONAME(1:3) = 'SAR'
+      ELSEIF (LSWIMAS) THEN
+        YONAME(1:3) = 'SWI'
+      ELSE
+        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++'
+        WRITE(IU06,*) ' + ERROR IN --READMLSARSPEC-- +'
+        WRITE(IU06,*) ' + UKNOWN FILE PREFIX         +'
+        WRITE(IU06,*) ' + PROGRAM WILL ABORT         +'
+        WRITE(IU06,*) ' ++++++++++++++++++++++++++++++'
+        CALL ABORT1
+      ENDIF
+
       YONAME(4:15) = CDTPRO
       OPEN (UNIT=INUNIT, FILE=YONAME)
 
@@ -135,10 +157,14 @@
 
 !       SET MINIMUM SAR SPECTRAL VALUE TO THE SAME VALUE AS IN WAM
 
+        SPECMIN = 0.25_JWRB*FLMIN
+!       JB: AS IN MF SWIMAS CODE (is it needed?)
+        IF (LSWIMAS) SPECMIN = 0.0_JWRB
+
         DO IFRE = 1,NFRE
           DO IANG = 1,NANG
             DO ISPEC = 1,NSPEC
-             SPEC(ISPEC,IANG,IFRE,2) = MAX(SPEC(ISPEC,IANG,IFRE,2),0.25_JWRB*FLMIN)
+             SPEC(ISPEC,IANG,IFRE,2) = MAX(SPEC(ISPEC,IANG,IFRE,2),SPECMIN)
             END DO
           END DO
         END DO

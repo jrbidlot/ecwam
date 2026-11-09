@@ -168,7 +168,7 @@
 
 
       DO JANG = 1,NANG
-        DO JFRE = 1,M10CONST+1
+        DO JFRE = 1,NFRE+1
           DO ISPEC = 1,NSPEC
             SPECT(ISPEC,JANG,JFRE) = GAPVAL
           END DO

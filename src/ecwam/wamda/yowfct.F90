@@ -1,16 +1,29 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
 MODULE YOWFCT
 
       USE PARKIND_WAVE, ONLY : JWIM, JWRB, JWRU
 
       USE YOWFRED,  ONLY : FR
       USE YOWPARAM, ONLY : NFRE
+      USE YOWSTAT , ONLY : LSARAS   , LSWIMAS
+      USE YOWTEST , ONLY : IU06
 
       IMPLICIT NONE
+
+#include "abort1.intfb.h"
 
       INTEGER(KIND=JWIM) :: M10CONST
       INTEGER(KIND=JWIM), ALLOCATABLE :: M10(:,:)
 
-      REAL(KIND=JWRB) :: FCUTCONST = 0.121_JWRB ! 0.121 is the MF value
+      REAL(KIND=JWRB) :: FCUTCONST
       REAL(KIND=JWRB), ALLOCATABLE    :: FCUT(:,:)
 
 !     VARIABLE   TYPE     PURPOSE
@@ -27,6 +40,19 @@ MODULE YOWFCT
 
       SUBROUTINE INIT_YOWFCT()
         INTEGER(KIND=JWIM) :: M
+
+        IF (LSARAS) THEN
+          FCUTCONST = 0.121_JWRB ! 0.121 is the MF value
+        ELSEIF (LSWIMAS) THEN
+          FCUTCONST = 0.151_JWRB ! 0.151 is the MF value
+        ELSE
+          WRITE(IU06,*) ' ++++++++++++++++++++++++++++++'
+          WRITE(IU06,*) ' + ERROR IN --YOWFCT-- +'
+          WRITE(IU06,*) ' + UKNOWN CORRELATION LENGTH  +'
+          WRITE(IU06,*) ' + PROGRAM WILL ABORT         +'
+          WRITE(IU06,*) ' ++++++++++++++++++++++++++++++'
+          CALL ABORT1
+        ENDIF
 
         M10CONST = NFRE
 

@@ -93,7 +93,7 @@
       USE YOWPCONS , ONLY : ROAIR    ,ROWATER  ,GAM_SURF
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
-      USE YOWSARAS , ONLY : LECSARDA ,LSARASDIAG
+      USE YOWSARAS , ONLY : LECSARDA ,LSARASDIAG, COEFPHI
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT  ,IDELWI   ,    &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
@@ -106,7 +106,8 @@
      &            IREFRA   ,IPROPAGS ,IASSI    ,                        &
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
-     &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
+     &            LSARAS   ,LSARINV  ,LSWIMAS,                          &
+     &            ISTREAM  ,NLOCGRB  ,NCONSENSUS,                       &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
      &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,LNSESTART,    &
      &            LSMSSIG_WAM,CMETER ,CEVENT   ,                        &
@@ -209,8 +210,10 @@
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
      &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LECALTDA, LRALTPREPROC,    &
      &   LRALTASCII, LRALTAVERAGE,                                      &
-     &   LSARASDIAG,                                                    &
+     &   LECSARDA, LSARASDIAG,                                          &
+     &   COEFPHI,                                                       &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
+     &   LSWIMAS,                                                       &
      &   IBUFRSAT, CSATNAME,                                            &
      &   SWAMPWIND, SWAMPWIND2, SWAMPCIFR, SWAMPCITH,                   &
      &   DTNEWWIND, LTURN90,                                            &
@@ -415,8 +418,9 @@
 !     LWAMANOUT: CONTROLS WHETHER FIELDS WILL BE WRITTEN OUT AT ANALYSIS TIME OR NOT.
 !                (USEFUL WHEN WAVE DATA ASSIMILATION IS DONE IN MORE THAN ONE TRAJECTORY.)
 !     LALTAS: CONTROLS WHETHER ALTIMETER DATA ARE ASSIMILATED
-!     LSARAS: CONTROLS WHETHER SAR DATA ASSIMILATED
+!     LSARAS: CONTROLS WHETHER SAR DATA ARE ASSIMILATED
 !     LSARINV: CONTROLS WHETHER SAR INVERSION IS DONE
+!     LSWIMAS: CONTROLS WHETHER SWIM DATA ARE ASSIMILATED
 !     SWAMPWIND : CONSTANT WIND SPEED USED BY SWAMP CASE.
 !     SWAMPWIND2 : SECOND WIND SPEED VALUE TO BE USED (if different than 0)
 !                  IN SWAMP CASE. IT WILL BE APPLIED DTNEWWIND HOURS
@@ -615,6 +619,7 @@
       LECALTDA = .TRUE.
       LECSARDA = .TRUE.
       LSARASDIAG = .FALSE.
+      COEFPHI = 0.02_JWRB !!! JB: is it the correct default used by MF ?????? (it seems very low)
       LRALTPREPROC = .TRUE.
       LRALTASCII = .FALSE.
       LRALTAVERAGE = .TRUE.
@@ -710,6 +715,7 @@
       LALTAS    = .FALSE.
       LSARAS    = .FALSE.
       LSARINV   = .FALSE.
+      LSWIMAS   = .FALSE.
 
       LWAMANOUT = .TRUE.
 
@@ -1141,6 +1147,7 @@
         WRITE(6,*) '*** LALTAS= ', LALTAS
         WRITE(6,*) '*** LSARAS= ', LSARAS
         WRITE(6,*) '*** LSARASDIAG= ', LSARASDIAG
+        WRITE(6,*) '*** LSWIMAS= ', LSWIMAS
         WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
         WRITE(6,*) '*** LLNORMIFS2WAM= ',LLNORMIFS2WAM
         WRITE(6,*) '*** LLNORMWAM2IFS= ',LLNORMWAM2IFS

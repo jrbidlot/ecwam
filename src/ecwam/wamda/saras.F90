@@ -1,3 +1,12 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
 SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
 
 !-------------------------------------------------------------------
@@ -38,7 +47,7 @@ SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
 !                  FOR PARTITIONINGS WITH OPTIMAL INTERPOLATION.
 !     READSARSPEC- READS SPECTRA IN FORMAT OF OUTPUT OF SAR
 !                  INVERSION PROGRAM.
-!     REARRNGSAR - ROTATES SAR SPECTRA TO WAM MODEL FIRST DIRECTION
+!     REARRNGSAR - ROTATES SPECTRAL DATA TO WAM MODEL FIRST DIRECTION
 !                  AND GET WAM SPECTRA AT SAR OBSERVATION LOCATION.
 !     SWELLSEP   - PARTITIONS SPECTRA.
 !     TUSTREAS   - TRANSFORMS PARTITIONINGS OF WAM FIRST GUESS
@@ -135,7 +144,7 @@ SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
      &            UW10     ,USW      ,THWW     ,COSSARLAT,SINSARLAT,    &
      &            LECSARDA
 
-      USE YOWSTAT  , ONLY : CDTPRO
+      USE YOWSTAT  , ONLY : CDTPRO   ,LSARAS   , LSWIMAS
       USE YOWTEST  , ONLY : IU06     ,ITEST
 
       USE MPL_MODULE
@@ -148,6 +157,7 @@ SUBROUTINE SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
 
       IMPLICIT NONE
 
+#include "abort1.intfb.h"
 #include "crossas.intfb.h"
 #include "crossw.intfb.h"
 #include "dev.intfb.h"
@@ -271,19 +281,44 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
       TH0=TH(1)
 
       IF (LECSARDA ) THEN
-        IF (XDELLA < 0.3_JWRB) THEN
-          SARCORDIA = 200000.0_JWRB
+!       ECMWF CHOICE
+        IF (LSARAS) THEN
+          IF (XDELLA < 0.3_JWRB) THEN
+            SARCORDIA = 200000.0_JWRB
+          ELSE
+            SARCORDIA = 300000.0_JWRB
+          ENDIF
         ELSE
-          SARCORDIA = 300000.0_JWRB
-        ENDIF
-      ELSE
-!       METEOFRANCE CHOICE (to review)
-        IF (XDELLA < 0.3_JWRB) THEN
-          SARCORDIA = 110000.0_JWRB
-        ELSE
-          SARCORDIA = 200000.0_JWRB
+          WRITE(IU06,*) ' ++++++++++++++++++++++++++++++'
+          WRITE(IU06,*) ' + ERROR IN --SARAS-- +'
+          WRITE(IU06,*) ' + UKNOWN CORRELATION LENGTH  +'
+          WRITE(IU06,*) ' + PROGRAM WILL ABORT         +'
+          WRITE(IU06,*) ' ++++++++++++++++++++++++++++++'
+          CALL ABORT1
         ENDIF
 
+      ELSE
+!       METEOFRANCE CHOICE (to review)
+        IF (LSARAS) THEN
+          IF (XDELLA < 0.3_JWRB) THEN
+            SARCORDIA = 110000.0_JWRB
+          ELSE
+            SARCORDIA = 200000.0_JWRB
+          ENDIF
+        ELSEIF (LSWIMAS) THEN
+          IF (XDELLA < 0.3_JWRB) THEN
+            SARCORDIA = 200000.0_JWRB
+          ELSE
+            SARCORDIA = 200000.0_JWRB
+          ENDIF
+        ELSE
+          WRITE(IU06,*) ' ++++++++++++++++++++++++++++++'
+          WRITE(IU06,*) ' + ERROR IN --SARAS-- +'
+          WRITE(IU06,*) ' + UKNOWN CORRELATION LENGTH  +'
+          WRITE(IU06,*) ' + PROGRAM WILL ABORT         +'
+          WRITE(IU06,*) ' ++++++++++++++++++++++++++++++'
+          CALL ABORT1
+        ENDIF
       ENDIF
 
       MAXMPART=0
@@ -295,7 +330,7 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 !         SPECTRA AT SAR POINTS.
 !     -----------------------------------------------------------
 
-      WRITE(IU06,*)'  -----SAR SPECTRA ASSIMILATION BEGINS--------'
+      WRITE(IU06,*)'  -----SPECTRAL DATA ASSIMILATION BEGINS--------'
 
       IREAD=1
 
@@ -306,23 +341,23 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
       ENDIF
  
       IF (LCONTROL) THEN
-        WRITE(IU06,*)'-----------READ SAR SPECTRA DONE------------'
+        WRITE(IU06,*)'-----------READ SPECTRAL DATA DONE------------'
         WRITE(IU06,*)' '
       ENDIF
 
 !     BROADCAST INPUT SAR TO ALL PE'S
 !     No attempt is yet made to distribute them per PE's (ie by only 
 !     providing what each PE needs)
-      IF (LCONTROL) WRITE(IU06,*)'----------BROADCAST SAR SPECTRA BEGINS-----------'
+      IF (LCONTROL) WRITE(IU06,*)'----------BROADCAST SPECTRAL DATA BEGINS-----------'
         CALL MPBCASTSARIN(IREAD, KTAG, LNODATA)
         IF (LCONTROL) THEN
-          WRITE(IU06,*)'----------BROADCAST SAR SPECTRA DONE-----------'
+          WRITE(IU06,*)'----------BROADCAST SPECTRAL DATA DONE-----------'
           WRITE(IU06,*)' '
         ENDIF
 
       IF (LNODATA) GOTO 5000
 
-!     ROTATE INVERTED SAR SPECTRA TO THE FIRST DIRECTION OF WAM (TH0)
+!     ROTATE INVERTED SPECTRAL DATA TO THE FIRST DIRECTION OF WAM (TH0)
 !     AND GET WAM SPECTRA AT OBSERVATION LOCATION
 
       IF (LCONTROL) WRITE(IU06,*)'-----------REARRNGSAR BEGINS------------'
@@ -491,7 +526,18 @@ IF (LHOOK) CALL DR_HOOK('SARAS',0,ZHOOK_HANDLE)
 !     1.5 CROSS ASSIGN WAM AND SAR WAVE SYSTEMS.
 !     ------------------------------------------
 
-      DISMIN=0.5_JWRB
+      IF (LSARAS) THEN
+        DISMIN = 0.5_JWRB
+      ELSEIF (LSWIMAS) THEN
+        DISMIN = 0.25_JWRB !!! MF choice !!1
+      ELSE
+        WRITE(IU06,*) ' ++++++++++++++++++++++'
+        WRITE(IU06,*) ' + ERROR IN --SARAS-- +'
+        WRITE(IU06,*) ' + UKNOWN DISMIN      +'
+        WRITE(IU06,*) ' + PROGRAM WILL ABORT +'
+        WRITE(IU06,*) ' ++++++++++++++++++++++'
+        CALL ABORT1
+      ENDIF
 
       IF (LCONTROL) WRITE(IU06,*)'------CROSSAS BEGINS -------------------------'
 

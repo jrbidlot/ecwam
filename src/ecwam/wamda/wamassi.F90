@@ -1,3 +1,12 @@
+! (C) Copyright 1989- ECMWF.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+!
+
 SUBROUTINE WAMASSI(LDSTOP, LDWRRE, BLK2GLO, WVENVI,   &
  &                 WVPRPT, FF_NOW, INTFLDS,  &
  &                 WAM2NEMO, NEMO2WAM, FL1)
@@ -63,7 +72,7 @@ SUBROUTINE WAMASSI(LDSTOP, LDWRRE, BLK2GLO, WVENVI,   &
      &                      IDELWI   ,IREST    ,IREFRA   ,IASSI    ,              &
      &                      NENSFNB  ,NTOTENS  ,NTOTENS  ,NSYSNB   ,CDATEA   ,    &
      &                      MARSTYPE ,YCLASS   ,YEXPVER  ,LALTAS   ,LSARAS   ,    &
-     &                      LSARINV  ,IREFDATE
+     &                      LSARINV  ,LSWIMAS  ,IREFDATE
       USE YOWTEST  , ONLY : IU06
       USE YOWTEXT  , ONLY : ICPLEN   ,CPATH    ,CWI
       USE YOWWAMI  , ONLY : CBPLTDT  ,CEPLTDT  ,IANALPD  ,IFOREPD  ,    &
@@ -181,13 +190,24 @@ IF (LHOOK) CALL DR_HOOK('WAMASSI',0,ZHOOK_HANDLE)
           WRITE(IU06,*) '   SUB. WAMASSI: SARINVERT', ILOOP, ' DONE'
         ENDIF
 
-        ! SAR ASSIMILATION (ASSIMILATE INTEGRAL PARAMETERS)
+        ! SAR ASSIMILATION (ASSIMILATE PARTITION PARAMETERS)
         IF (LSARAS) THEN
           CALL SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
-          WRITE(IU06,*) '   SUB. WAMASSI: SARAS ', ILOOP, ' DONE'
+          WRITE(IU06,*) '   SUB. WAMASSI: SARAS FOR *SAR* DATA ', ILOOP, ' DONE'
         ENDIF
 
       ENDDO
+
+      !~~~~~~~~~~~~~~~~~~~
+      !  SWIM ASSIMILATION
+      !~~~~~~~~~~~~~~~~~~~
+
+       IF (LSWIMAS) THEN
+         COUT = 'NA' 
+         LACT = .TRUE.
+         CALL SARAS(BLK2GLO, FF_NOW, FL1, COUT, LACT)
+         WRITE(IU06,*) '   SUB. WAMASSI: SARAS FOR *SWIM* DATA '
+       ENDIF
 
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -304,6 +304,7 @@ fi
 
 # NAMELIST
 ##########
+## See mpuserin.F90
 
 cat > wam_namelist << EOF
 &NALINE
@@ -343,12 +344,17 @@ cat > wam_namelist << EOF
   LRELWIND              = T,
   RWFAC                 = 0.5,
   IASSI                 = ${iassi},
-  LALTAS                = ${laltas}
-  LSARAS                = ${lsaras}
   IDELALT               = ${idelalt},
+  LALTAS                = ${laltas}
+  LECALTDA              = T,
   LRALTPREPROC          = F, 
   LRALTASCII            = T, 
   LRALTAVERAGE          = F, 
+  LSARAS                = ${lsaras}
+  LECSARDA              = T,
+  LSARASDIAG            = F,
+  COEFPHI               = 0.02,
+  LSWIMAS               = F, 
   LFDBIOOUT             = F,
   LFDB                  = F,
   NGRIB_VERSION         = 2,
