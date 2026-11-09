@@ -124,8 +124,13 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
 !!! by setting XLMAX to 0 and XLMIN to maximum required value.
 
       IF ( LECWAMDA ) THEN
-        XLMIN = 150000._JWRB
-        XLMAX = 0.0_JWRB
+        IF (XDELLA < 0.36_JWRB) THEN
+          XLMIN = 150000._JWRB
+          XLMAX = 0.0_JWRB
+        ELSE
+          XLMIN = 300000._JWRB
+          XLMAX = 0.0_JWRB
+        ENDIF
       ELSE
 !       METEOFRANCE CHOICE
         IF(XDELLA < 0.05_JWRB) THEN
