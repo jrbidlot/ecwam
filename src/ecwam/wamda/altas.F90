@@ -1,12 +1,3 @@
-! (C) Copyright 1989- ECMWF.
-! 
-! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
-! In applying this licence, ECMWF does not waive the privileges and immunities
-! granted to it by virtue of its status as an intergovernmental organisation
-! nor does it submit to any jurisdiction.
-!
-
 SUBROUTINE ALTAS(IJSG, IJLG, MIJ, BLK2GLO,           &
  &               WVENVI, FF_NOW, INTFLDS, WAM2NEMO,  &
  &               WVPRPT, FL1, XLLWS)
@@ -133,8 +124,12 @@ IF (LHOOK) CALL DR_HOOK('ALTAS',0,ZHOOK_HANDLE)
 !!! by setting XLMAX to 0 and XLMIN to maximum required value.
 
       IF ( LECALTDA ) THEN
-        XLMIN = 150000._JWRB
-        XLMAX = 0.0_JWRB
+        IF (XDELLA < 0.36_JWRB) THEN
+          XLMIN = 150000._JWRB
+          XLMAX = 0.0_JWRB
+        ELSE
+          XLMIN = 300000._JWRB
+          XLMAX = 0.0_JWRB
       ELSE
 !       METEOFRANCE CHOICE
         IF(XDELLA < 0.05_JWRB) THEN
