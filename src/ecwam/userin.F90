@@ -136,6 +136,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
      &            NENSFNB  ,NTOTENS  ,NSYSNB   ,NMETNB   ,CDATEA   ,    &
      &            YCLASS   ,YEXPVER  ,L4VTYPE  ,LFRSTFLD ,LALTAS   ,    &
      &            LSARAS   ,LSARINV  ,ISTREAM  ,NLOCGRB  ,NCONSENSUS,   &
+     &            LSWIMAS  ,                                            &
      &            NDWD     ,NMFR     ,NNCEP    ,NUKM     ,IREFDATE ,    &
      &            LGUST    ,LADEN    ,LSUBGRID ,LLSOURCE ,              &
      &            LNSESTART,                                            &
@@ -1123,6 +1124,12 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
         IF (LSARAS) THEN
           WRITE(IU06,*) ' '
           WRITE(IU06,*) ' WITH SAR DATA IN TIME WINDOW(S) OF '
+          WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS'
+          WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
+        ENDIF
+        IF (LSWIMAS) THEN
+          WRITE(IU06,*) ' '
+          WRITE(IU06,*) ' WITH SWIM DATA IN TIME WINDOW(S) OF '
           WRITE(IU06,*) ' IDELALT = ', IDELALT,' SECONDS'
           WRITE(IU06,*) ' CENTERED AROUND THE ASSIMILATION TIME(S) '
         ENDIF
