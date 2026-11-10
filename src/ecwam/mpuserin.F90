@@ -93,6 +93,7 @@
       USE YOWPCONS , ONLY : ROAIR    ,ROWATER  ,GAM_SURF
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM
+      USE YOWSARAS , ONLY : LECSARDA ,LSARASDIAG, COEFPHI
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IFRELFMAX, DELPRO_LF, IDELPRO  ,IDELT  ,IDELWI   ,    &
      &            IDELWO   ,IDELALT  ,IREST    ,IDELRES  ,IDELINT  ,    &
@@ -209,6 +210,8 @@
      &   NENSFNB, NTOTENS, NSYSNB, NMETNB,                              &
      &   LWCOU, LWCOUAST, LNOCDIN, LODBRALT, LECALTDA, LRALTPREPROC,    &
      &   LRALTASCII, LRALTAVERAGE,                                      &
+     &   LECSARDA, LSARASDIAG,                                          &
+     &   COEFPHI,                                                       &
      &   LALTCOR, L4VTYPE, LFRSTFLD, LALTAS, LSARAS, LSARINV, XKAPPA2,  &
      &   LSWIMAS,                                                       &
      &   IBUFRSAT, CSATNAME,                                            &
@@ -399,6 +402,7 @@
 !     LODBRALT: IF TRUE THEN THE ALTIMETER DATA WILL BE READ AND PASSED 
 !               THROUGH OBSERVATION DATABASE (ODB)
 !     LECALTDA CONTROLS ECMWF SPECIFC OPTIONS IN THE WAVE DATA ANALYIS SYSTEM
+!     LSARASDIAG CONTROLS WHETHER EXTRA FIRST GUESS AND ANALYSIS DIAGNOSTICS IN SARAS WILL BE PRODUCED
 !     LRALTPREPROC CONTROLS WHETHER RADAR ALTIMETER OBS ARE PREPROCESSED BY RFL4WAM (true)
 !     LRALTASCII CONTROLS WHETHER RADAR ALTIMETER OBS INPUT IS IN ASCII TEXT RATHER THAN BINARY WHEN NOT USING ODB
 !     LRALTAVERAGE CONTROLS WHETHER RADAR ALTIMETER OBS INPUT HAS BEEN AVERAGED ALONG TRACK OR NOT 
@@ -613,6 +617,9 @@
       LRSTINFDAT= .FALSE.
       LODBRALT  = .FALSE.
       LECALTDA = .TRUE.
+      LECSARDA = .TRUE.
+      LSARASDIAG = .FALSE.
+      COEFPHI = 0.02_JWRB !!! JB: is it the correct default used by MF ?????? (it seems very low)
       LRALTPREPROC = .TRUE.
       LRALTASCII = .FALSE.
       LRALTAVERAGE = .TRUE.
@@ -1108,6 +1115,7 @@
         WRITE(6,*) '==============================================='
         WRITE(6,*) '*** MPUSERIN has read the following settings'
         WRITE(6,*) '*** LECALTDA =', LECALTDA
+        WRITE(6,*) '*** LECSARDA =', LECSARDA
         WRITE(6,*) '*** NANG=',NANG
         WRITE(6,*) '*** NFRE=',NFRE
         WRITE(6,*) '*** NFRE_RED=',NFRE_RED
@@ -1138,6 +1146,7 @@
         WRITE(6,*) '*** IDELALT= ', IDELALT
         WRITE(6,*) '*** LALTAS= ', LALTAS
         WRITE(6,*) '*** LSARAS= ', LSARAS
+        WRITE(6,*) '*** LSARASDIAG= ', LSARASDIAG
         WRITE(6,*) '*** LSWIMAS= ', LSWIMAS
         WRITE(6,*) '*** LWCOUNORMS= ',LWCOUNORMS
         WRITE(6,*) '*** LLNORMIFS2WAM= ',LLNORMIFS2WAM

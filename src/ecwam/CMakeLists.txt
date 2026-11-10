@@ -351,6 +351,7 @@ list( APPEND ecwam_srcs
   yowphys.F90
   yowprproc.F90
   yowrefd.F90
+  yowsaras.F90
   yowshal.F90
   yowspec.F90
   yowsphere.F90
