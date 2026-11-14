@@ -242,6 +242,7 @@ list( APPEND ecwam_srcs
   sinput.F90
   sinput_ard.F90
   sinput_jan.F90
+  snl_enh.F90
   skewness.F90
   snonlin.F90
   snonlin_swrt.F90

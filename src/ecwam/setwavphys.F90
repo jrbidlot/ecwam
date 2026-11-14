@@ -22,12 +22,14 @@ USE YOWCOUP  , ONLY : LLGCBZ0  ,LLNORMAGAM
 USE YOWPARAM , ONLY : NANG
 USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHAMIN ,ALPHA    ,ALPHAPMAX,&
      &                CHNKMIN_U, TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,&
+     &                SSDSC2,                                           &
      &                CDIS     ,DELTA_SDIS, CDISVIS,                    &
      &                DELTA_THETA_RN, RN1_RN, DTHRN_A, DTHRN_U,         &
      &                ANG_GC_A, ANG_GC_B, ANG_GC_C,                     &
+     &                SWELLF, SWELLF5,                                  &
      &                SWELLF4,  SWELLF7, SWELLF7M1, Z0TUBMAX, Z0RAT,    &
      &                SSDSC5
-USE YOWSTAT  , ONLY : IPHYS
+USE YOWSTAT  , ONLY : IPHYS, INLSCHEME
 USE YOWTEST  , ONLY : IU06
 
 USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -114,79 +116,127 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
 
       ELSE IF (IPHYS == 1) THEN
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
-        ZALP    = 0.008_JWRB
-        TAILFACTOR = 2.5_JWRB
-        TAILFACTOR_PM = 3.0_JWRB
 
-!       ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-        IF (NANG <= 24) THEN
-          ANG_GC_A = 0.40_JWRB
-          ANG_GC_B = 0.60_JWRB
-          ANG_GC_C = 3.0_JWRB
-        ELSE
-          ANG_GC_A = 0.35_JWRB
-          ANG_GC_B = 0.65_JWRB
-          ANG_GC_C = 3.0_JWRB
-        ENDIF
+        IF (INLSCHEME == 0 ) THEN
+          ZALP    = 0.008_JWRB
+          TAILFACTOR = 2.5_JWRB
+          TAILFACTOR_PM = 3.0_JWRB
 
-!       DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
-        RN1_RN = 0.25_JWRB
+          SSDSC2 = -2.2E-5_JWRB
+          SWELLF = 0.66_JWRB
+          SWELLF5 = 1.2_JWRB
 
-        IF(LLGCBZ0) THEN
-          ALPHA   = 0.0055_JWRB
-          ALPHAMIN = 0.0001_JWRB
-          CHNKMIN_U = 28._JWRB
-          ALPHAPMAX = 0.03_JWRB
-
-          DELTA_THETA_RN = 0.75_JWRB
-          DTHRN_A = 0.60_JWRB
-          DTHRN_U = 33.0_JWRB
-
-          Z0TUBMAX = 0.05_JWRB
-          Z0RAT = 0.02_JWRB
-          SWELLF4 = 1.15E05_JWRB
-          SWELLF7 = 4.32E05_JWRB
-
-          SWELLF7M1 = 1.0_JWRB/SWELLF7 
-
-          SSDSC5  = 0.0_JWRB
-
-          IF(LLNORMAGAM) THEN
-            BETAMAX = 1.39_JWRB
-            TAUWSHELTER = 0.0_JWRB
+!         ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
+          IF (NANG <= 24) THEN
+            ANG_GC_A = 0.40_JWRB
+            ANG_GC_B = 0.60_JWRB
+            ANG_GC_C = 3.0_JWRB
           ELSE
-           !!! not yet fully tested !!!
-            BETAMAX = 1.44_JWRB
-            TAUWSHELTER = 0.25_JWRB
+            ANG_GC_A = 0.35_JWRB
+            ANG_GC_B = 0.65_JWRB
+            ANG_GC_C = 3.0_JWRB
           ENDIF
 
-        ELSE 
-          ALPHA   = 0.0065_JWRB
-          ALPHAPMAX = 0.031_JWRB
+!         DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
+          RN1_RN = 0.25_JWRB
 
-          DELTA_THETA_RN = 0.75_JWRB
-          DTHRN_A = 0.60_JWRB
-          DTHRN_U = 200.0_JWRB  ! i.e. not used 
-
-          Z0TUBMAX = 0.0005_JWRB
-          Z0RAT = 0.04_JWRB
-          SWELLF4 = 1.5E05_JWRB
-          SWELLF7 = 3.6E05_JWRB
-          SWELLF7M1 = 1.0_JWRB/SWELLF7 
-
-          SSDSC5  = 0.0_JWRB
-
-          IF(LLNORMAGAM) THEN
-            BETAMAX = 1.39_JWRB
-            TAUWSHELTER = 0.0_JWRB
-            ALPHAMIN = 0.0005_JWRB
-            CHNKMIN_U = 30._JWRB
-          ELSE
-            BETAMAX = 1.40_JWRB
-            TAUWSHELTER = 0.25_JWRB
+          IF(LLGCBZ0) THEN
+            ALPHA   = 0.0055_JWRB
             ALPHAMIN = 0.0001_JWRB
-            CHNKMIN_U = 33._JWRB
+            CHNKMIN_U = 28._JWRB
+            ALPHAPMAX = 0.03_JWRB
+
+            DELTA_THETA_RN = 0.75_JWRB
+            DTHRN_A = 0.60_JWRB
+            DTHRN_U = 33.0_JWRB
+
+            Z0TUBMAX = 0.05_JWRB
+            Z0RAT = 0.02_JWRB
+            SWELLF4 = 1.15E05_JWRB
+            SWELLF7 = 4.32E05_JWRB
+
+            SWELLF7M1 = 1.0_JWRB/SWELLF7 
+
+            SSDSC5  = 0.0_JWRB
+
+            IF(LLNORMAGAM) THEN
+              BETAMAX = 1.39_JWRB
+              TAUWSHELTER = 0.0_JWRB
+            ELSE
+             !!! not yet fully tested !!!
+              BETAMAX = 1.44_JWRB
+              TAUWSHELTER = 0.25_JWRB
+            ENDIF
+
+          ELSE 
+            ALPHA   = 0.0065_JWRB
+            ALPHAPMAX = 0.031_JWRB
+
+            DELTA_THETA_RN = 0.75_JWRB
+            DTHRN_A = 0.60_JWRB
+            DTHRN_U = 200.0_JWRB  ! i.e. not used 
+
+            Z0TUBMAX = 0.0005_JWRB
+            Z0RAT = 0.04_JWRB
+            SWELLF4 = 1.5E05_JWRB
+            SWELLF7 = 3.6E05_JWRB
+            SWELLF7M1 = 1.0_JWRB/SWELLF7 
+
+            SSDSC5  = 0.0_JWRB
+
+            IF(LLNORMAGAM) THEN
+              BETAMAX = 1.39_JWRB
+              TAUWSHELTER = 0.0_JWRB
+              ALPHAMIN = 0.0005_JWRB
+              CHNKMIN_U = 30._JWRB
+            ELSE
+              BETAMAX = 1.40_JWRB
+              TAUWSHELTER = 0.25_JWRB
+              ALPHAMIN = 0.0001_JWRB
+              CHNKMIN_U = 33._JWRB
+            ENDIF
           ENDIF
+        ELSEIF (INLSCHEME == 1 ) THEN
+
+!!!! highly experimental only for LLGCBZ0 true and  LLNORMAGAM true !!!!
+
+          ZALP    = 0.008_JWRB
+          TAILFACTOR = 2.4_JWRB
+          TAILFACTOR_PM = 0.0_JWRB
+
+          SSDSC2 = -1.0E-5_JWRB
+          SWELLF = 0.76_JWRB
+          SWELLF5 = 0.6_JWRB
+
+!         ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
+            ANG_GC_A = 0.40_JWRB
+            ANG_GC_B = 0.40_JWRB
+            ANG_GC_C = 3.0_JWRB
+
+!         DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
+          RN1_RN = 0.25_JWRB
+
+            ALPHA   = 0.0055_JWRB
+            ALPHAMIN = 0.0001_JWRB
+            CHNKMIN_U = 28._JWRB
+            ALPHAPMAX = 0.03_JWRB
+
+            DELTA_THETA_RN = 0.75_JWRB
+            DTHRN_A = 0.60_JWRB
+            DTHRN_U = 33.0_JWRB
+
+            Z0TUBMAX = 0.05_JWRB
+            Z0RAT = 0.02_JWRB
+            SWELLF4 = 1.15E05_JWRB
+            SWELLF7 = 4.32E05_JWRB
+
+            SWELLF7M1 = 1.0_JWRB/SWELLF7 
+
+            SSDSC5  = 0.0_JWRB
+
+              BETAMAX = 1.25_JWRB
+              TAUWSHELTER = 0.0_JWRB
+
         ENDIF
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION

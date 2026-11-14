@@ -290,11 +290,12 @@ IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
         ENDDO
       ENDIF
 
-      IF (INLSCHEME == 1) THEN
-        CALL SNONLIN_SWRT (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
-      ELSE
+      SELECT CASE (INLSCHEME)
+      CASE(0)
         CALL SNONLIN (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
-      ENDIF
+      CASE(1)
+        CALL SNONLIN_SWRT (KIJS, KIJL, FL1, FLD, SL, WAVNUM, DEPTH, AKMEAN)
+      END SELECT
 
       IF (LCFLX .AND. LWVFLX_SNL) THEN
 !     Save source term contributions relevant for the calculation of ocean fluxes

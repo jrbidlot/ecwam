@@ -120,7 +120,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            CHNKMIN_U, CDIS ,DELTA_SDIS, CDISVIS,                 &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
+     &            SSDSC2,                                               &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
+     &            ANG_GC_A, ANG_GC_B, ANG_GC_C,                         &
+     &            SWELLF, SWELLF5,                                      &
      &            SWELLF4,  SWELLF7, SSDSC5
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
@@ -772,9 +775,14 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                DELTA_SDIS = ... ', DELTA_SDIS
       WRITE(IU06,*) '                CDISVIS = ...... ', CDISVIS
       ELSEIF (IPHYS == 1) THEN
+      WRITE(IU06,*) '                SSDSC2  = ...... ', SSDSC2
+      WRITE(IU06,*) '                SWELLF  = ...... ', SWELLF
       WRITE(IU06,*) '                SWELLF4 = ...... ', SWELLF4
+      WRITE(IU06,*) '                SWELLF5 = ...... ', SWELLF5
       WRITE(IU06,*) '                SWELLF7 = ...... ', SWELLF7
-      WRITE(IU06,*) '                SSDSC5 = ....... ', SSDSC5 
+      WRITE(IU06,*) '                ANG_GC_A= ....... ', ANG_GC_A
+      WRITE(IU06,*) '                ANG_GC_B= ....... ', ANG_GC_B
+      WRITE(IU06,*) '                ANG_GC_C= ....... ', ANG_GC_C
       ENDIF
       WRITE(IU06,*) '' 
       WRITE(IU06,*) ' THIS IS ALWAYS A SHALLOW WATER RUN '

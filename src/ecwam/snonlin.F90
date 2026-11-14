@@ -83,9 +83,7 @@
 ! ----------------------------------------------------------------------
 
       IMPLICIT NONE
-#include "peak_ang.intfb.h"
-#include "transf.intfb.h"
-#include "transf_snl.intfb.h"
+#include "snl_enh.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL
       REAL(KIND=JWRB), DIMENSION(KIJL,NANG,NFRE), INTENT(IN) :: FL1
@@ -98,8 +96,6 @@
       INTEGER(KIND=JWIM) :: MP, MP1, MM, MM1, IC, IP, IP1, IM, IM1
       INTEGER(KIND=JWIM) :: MFR1STFR, MFRLSTFR
 
-      REAL(KIND=JWRB), PARAMETER :: ENH_MAX=10.0_JWRB
-      REAL(KIND=JWRB), PARAMETER :: ENH_MIN=0.1_JWRB   ! to prevent ENH to become too small
       REAL(KIND=JWRB) :: XK 
       REAL(KIND=JWRB), DIMENSION(KIJL,MLSTHG) :: ENH
 
@@ -111,9 +107,7 @@
       REAL(KIND=JWRB) :: FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
       REAL(KIND=JWRB) :: SAP, SAM, FIJ, FAD1, FAD2, FCEN
 
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: XNU, SIG_TH
-      REAL(KIND=JWRB), DIMENSION(KIJL) :: FTEMP, AD, DELAD, DELAP, DELAM, ENHFR
-
+      REAL(KIND=JWRB), DIMENSION(KIJL) :: FTEMP, AD, DELAD, DELAP, DELAM
 
 ! ----------------------------------------------------------------------
 
@@ -123,46 +117,7 @@
 !*    1. SHALLOW WATER SCALING 
 !        ---------------------
 
-      SELECT CASE (ISNONLIN)
-      CASE(0)      
-        DO IJ=KIJS,KIJL
-          ENHFR(IJ) = MAX(0.75_JWRB*DEPTH(IJ)*AKMEAN(IJ), 0.5_JWRB)
-          ENHFR(IJ) = 1.0_JWRB+(5.5_JWRB/ENHFR(IJ)) * (1.0_JWRB-.833_JWRB*ENHFR(IJ)) * EXP(-1.25_JWRB*ENHFR(IJ))
-        ENDDO
-        DO MC=1,MLSTHG
-          DO IJ=KIJS,KIJL
-            ENH(IJ,MC) = ENHFR(IJ)
-          ENDDO
-        ENDDO
-
-      CASE(1)      
-        DO MC=1,NFRE
-          DO IJ = KIJS, KIJL 
-            ENH(IJ,MC) = MAX(MIN(ENH_MAX,TRANSF(WAVNUM(IJ,MC),DEPTH(IJ))),ENH_MIN)
-          ENDDO
-        ENDDO
-        DO MC=NFRE+1,MLSTHG
-          XK = GM1*(ZPIFR(NFRE)*FRATIO**(MC-NFRE))**2
-          DO IJ = KIJS, KIJL 
-            ENH(IJ,MC) = MAX(MIN(ENH_MAX,TRANSF(XK,DEPTH(IJ))),ENH_MIN)
-          ENDDO
-        ENDDO
-
-      CASE(2)      
-        !$loki inline      
-        CALL PEAK_ANG(KIJS, KIJL, FL1, XNU, SIG_TH)
-        DO MC=1,NFRE
-          DO IJ = KIJS, KIJL 
-            ENH(IJ,MC) = TRANSF_SNL(WAVNUM(IJ,MC), DEPTH(IJ), XNU(IJ), SIG_TH(IJ))
-          ENDDO
-        ENDDO
-        DO MC=NFRE+1,MLSTHG
-          XK = GM1*(ZPIFR(NFRE)*FRATIO**(MC-NFRE))**2
-          DO IJ = KIJS, KIJL 
-            ENH(IJ,MC) = TRANSF_SNL(XK, DEPTH(IJ), XNU(IJ), SIG_TH(IJ))
-          ENDDO
-        ENDDO
-      END SELECT
+      CALL SWRT_ENH(KIJS, KIJL, FL1, WAVNUM, DEPTH, AKMEAN, ENH)
 
 
 !*    2. FREQUENCY LOOP.

@@ -88,11 +88,11 @@
       REAL(KIND=JWRB) :: ANG_GC_A, ANG_GC_B, ANG_GC_C
 
 !     Negative wind input, ARDHUIN et al. 2010:
-      REAL(KIND=JWRB), PARAMETER :: SWELLF = 0.66_JWRB ! controls the turbulent swell dissipation
+      REAL(KIND=JWRB) :: SWELLF  !! See *SETWAVPHYS*  controls the turbulent swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF2 = -0.018_JWRB
       REAL(KIND=JWRB), PARAMETER :: SWELLF3 = 0.022_JWRB
       REAL(KIND=JWRB) :: SWELLF4  !! See *SETWAVPHYS*
-      REAL(KIND=JWRB), PARAMETER :: SWELLF5 = 1.2_JWRB ! controls the viscous swell dissipation
+      REAL(KIND=JWRB) :: SWELLF5  !! See *SETWAVPHYS*  controls the viscous swell dissipation
       REAL(KIND=JWRB), PARAMETER :: SWELLF6 = 1.0_JWRB
       REAL(KIND=JWRB) :: SWELLF7  !! See *SETWAVPHYS*
       REAL(KIND=JWRB) :: SWELLF7M1 !!!! set it to 1 if you decide to have SWELLF7=0
@@ -124,7 +124,7 @@
       INTEGER(KIND=JWIM), PARAMETER :: ISB=2_JWIM
       INTEGER(KIND=JWIM), PARAMETER :: IPSAT=2_JWIM
 
-      REAL(KIND=JWRB), PARAMETER :: SSDSC2 = -2.2E-5_JWRB
+      REAL(KIND=JWRB) :: SSDSC2  !! See *SETWAVPHYS*  Controls the main whitecap dissipation
       REAL(KIND=JWRB), PARAMETER :: SSDSC4 = 1.0_JWRB
       REAL(KIND=JWRB), PARAMETER :: SSDSC6 = 0.3_JWRB 
       REAL(KIND=JWRB), PARAMETER :: MICHE = 1.0_JWRB 
