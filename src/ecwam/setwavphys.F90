@@ -117,7 +117,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
       ELSE IF (IPHYS == 1) THEN
 !       ARDHUIN ET AL. (2010) WIND INPUT PHYSICS
 
-        IF (INLSCHEME == 0 ) THEN
           ZALP    = 0.008_JWRB
           TAILFACTOR = 2.5_JWRB
           TAILFACTOR_PM = 3.0_JWRB
@@ -196,48 +195,6 @@ IF (LHOOK) CALL DR_HOOK('SETWAVPHYS',0,ZHOOK_HANDLE)
               CHNKMIN_U = 33._JWRB
             ENDIF
           ENDIF
-        ELSEIF (INLSCHEME == 1 ) THEN
-
-!!!! highly experimental only for LLGCBZ0 true and  LLNORMAGAM true !!!!
-
-          ZALP    = 0.008_JWRB
-          TAILFACTOR = 2.4_JWRB
-          TAILFACTOR_PM = 0.0_JWRB
-
-          SSDSC2 = -1.0E-5_JWRB
-          SWELLF = 0.76_JWRB
-          SWELLF5 = 0.6_JWRB
-
-!         ANGULAR ADJUSTMENT PARAMETERS FOR THE GRAVITY-CAPILLARY MODEL
-            ANG_GC_A = 0.40_JWRB
-            ANG_GC_B = 0.40_JWRB
-            ANG_GC_C = 3.0_JWRB
-
-!         DIRECTIONALITY CORRECTION FACTOR FOR THE GRAVITY-CAPILLARY MODEL
-          RN1_RN = 0.25_JWRB
-
-            ALPHA   = 0.0055_JWRB
-            ALPHAMIN = 0.0001_JWRB
-            CHNKMIN_U = 28._JWRB
-            ALPHAPMAX = 0.03_JWRB
-
-            DELTA_THETA_RN = 0.75_JWRB
-            DTHRN_A = 0.60_JWRB
-            DTHRN_U = 33.0_JWRB
-
-            Z0TUBMAX = 0.05_JWRB
-            Z0RAT = 0.02_JWRB
-            SWELLF4 = 1.15E05_JWRB
-            SWELLF7 = 4.32E05_JWRB
-
-            SWELLF7M1 = 1.0_JWRB/SWELLF7 
-
-            SSDSC5  = 0.0_JWRB
-
-              BETAMAX = 1.25_JWRB
-              TAUWSHELTER = 0.0_JWRB
-
-        ENDIF
 
 !!!     EMPIRICAL CONSTANCE FOR  SPECTRAL UPDATE FOLLOWING DATA ASSIMILATION
         EGRCRV = 1065.0_JWRB
