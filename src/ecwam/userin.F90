@@ -121,8 +121,9 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       USE YOWPHYS  , ONLY : BETAMAX  ,ZALP     ,ALPHA    ,  ALPHAPMAX,  &
      &            CHNKMIN_U, CDIS ,DELTA_SDIS, CDISVIS,                 &
      &            TAUWSHELTER, TAILFACTOR, TAILFACTOR_PM,               &
+     &            ANG_GC_A, ANG_GC_B, ANG_GC_C, ANG_GC_MIN,             &
      &            DELTA_THETA_RN, DTHRN_A, DTHRN_U,                     &
-     &            SWELLF4, SWELLF5, SWELLF7, SSDSC5
+     &            SWELLF, SWELLF4, SWELLF5, SWELLF7, SSDSC5
       USE YOWSHAL  , ONLY : NDEPTH   ,DEPTHA   ,DEPTHD   ,BATHYMAX
       USE YOWSTAT  , ONLY : CDATEE   ,CDATEF   ,CDATER   ,CDATES   ,    &
      &            IFRELFMAX, DELPRO_LF, IDELPRO, IDELT   ,IDELWI   ,    &
@@ -767,6 +768,10 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                CHNKMIN_U = .... ', CHNKMIN_U
       WRITE(IU06,*) '                ALPHAPMAX = .... ', ALPHAPMAX
       WRITE(IU06,*) '                TAUWSHELTER = .. ', TAUWSHELTER
+      WRITE(IU06,*) '                ANG_GC_A = ..... ', ANG_GC_A 
+      WRITE(IU06,*) '                ANG_GC_B = ..... ', ANG_GC_B
+      WRITE(IU06,*) '                ANG_GC_C = ..... ', ANG_GC_C
+      WRITE(IU06,*) '                ANG_GC_MIN = ... ', ANG_GC_MIN
       WRITE(IU06,*) '                DELTA_THETA_RN = ', DELTA_THETA_RN 
       WRITE(IU06,*) '                DTHRN_A = ...... ', DTHRN_A
       WRITE(IU06,*) '                DTHRN_U = ...... ', DTHRN_U
@@ -777,6 +782,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,*) '                DELTA_SDIS = ... ', DELTA_SDIS
       WRITE(IU06,*) '                CDISVIS = ...... ', CDISVIS
       ELSEIF (IPHYS == 1) THEN
+      WRITE(IU06,*) '                SWELLF  = ...... ', SWELLF
       WRITE(IU06,*) '                SWELLF4 = ...... ', SWELLF4
       WRITE(IU06,*) '                SWELLF5 = ...... ', SWELLF5
       WRITE(IU06,*) '                SWELLF7 = ...... ', SWELLF7
