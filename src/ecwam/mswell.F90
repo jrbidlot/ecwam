@@ -194,6 +194,7 @@ IF (LHOOK) CALL DR_HOOK('MSWELL',0,ZHOOK_HANDLE)
         ENDDO
 
         DO ILOC=1,NLOC
+          K=1
           KLOC(ILOC)=1
           COSDIRMAX=COS(TH(K)-THETA0(1))
           DO K=2,NANG
